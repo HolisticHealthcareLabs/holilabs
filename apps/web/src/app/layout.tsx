@@ -13,7 +13,7 @@ import { themeInitScript } from '@/scripts/theme-init';
 import { Toaster } from '@/components/ui/toaster';
 
 const OfflineIndicator = dynamic(() => import('@/components/OfflineIndicator'), { ssr: false });
-const IOSInstallPrompt = dynamic(() => import('@/components/IOSInstallPrompt').then(m => m.IOSInstallPrompt ? { default: m.IOSInstallPrompt } : m), { ssr: false });
+const IOSInstallPrompt = dynamic(() => import('@/components/IOSInstallPrompt').then(m => ({ default: m.IOSInstallPrompt })), { ssr: false });
 const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner').then(m => ({ default: m.CookieConsentBanner })), { ssr: false });
 // Validate environment variables at app startup
 import '@/lib/env';

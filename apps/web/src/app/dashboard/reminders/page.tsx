@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import {
-  Calendar, Send, AlertTriangle, Clock,
+  Calendar, Upload, AlertTriangle, Clock,
   FileText, CheckCircle2, XCircle,
 } from 'lucide-react';
 
@@ -99,7 +99,7 @@ export default function RemindersPage() {
 
         <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-500/20 bg-white dark:bg-gray-900 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{t('stats.sentToday')}</span>
           </div>
           {loadingStats ? (

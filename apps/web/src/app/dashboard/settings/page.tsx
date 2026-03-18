@@ -14,17 +14,14 @@ import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Bell,
-  Building2,
   ChevronRight,
-  CreditCard,
-  FileBadge2,
-  Home,
-  Link2,
+  Plus,
+  CheckCircle2,
+  User,
   Lock,
   Search,
-  ShieldCheck,
-  UserCircle2,
-  Users2,
+  Shield,
+  Settings,
 } from 'lucide-react';
 
 type OnboardingProfile = import('@/app/api/onboarding/profile/route').OnboardingProfile;
@@ -313,18 +310,18 @@ export default function SettingsPage() {
   const navigationItems: Array<{
     id: SettingsSection;
     label: string;
-    icon: typeof Home;
+    icon: typeof User;
     accent: string;
     available: boolean;
   }> = [
-    { id: 'home', label: t('home'), icon: Home, accent: 'bg-blue-100 text-blue-700', available: true },
-    { id: 'personal', label: t('personalInfo'), icon: UserCircle2, accent: 'bg-emerald-100 text-emerald-700', available: true },
-    { id: 'security', label: t('securitySignIn'), icon: ShieldCheck, accent: 'bg-sky-100 text-sky-700', available: false },
-    { id: 'license', label: t('clinicalLicense'), icon: FileBadge2, accent: 'bg-amber-100 text-amber-700', available: false },
-    { id: 'integrations', label: t('thirdPartyApps'), icon: Link2, accent: 'bg-indigo-100 text-indigo-700', available: true },
+    { id: 'home', label: t('home'), icon: User, accent: 'bg-blue-100 text-blue-700', available: true },
+    { id: 'personal', label: t('personalInfo'), icon: User, accent: 'bg-emerald-100 text-emerald-700', available: true },
+    { id: 'security', label: t('securitySignIn'), icon: Shield, accent: 'bg-sky-100 text-sky-700', available: false },
+    { id: 'license', label: t('clinicalLicense'), icon: CheckCircle2, accent: 'bg-amber-100 text-amber-700', available: false },
+    { id: 'integrations', label: t('thirdPartyApps'), icon: Settings, accent: 'bg-indigo-100 text-indigo-700', available: true },
     { id: 'privacy', label: t('dataPrivacy'), icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
-    { id: 'team', label: t('peopleSharing'), icon: Users2, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
-    { id: 'billing', label: t('walletSubscriptions'), icon: CreditCard, accent: 'bg-orange-100 text-orange-700', available: false },
+    { id: 'team', label: t('peopleSharing'), icon: Plus, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
+    { id: 'billing', label: t('walletSubscriptions'), icon: Settings, accent: 'bg-orange-100 text-orange-700', available: false },
   ];
 
   const saveFeedbackTone = saveMessage.includes('✅')
