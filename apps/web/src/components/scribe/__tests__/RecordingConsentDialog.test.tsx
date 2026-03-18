@@ -40,7 +40,7 @@ describe('RecordingConsentDialog', () => {
     render(
       <RecordingConsentDialog isOpen={true} patientName="Ana Torres" onConsent={onConsent} onDecline={jest.fn()} />
     );
-    const authorizeButton = screen.getByText(/Autorizo/);
+    const authorizeButton = screen.getByRole('button', { name: /Autorizo/i });
     fireEvent.click(authorizeButton);
     expect(onConsent).toHaveBeenCalled();
   });

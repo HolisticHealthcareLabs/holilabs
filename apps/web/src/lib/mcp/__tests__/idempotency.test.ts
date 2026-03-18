@@ -11,6 +11,7 @@ jest.mock('@/lib/prisma', () => ({
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+    $transaction: jest.fn((fn: any) => fn({})),
   },
 }));
 

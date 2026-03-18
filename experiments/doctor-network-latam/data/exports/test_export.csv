@@ -1,0 +1,4 @@
+id,source_country,source_registry,license_number,full_name,specialties,status,state_region,city,hospital_affiliations,insurance_networks,collected_at,source_url
+b3a2f2b5-58ed-4b78-90e0-eb6a12eb4078,BR,CFM,CRM-SP 123456,Maria Da Silva,Cardiologia,ACTIVE,SP,,,,2026-03-17T23:13:00.208278+00:00,
+08973818-0d3a-452b-ab68-bf3cd45be32a,AR,REFEPS,M.N. 98765,Juan Carlos López,Medicina Interna; Cardiología,ACTIVE,CABA,,,,2026-03-17T23:13:00.208305+00:00,
+0ddc19fd-9c09-4336-a061-20ef3bead3b4,CO,RETHUS,TP-2024-001,Ana María Rodríguez Gómez,Pediatría,ACTIVE,Bogotá D.C.,,,,2026-03-17T23:13:00.208434+00:00,

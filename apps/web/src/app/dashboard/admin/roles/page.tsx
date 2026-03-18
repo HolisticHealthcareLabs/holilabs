@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { Shield, Crown, User, CheckCircle2, X, Plus } from 'lucide-react';
+import { Shield, Star, User, CheckCircle2, X, Plus } from 'lucide-react';
 
 type RoleId = 'LICENSE_OWNER' | 'ADMIN' | 'COMPLIANCE_ADMIN' | 'PHYSICIAN' | 'NURSE' | 'RECEPTIONIST' | 'STAFF';
 
@@ -16,8 +16,8 @@ interface TeamMember {
   assignedAt?: string;
 }
 
-const ROLE_CONFIG: Record<RoleId, { labelKey: string; descKey: string; color: string; icon: typeof Crown }> = {
-  LICENSE_OWNER: { labelKey: 'licenseOwner', descKey: 'licenseOwnerDesc', color: 'text-violet-600 dark:text-violet-400', icon: Crown },
+const ROLE_CONFIG: Record<RoleId, { labelKey: string; descKey: string; color: string; icon: typeof Star }> = {
+  LICENSE_OWNER: { labelKey: 'licenseOwner', descKey: 'licenseOwnerDesc', color: 'text-violet-600 dark:text-violet-400', icon: Star },
   ADMIN: { labelKey: 'clinicAdmin', descKey: 'clinicAdminDesc', color: 'text-blue-600 dark:text-blue-400', icon: Shield },
   COMPLIANCE_ADMIN: { labelKey: 'complianceAdmin', descKey: 'complianceAdminDesc', color: 'text-amber-600 dark:text-amber-400', icon: Shield },
   PHYSICIAN: { labelKey: 'physician', descKey: 'physicianDesc', color: 'text-emerald-600 dark:text-emerald-400', icon: User },
@@ -86,7 +86,7 @@ export default function RolesAdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Crown className="w-6 h-6 text-violet-600" />
+            <Star className="w-6 h-6 text-violet-600" />
             {t('roleManagement')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

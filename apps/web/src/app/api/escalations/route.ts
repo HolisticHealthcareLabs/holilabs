@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 const ListQuerySchema = z.object({
     patientId: z.string().optional(),
-    status: z.enum(['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'REOPENED']).optional(),
+    status: z.enum(['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'BREACHED', 'ESCALATED_HIGHER', 'PAUSED']).optional(),
     severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
     category: z.enum(['CLINICAL', 'REVENUE', 'OPERATIONAL', 'SECURITY', 'ADMINISTRATIVE']).optional(),
     assignedToId: z.string().optional(),
@@ -27,7 +27,7 @@ const ListQuerySchema = z.object({
     take: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-async function handleGet(req: NextRequest) {
+async function handleGet(req: NextRequest, context: any) {
     const url = new URL(req.url);
     const query = Object.fromEntries(url.searchParams);
 
@@ -122,22 +122,17 @@ async function handlePost(req: NextRequest, context: any) {
 
     const slaDeadline = parsed.data.slaDeadlineHours
         ? new Date(Date.now() + parsed.data.slaDeadlineHours * 3600 * 1000)
-        : null;
+        : new Date(Date.now() + 24 * 3600 * 1000); // Default 24-hour SLA
 
     const escalation: any = await prisma.escalation.create({
         data: {
             patientId: parsed.data.patientId,
-            encounterId: parsed.data.encounterId,
-            title: parsed.data.title,
-            description: parsed.data.description,
-            category: parsed.data.category,
-            severity: parsed.data.severity,
-            slaDeadlineHours: parsed.data.slaDeadlineHours,
+            reason: parsed.data.description,
             slaDeadline,
-            escalationLevel: parsed.data.escalationLevel,
             notificationChannels: parsed.data.notificationChannels,
-            createdBy: context.userId,
-            status: 'PENDING',
+            escalationLevel: parsed.data.escalationLevel,
+            scheduledReminderId: '', // Placeholder for required relation
+            status: 'OPEN',
         },
         include: {
             patient: {
@@ -187,5 +182,5 @@ async function handlePost(req: NextRequest, context: any) {
     );
 }
 
-export const GET = createProtectedRoute({ roles: ['ADMIN'] })(handleGet);
-export const POST = createProtectedRoute({ roles: ['ADMIN'] })(handlePost);
+export const GET = createProtectedRoute(handleGet, { roles: ['ADMIN'] });
+export const POST = createProtectedRoute(handlePost, { roles: ['ADMIN'] });

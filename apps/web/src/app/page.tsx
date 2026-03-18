@@ -10,7 +10,7 @@ export default async function RootHomePage() {
 
     if (session?.user) {
       if (session.user.onboardingCompleted) {
-        redirect('/dashboard/prevention');
+        redirect('/dashboard/clinical-command');
       } else {
         redirect('/onboarding');
       }

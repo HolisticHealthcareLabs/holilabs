@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } fro
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Step } from 'react-joyride';
-import { Stethoscope, Star, RefreshCw, Layers } from 'lucide-react';
+import { Stethoscope, Star, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranscriptPane, type Segment } from './_components/TranscriptPane';
 import { useMicrophoneSTT } from './_components/useMicrophoneSTT';
@@ -109,7 +109,7 @@ export default function ClinicalCommandCenterPage() {
   ], [t]);
 
   // ── Deep link: auto-select patient from My Day schedule ─────────────────
-  const incomingPatientId = searchParams.get('patientId');
+  const incomingPatientId = searchParams?.get('patientId');
 
   useEffect(() => {
     if (!incomingPatientId) return;
@@ -377,6 +377,7 @@ export default function ClinicalCommandCenterPage() {
     ],
   }), []);
 
+  const chunkIndexRef = useRef(0);
   const injectedEntityIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -729,7 +730,7 @@ export default function ClinicalCommandCenterPage() {
               }
             `}
           >
-            <Layers className="w-3 h-3" />
+            <Stethoscope className="w-3 h-3" />
             {t('contextButton')}
             {extractedEntities.filter((e) => e.status === 'active').length > 0 && (
               <span className="

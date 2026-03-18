@@ -89,7 +89,7 @@ function buildToolArrayFromWorkflow(
       varMatch?.forEach(match => {
         const varPath = match.replace(/[{}]/g, '').trim();
         const varValue = varPath.split('.').reduce((obj, key) => obj?.[key], context);
-        result = result.replace(match, varValue ?? '');
+        result = result.replace(match, String(varValue ?? ''));
       });
       return result;
     }

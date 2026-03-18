@@ -36,6 +36,7 @@ export { useJobStatus } from './useJobStatus';
 export { useRealtimePreventionUpdates } from './useRealtimePreventionUpdates';
 export { useGovernanceRealtime } from './useGovernanceRealtime';
 export { useTaskRealtime } from './useTaskRealtime';
+export { useAgentEvents } from './useAgentEvents';
 
 // =============================================================================
 // UI HOOKS

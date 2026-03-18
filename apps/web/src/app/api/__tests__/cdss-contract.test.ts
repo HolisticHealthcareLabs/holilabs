@@ -693,7 +693,7 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   describe('POST /api/clinical/diagnosis', () => {
     let POST: any;
     beforeAll(() => {
-      ({ POST } = require('../../clinical/diagnosis/route'));
+      ({ POST } = require('../clinical/diagnosis/route'));
     });
 
     const validBody = {

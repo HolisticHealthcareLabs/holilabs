@@ -270,7 +270,7 @@ export default function PreVisitPage() {
       <DocumentUpload
         patientId={appointment.patientId}
         onComplete={handleDocumentComplete}
-        onError={(error) => console.error('[PreVisit]', { event: 'document_upload_error', error: error instanceof Error ? error.message : String(error) })}
+        onError={(error: any) => console.error('[PreVisit]', { event: 'document_upload_error', error: error instanceof Error ? error.message : String(error) })}
       />
 
       {/* Processed Documents */}

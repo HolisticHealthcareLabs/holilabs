@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ChevronRight, FileSignature, ShieldCheck, FlaskConical, CheckCircle2, X, Bell } from 'lucide-react';
+import { ChevronRight, FileText, Shield, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { nudgeProvider } from '@/app/actions/schedule';
 
 export interface TaskItem {
@@ -16,9 +16,9 @@ export interface TaskItem {
 }
 
 const ICON_MAP = {
-  signature:  FileSignature,
-  auth:       ShieldCheck,
-  lab:        FlaskConical,
+  signature:  FileText,
+  auth:       Shield,
+  lab:        AlertCircle,
   generic:    CheckCircle2,
 };
 
@@ -171,7 +171,7 @@ export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
                         disabled={isPending}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
                       >
-                        <Bell className="w-3 h-3" />
+                        <AlertCircle className="w-3 h-3" />
                         {t('nudgeProvider')}
                       </button>
                     )}

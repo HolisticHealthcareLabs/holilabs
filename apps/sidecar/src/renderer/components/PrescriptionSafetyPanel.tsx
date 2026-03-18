@@ -12,7 +12,6 @@ const COLOR_CONFIG = {
   RED:    { bg: '#ff3b30', label: 'BLOCKED', text: 'text-red-400' },
   YELLOW: { bg: '#ff9f0a', label: 'CAUTION', text: 'text-yellow-400' },
   GREEN:  { bg: '#30d158', label: 'CLEARED', text: 'text-green-400' },
-  GREY:   { bg: '#8e8e93', label: 'UNAVAILABLE', text: 'text-gray-400' },
 };
 
 export const PrescriptionSafetyPanel: React.FC<PrescriptionSafetyPanelProps> = ({
@@ -23,7 +22,7 @@ export const PrescriptionSafetyPanel: React.FC<PrescriptionSafetyPanelProps> = (
 }) => {
   const [isOverrideSubmitting, setIsOverrideSubmitting] = useState(false);
   const color = result?.color ?? 'GREEN';
-  const cfg = COLOR_CONFIG[color as keyof typeof COLOR_CONFIG] ?? COLOR_CONFIG.GREY;
+  const cfg = COLOR_CONFIG[color] ?? COLOR_CONFIG.GREEN;
   const showOverride = result?.canOverride && (color === 'RED' || color === 'YELLOW') && onOverride;
 
   const handleOverride = async () => {

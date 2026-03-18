@@ -369,21 +369,21 @@ export const POST = createProtectedRoute(
   }
 
   // Generate fresh context
-  const context = generateClinicalContext(body);
+  const clinicalContext = generateClinicalContext(body);
 
   // Cache it
-  contextCache.set(cacheKey, { result: context, date: today });
+  contextCache.set(cacheKey, { result: clinicalContext, date: today });
 
   logger.info({
     event: 'context_scan_generated',
     patientId: body.patientId,
     encounterId: body.encounterId,
-    medsCount: context.activeMedications.length,
-    riskFlagCount: context.riskFlags.length,
-    interactionCount: context.interactionMatrix.length,
+    medsCount: clinicalContext.activeMedications.length,
+    riskFlagCount: clinicalContext.riskFlags.length,
+    interactionCount: clinicalContext.interactionMatrix.length,
   });
 
-  return NextResponse.json({ success: true, cached: false, context });
+  return NextResponse.json({ success: true, cached: false, context: clinicalContext });
   },
   { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
 );

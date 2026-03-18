@@ -68,7 +68,7 @@ const customJestConfig = {
   // Pattern handles both regular node_modules and pnpm's .pnpm folder structure
   // For pnpm, scoped packages use + instead of / (e.g., @auth/prisma-adapter becomes @auth+prisma-adapter)
   transformIgnorePatterns: [
-    'node_modules/(?!(@auth/|next-auth|@prisma/|@auth\\+|next-auth\\+|@prisma\\+|uuid))',
+    'node_modules/(?!(@auth/|next-auth|@prisma/|next-intl|@auth\\+|next-auth\\+|@prisma\\+|uuid))',
   ],
 
   // Transform files with ts-jest

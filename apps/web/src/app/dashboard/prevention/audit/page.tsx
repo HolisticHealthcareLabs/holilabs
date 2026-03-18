@@ -8,7 +8,6 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useTranslations } from 'next-intl';
 import {
   Shield,
   Search,
