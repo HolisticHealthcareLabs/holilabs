@@ -97,3 +97,8 @@ synthea-output/
 apps/web/public/downloads/*.dmg
 release/
 .claude/worktrees/
+CLAUDE_CODE_PROMPT.md
+HEALTH3_*.md
+INTEGRATION_TESTS_SUMMARY.md
+PROMPT_*.md
+STEP0_INSTRUCTIONS.md
