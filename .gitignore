@@ -96,3 +96,4 @@ synthea/
 synthea-output/
 apps/web/public/downloads/*.dmg
 release/
+.claude/worktrees/
