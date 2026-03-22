@@ -935,7 +935,8 @@ export function compose(...middlewares: Middleware[]) {
           const middleware = middlewares[index++];
           return middleware(request, context, next);
         }
-        return handler(request, context);
+        const result = handler(request, context);
+        return result instanceof NextResponse ? result : NextResponse.json(result);
       };
 
       return next();
@@ -1033,7 +1034,7 @@ export function createProtectedRoute(
     }
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
-    let response = await composedHandler(request, context);
+    let response = (await composedHandler(request, context)) as NextResponse;
 
     // Apply request ID, CORS, and security headers to response
     response.headers.set(REQUEST_ID_HEADER, requestId);
@@ -1073,7 +1074,7 @@ export function createPublicRoute(
     }
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
-    let response = await composedHandler(request, ctx);
+    let response = (await composedHandler(request, ctx)) as NextResponse;
 
     // Apply request ID, CORS, and security headers to response
     response.headers.set(REQUEST_ID_HEADER, requestId);

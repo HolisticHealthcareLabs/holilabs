@@ -1,0 +1,26 @@
+{
+  "name": "@holi/integration-tests",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --verbose",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@holi/data-ingestion": "workspace:*",
+    "@holi/event-bus": "workspace:*",
+    "@holi/prevention-engine": "workspace:*",
+    "@holi/fhir-canonical": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.11.0",
+    "@types/fhir": "^0.0.41",
+    "@types/uuid": "^9.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3",
+    "ioredis": "^5.3.0",
+    "uuid": "^9.0.0"
+  }
+}

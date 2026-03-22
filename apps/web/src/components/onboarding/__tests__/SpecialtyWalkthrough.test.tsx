@@ -22,8 +22,8 @@ jest.mock('react-joyride', () => {
 });
 
 jest.mock('lucide-react', () => ({
-  Volume2: (props: any) => <svg {...props} />,
-  VolumeX: (props: any) => <svg {...props} />,
+  AlertCircle: (props: any) => <svg {...props} />,
+  X: (props: any) => <svg {...props} />,
 }));
 
 const SpecialtyWalkthrough = require('../SpecialtyWalkthrough').default;

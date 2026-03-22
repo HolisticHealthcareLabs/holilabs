@@ -10,7 +10,7 @@ import Joyride, {
   type Step,
   type TooltipRenderProps,
 } from 'react-joyride';
-import { Volume2, VolumeX } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -196,7 +196,7 @@ function WalkthroughTooltip({
           className="rounded-full p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
           aria-label={muted ? 'Unmute narration' : 'Mute narration'}
         >
-          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {muted ? <X className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
         </button>
       </div>
 

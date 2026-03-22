@@ -148,7 +148,7 @@ export default function DashboardCommandCenter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900">
       {/* Onboarding */}
-      <WelcomeModal />
+      {/* <WelcomeModal /> */}
       <OnboardingChecklist />
 
       {/* Command Palette */}

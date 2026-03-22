@@ -1,0 +1,121 @@
+[
+  {
+    "ruleId": "LAB_HBA1C_PREDIABETES",
+    "name": "HbA1c — Prediabetes Range",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 5.7,
+      "unit": "%"
+    },
+    "severity": "MEDIUM",
+    "message": "HbA1c ≥ 5.7% indicates prediabetes range. Lifestyle intervention recommended.",
+    "actionRequired": "Refer to diabetes prevention program. Retest in 6 months. Assess other cardiovascular risk factors.",
+    "sourceAuthority": "American Diabetes Association — Standards of Diabetes Care 2024, Section 3",
+    "citationUrl": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+  },
+  {
+    "ruleId": "LAB_HBA1C_DIABETES",
+    "name": "HbA1c — Diabetes Diagnostic Threshold",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 6.5,
+      "unit": "%"
+    },
+    "severity": "HIGH",
+    "message": "HbA1c ≥ 6.5% meets diagnostic criteria for diabetes mellitus.",
+    "actionRequired": "Confirm with repeat test. Initiate diabetes management protocol. Refer to endocrinology if indicated.",
+    "sourceAuthority": "American Diabetes Association — Standards of Diabetes Care 2024, Table 2.2",
+    "citationUrl": "https://diabetesjournals.org/care/article/47/Supplement_1/S20/153956"
+  },
+  {
+    "ruleId": "LAB_CREATININE_HIGH",
+    "name": "Serum Creatinine — Elevated",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": ">",
+      "value": 1.2,
+      "unit": "mg/dL"
+    },
+    "severity": "MEDIUM",
+    "message": "Serum creatinine > 1.2 mg/dL may indicate reduced kidney function.",
+    "actionRequired": "Calculate eGFR. Order urine albumin-to-creatinine ratio. Review nephrotoxic medications.",
+    "sourceAuthority": "KDIGO 2024 CKD Guideline, Chapter 1",
+    "citationUrl": "https://kdigo.org/guidelines/ckd-evaluation-and-management/"
+  },
+  {
+    "ruleId": "LAB_POTASSIUM_LOW",
+    "name": "Potassium — Hypokalemia",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": "<",
+      "value": 3.0,
+      "unit": "mEq/L"
+    },
+    "severity": "HIGH",
+    "message": "Potassium < 3.0 mEq/L — significant hypokalemia. Cardiac arrhythmia risk.",
+    "actionRequired": "Oral or IV potassium replacement per severity protocol. ECG monitoring if symptomatic. Review diuretic therapy.",
+    "sourceAuthority": "UpToDate Clinical Practice — Overview of the causes and treatment of hypokalemia, 2024",
+    "citationUrl": "https://www.uptodate.com/contents/overview-of-the-causes-and-treatment-of-hypokalemia"
+  },
+  {
+    "ruleId": "LAB_POTASSIUM_CRITICAL_LOW",
+    "name": "Potassium — Critical Hypokalemia",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": "<",
+      "value": 2.5,
+      "unit": "mEq/L"
+    },
+    "severity": "CRITICAL",
+    "message": "Potassium < 2.5 mEq/L — CRITICAL hypokalemia. Immediate intervention required.",
+    "actionRequired": "URGENT: IV potassium replacement under continuous cardiac monitoring. ICU admission if unstable.",
+    "sourceAuthority": "UpToDate Clinical Practice — Overview of the causes and treatment of hypokalemia, 2024",
+    "citationUrl": "https://www.uptodate.com/contents/overview-of-the-causes-and-treatment-of-hypokalemia"
+  },
+  {
+    "ruleId": "LAB_LDL_HIGH",
+    "name": "LDL Cholesterol — High",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 160,
+      "unit": "mg/dL"
+    },
+    "severity": "MEDIUM",
+    "message": "LDL cholesterol ≥ 160 mg/dL — elevated cardiovascular risk.",
+    "actionRequired": "Assess 10-year ASCVD risk score. Consider statin therapy per ACC/AHA guidelines. Dietary counseling.",
+    "sourceAuthority": "ACC/AHA 2019 Guideline on the Primary Prevention of Cardiovascular Disease",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
+  },
+  {
+    "ruleId": "LAB_TSH_HYPOTHYROID",
+    "name": "TSH — Hypothyroidism Threshold",
+    "category": "LAB_ALERT",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "value",
+      "operator": ">",
+      "value": 4.5,
+      "unit": "mIU/L"
+    },
+    "severity": "MEDIUM",
+    "message": "TSH > 4.5 mIU/L — possible hypothyroidism. Confirm with free T4.",
+    "actionRequired": "Order free T4 and TPO antibodies. Assess clinical symptoms. Consider levothyroxine if confirmed.",
+    "sourceAuthority": "ATA 2014 Guidelines for the Treatment of Hypothyroidism",
+    "citationUrl": "https://www.liebertpub.com/doi/10.1089/thy.2014.0028"
+  }
+]

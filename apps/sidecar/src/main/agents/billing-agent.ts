@@ -7,8 +7,6 @@
  * @module sidecar/agents/billing-agent
  */
 
-// Use native Node.js fetch (available in Node 18+)
-const fetch = globalThis.fetch;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

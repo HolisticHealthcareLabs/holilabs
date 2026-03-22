@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence, type Variants, type Easing } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 
 const APPLE_EASE = [0.16, 1, 0.3, 1] as const;
@@ -85,7 +85,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
             className="fixed inset-0 z-[9999] flex items-center justify-center"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: APPLE_EASE as unknown as number[] }}
+            transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
             style={{ pointerEvents: phase === 'dissolve' ? 'none' : 'auto' }}
           >
             {/* Background layers */}
@@ -94,7 +94,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
               animate={{
                 opacity: phase === 'dissolve' ? 0 : 1,
               }}
-              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as number[] }}
+              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
             />
 
             <motion.div
@@ -103,7 +103,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
               animate={{
                 opacity: phase === 'dissolve' ? 0 : 1,
               }}
-              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as number[] }}
+              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
             />
 
             {/* Bridge content */}
@@ -118,7 +118,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
                 }
                 transition={{
                   duration: phase === 'bridge' ? 0.6 : 0.5,
-                  ease: APPLE_EASE as unknown as number[],
+                  ease: APPLE_EASE as unknown as Easing,
                 }}
               >
                 <svg
@@ -146,7 +146,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
                 transition={{
                   duration: phase === 'bridge' ? 0.7 : 0.5,
                   delay: phase === 'bridge' ? 0.3 : 0,
-                  ease: APPLE_EASE as unknown as number[],
+                  ease: APPLE_EASE as unknown as Easing,
                 }}
                 className="text-[17px] font-medium text-white/50 tracking-[-0.01em] text-center"
               >
@@ -178,9 +178,10 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
       {phase === 'reveal' && (
         <motion.div
           className="fixed inset-0 z-[9998] pointer-events-none"
-          initial={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-          animate={{ backdropFilter: 'blur(0px)', WebkitBackdropFilter: 'blur(0px)' }}
-          transition={{ duration: 0.9, ease: APPLE_EASE as unknown as number[] }}
+          initial={{ backdropFilter: 'blur(12px)' }}
+          animate={{ backdropFilter: 'blur(0px)' }}
+          transition={{ duration: 0.9, ease: APPLE_EASE as unknown as Easing }}
+          style={{ WebkitBackdropFilter: 'blur(0px)' } as any}
         />
       )}
     </>

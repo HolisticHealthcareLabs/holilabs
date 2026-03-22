@@ -59,6 +59,10 @@ export function PatientDetailSplitPanel({
   const [showList, setShowList] = useState(true);
   const [idCopied, setIdCopied] = useState(false);
 
+  // Find current patient
+  const patient = patients.find((p) => p.id === patientId);
+  const currentIndex = patients.findIndex((p) => p.id === patientId);
+
   const handleCopyPatientId = useCallback(async () => {
     const idToCopy = patient?.tokenId ?? patient?.id ?? '';
     if (!idToCopy) return;
@@ -70,10 +74,6 @@ export function PatientDetailSplitPanel({
       // clipboard API unavailable (e.g. non-secure context) — fail silently
     }
   }, [patient]);
-
-  // Find current patient
-  const patient = patients.find((p) => p.id === patientId);
-  const currentIndex = patients.findIndex((p) => p.id === patientId);
 
   // Handle keyboard shortcuts
   useEffect(() => {
