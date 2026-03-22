@@ -1,0 +1,14 @@
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/index.ts'
+  ],
+  moduleNameMapper: {
+    '^@holi/event-bus$': '<rootDir>/../event-bus/src'
+  }
+};
