@@ -1,0 +1,75 @@
+// ============================================================================
+// ADDITIVE SCHEMA ADDITION — packages/data-ingestion
+//
+// INSTRUCTIONS FOR MERGE INTO prisma/schema.prisma:
+//   1. Wait for Session 1 (build repair) to complete
+//   2. Append ONLY the models below to prisma/schema.prisma
+//   3. Run: npx prisma migrate dev --name add_ingestion_tables
+//   4. DO NOT modify any existing model
+//
+// CYRUS compliance:
+//   - rawPayload encrypted at rest by DB-level encryption (existing policy)
+//   - tenantId enforced on all queries via verifyPatientAccess
+//   - No PII fields stored unencrypted in this model
+//
+// RUTH compliance:
+//   - provenanceHash provides audit trail integrity per LGPD Art. 37
+// ============================================================================
+
+model DataSource {
+  id                  String    @id @default(cuid())
+  name                String
+  type                String    // DataSourceType enum value
+  configEncrypted     String    // AES-256 encrypted JSON of SourceConfig
+  tenantId            String
+  patientId           String?
+  isActive            Boolean   @default(true)
+  syncIntervalSeconds Int?
+  createdAt           DateTime  @default(now())
+  lastSyncedAt        DateTime?
+  ingestedRecords     IngestedRecord[]
+
+  @@index([tenantId])
+  @@index([patientId])
+}
+
+model IngestionJob {
+  id             String          @id @default(cuid())
+  sourceId       String
+  tenantId       String
+  startedAt      DateTime        @default(now())
+  completedAt    DateTime?
+  status         String          // RUNNING | COMPLETED | FAILED | PARTIAL
+  totalRecords   Int             @default(0)
+  successCount   Int             @default(0)
+  failureCount   Int             @default(0)
+  errorsJson     String?         // JSON array of IngestionError (non-PHI)
+  ingestedRecords IngestedRecord[]
+
+  @@index([tenantId])
+  @@index([sourceId])
+}
+
+model IngestedRecord {
+  id               String       @id @default(cuid())
+  ingestId         String       @unique
+  sourceId         String
+  source           DataSource   @relation(fields: [sourceId], references: [id])
+  jobId            String
+  job              IngestionJob @relation(fields: [jobId], references: [id])
+  tenantId         String
+  patientId        String?
+  recordType       String       // CanonicalRecordType enum value
+  rawPayload       String       // JSON — may contain PHI; encrypted at DB level
+  isValid          Boolean
+  completenessScore Float
+  provenanceHash   String       // SHA-256 of rawData for tamper detection
+  normalizerVersion String
+  ingestedAt       DateTime     @default(now())
+  recordedAt       DateTime?
+
+  @@index([tenantId])
+  @@index([patientId])
+  @@index([recordType])
+  @@index([sourceId])
+}

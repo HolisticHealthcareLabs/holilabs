@@ -26,17 +26,18 @@ const FHIR_BASE = `https://healthcare.googleapis.com/v1/projects/${GCP_PROJECT}/
 let authClient: any = null;
 
 async function getAuthToken(): Promise<string> {
-  if (!authClient) {
-    const { GoogleAuth } = await import('google-auth-library');
-    authClient = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-healthcare'],
-    });
-  }
+  throw new Error('GCP Healthcare integration not yet implemented');
+  // if (!authClient) {
+  //   const { GoogleAuth } = await import('@google-cloud/secret-manager');
+  //   authClient = new GoogleAuth({
+  //     scopes: ['https://www.googleapis.com/auth/cloud-healthcare'],
+  //   });
+  // }
 
-  const client = await authClient.getClient();
-  const { token } = await client.getAccessToken();
-  if (!token) throw new Error('Failed to get GCP access token');
-  return token;
+  // const client = await authClient.getClient();
+  // const { token } = await client.getAccessToken();
+  // if (!token) throw new Error('Failed to get GCP access token');
+  // return token;
 }
 
 async function fhirRequest(

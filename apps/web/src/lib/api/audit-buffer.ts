@@ -32,11 +32,7 @@ async function flush(): Promise<void> {
   while (attempt < MAX_RETRIES) {
     try {
       await prisma.auditLog.createMany({
-        data: batch.map((entry) => ({
-          ...entry,
-          action: entry.action as any,
-          details: entry.details as any,
-        })),
+        data: batch as unknown as any,
       });
       flushing = false;
       return;

@@ -127,8 +127,9 @@ export async function aiGateway(request: AIGatewayRequest): Promise<AIGatewayRes
           totalTokens: tokens,
           responseTimeMs: elapsed,
           fromCache: false,
-          queryComplexity: 'standard',
+          queryComplexity: 'moderate',
           feature: request.task || 'ai_chat',
+          estimatedCost,
         } as UsageMetrics);
       } catch (trackError) {
         logger.warn({

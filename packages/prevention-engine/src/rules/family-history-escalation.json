@@ -1,0 +1,182 @@
+[
+  {
+    "ruleId": "FH_DIABETES_ESCALATION",
+    "name": "Family Hx Diabetes — Escalate Prediabetes Alert",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "E11"
+    },
+    "escalatesRule": "LAB_HBA1C_PREDIABETES",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "HbA1c in prediabetes range WITH family history of diabetes. Elevated risk — intensified monitoring recommended.",
+    "actionRequired": "Intensified lifestyle intervention. Consider early metformin. Retest in 3 months instead of 6.",
+    "sourceAuthority": "American Diabetes Association — Standards of Care in Diabetes 2024, Section 2: Diagnosis and Classification",
+    "citationUrl": "https://diabetesjournals.org/care/article/47/Supplement_1/S20/153956"
+  },
+  {
+    "ruleId": "FH_BREAST_CANCER_ESCALATION",
+    "name": "Family Hx Breast Cancer — Escalate Mammogram Gap",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "C50"
+    },
+    "escalatesRule": "SCREENING_MAMMOGRAM_GAP",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Family history of breast cancer detected. Mammogram screening should begin earlier and at shorter intervals.",
+    "actionRequired": "Begin annual mammography 10 years before earliest family diagnosis. Consider breast MRI per NCCN guidelines.",
+    "sourceAuthority": "American Cancer Society — Breast Cancer Screening Guidelines 2023",
+    "citationUrl": "https://www.cancer.org/cancer/types/breast-cancer/screening-tests-and-early-detection/american-cancer-society-recommendations-for-the-early-detection-of-breast-cancer.html"
+  },
+  {
+    "ruleId": "FH_COLORECTAL_CANCER_ESCALATION",
+    "name": "Family Hx Colorectal Cancer — Escalate Colonoscopy Gap",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "C18"
+    },
+    "escalatesRule": "SCREENING_COLONOSCOPY_GAP",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Family history of colorectal cancer. Screening should begin at age 40 or 10 years before earliest family diagnosis.",
+    "actionRequired": "Begin colonoscopy screening at age 40 or 10 years before youngest affected relative. Repeat every 5 years.",
+    "sourceAuthority": "USPSTF — Screening for Colorectal Cancer, 2021 Recommendation Statement",
+    "citationUrl": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening"
+  },
+  {
+    "ruleId": "FH_HYPERTENSION_ESCALATION",
+    "name": "Family Hx Hypertension — Escalate Elevated BP Alert",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "I10"
+    },
+    "escalatesRule": "VITAL_BP_ELEVATED",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Elevated blood pressure WITH family history of hypertension. Higher risk for sustained hypertension.",
+    "actionRequired": "Confirm with ambulatory monitoring. Begin lifestyle modifications immediately. Consider early pharmacotherapy.",
+    "sourceAuthority": "ACC/AHA 2017 Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"
+  },
+  {
+    "ruleId": "FH_CVD_LDL_ESCALATION",
+    "name": "Family Hx CVD — Escalate Elevated LDL Alert",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "I20"
+    },
+    "escalatesRule": "LAB_LDL_HIGH",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Elevated LDL cholesterol WITH family history of cardiovascular disease. Significant ASCVD risk enhancement.",
+    "actionRequired": "Calculate enhanced 10-year ASCVD risk. Strong consideration for statin therapy. Coronary calcium scoring may be warranted.",
+    "sourceAuthority": "ACC/AHA 2019 Guideline on the Primary Prevention of Cardiovascular Disease",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
+  },
+  {
+    "ruleId": "FH_THYROID_ESCALATION",
+    "name": "Family Hx Thyroid Disorders — Escalate Borderline TSH",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "E00"
+    },
+    "escalatesRule": "LAB_TSH_HYPOTHYROID",
+    "escalatedSeverity": "MEDIUM",
+    "severity": "MEDIUM",
+    "message": "Borderline TSH WITH family history of thyroid disorders. Increased risk of progression to clinical hypothyroidism.",
+    "actionRequired": "Order TPO antibodies. Retest TSH in 3 months. Monitor for clinical symptoms of hypothyroidism.",
+    "sourceAuthority": "American Association of Clinical Endocrinology — 2023 Clinical Practice Guideline for Hypothyroidism",
+    "citationUrl": "https://www.liebertpub.com/doi/10.1089/thy.2014.0028"
+  },
+  {
+    "ruleId": "FH_CKD_CREATININE_ESCALATION",
+    "name": "Family Hx CKD — Escalate Elevated Creatinine",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "N18"
+    },
+    "escalatesRule": "LAB_CREATININE_HIGH",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Elevated creatinine WITH family history of chronic kidney disease. Higher risk of CKD progression.",
+    "actionRequired": "Urgent nephrology referral. Calculate eGFR. Screen for proteinuria. Avoid nephrotoxic medications.",
+    "sourceAuthority": "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD",
+    "citationUrl": "https://kdigo.org/guidelines/ckd-evaluation-and-management/"
+  },
+  {
+    "ruleId": "FH_OSTEOPOROSIS_DEXA_ESCALATION",
+    "name": "Family Hx Osteoporosis — DEXA Screening Recommendation",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "M80"
+    },
+    "escalatesRule": "SCREENING_DEXA_GAP",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Family history of osteoporosis in female patient ≥50. DEXA screening recommended at earlier interval.",
+    "actionRequired": "Schedule DEXA scan. Assess calcium and vitamin D intake. FRAX score calculation recommended.",
+    "sourceAuthority": "International Society for Clinical Densitometry — 2023 ISCD Official Positions",
+    "citationUrl": "https://iscd.org/learn/official-positions/"
+  },
+  {
+    "ruleId": "FH_SUDDEN_CARDIAC_DEATH_ECG_ESCALATION",
+    "name": "Family Hx Sudden Cardiac Death — ECG Screening Recommendation",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "I46"
+    },
+    "escalatesRule": "SCREENING_ECG_GAP",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Family history of sudden cardiac death. ECG screening recommended for patient ≥30.",
+    "actionRequired": "12-lead ECG screening. Consider echocardiography. Cardiology referral if abnormalities detected.",
+    "sourceAuthority": "European Society of Cardiology — 2022 Guidelines on Ventricular Arrhythmias and Prevention of Sudden Cardiac Death",
+    "citationUrl": "https://academic.oup.com/eurheartj/article/43/40/3997/6675633"
+  },
+  {
+    "ruleId": "FH_T1D_AUTOANTIBODY_ESCALATION",
+    "name": "Family Hx Type 1 Diabetes — Autoantibody Screening Recommendation",
+    "category": "FAMILY_HISTORY_ESCALATION",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "familyHistory.conditions",
+      "operator": "CONTAINS_ICD_PREFIX",
+      "value": "E10"
+    },
+    "escalatesRule": "SCREENING_AUTOANTIBODY_GAP",
+    "escalatedSeverity": "HIGH",
+    "severity": "HIGH",
+    "message": "Family history of type 1 diabetes. Autoantibody screening recommended for patient ≥20.",
+    "actionRequired": "Screen for islet autoantibodies (GAD65, IA-2, ZnT8). Consider referral to endocrinology for staging if positive.",
+    "sourceAuthority": "American Diabetes Association — Standards of Care in Diabetes 2024, Section 2",
+    "citationUrl": "https://diabetesjournals.org/care/article/47/Supplement_1/S20/153956"
+  }
+]

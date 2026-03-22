@@ -194,11 +194,23 @@ export async function breachOverdueEscalations() {
  * Get escalation counts grouped by status (for dashboard stats).
  */
 export async function getEscalationCounts(): Promise<Record<EscalationStatus, number>> {
-  const [open, breached, resolved] = await Promise.all([
+  const [open, breached, resolved, inProgress, paused, assigned, escalatedHigher] = await Promise.all([
     prisma.escalation.count({ where: { status: 'OPEN' } }),
     prisma.escalation.count({ where: { status: 'BREACHED' } }),
     prisma.escalation.count({ where: { status: 'RESOLVED' } }),
+    prisma.escalation.count({ where: { status: 'IN_PROGRESS' } }),
+    prisma.escalation.count({ where: { status: 'PAUSED' } }),
+    prisma.escalation.count({ where: { status: 'ASSIGNED' } }),
+    prisma.escalation.count({ where: { status: 'ESCALATED_HIGHER' } }),
   ]);
 
-  return { OPEN: open, BREACHED: breached, RESOLVED: resolved };
+  return {
+    OPEN: open,
+    BREACHED: breached,
+    RESOLVED: resolved,
+    IN_PROGRESS: inProgress,
+    PAUSED: paused,
+    ASSIGNED: assigned,
+    ESCALATED_HIGHER: escalatedHigher,
+  };
 }

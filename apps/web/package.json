@@ -55,6 +55,7 @@
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@holi/data-ingestion": "workspace:*",
     "@holi/deid": "workspace:^",
     "@holi/dp": "workspace:^",
     "@holi/schemas": "workspace:^",

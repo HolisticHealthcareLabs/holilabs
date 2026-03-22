@@ -1,0 +1,121 @@
+[
+  {
+    "ruleId": "VITAL_BP_SYSTOLIC_STAGE1",
+    "name": "Blood Pressure — Stage 1 Hypertension",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 130,
+      "unit": "mmHg"
+    },
+    "severity": "MEDIUM",
+    "message": "Systolic BP ≥ 130 mmHg — Stage 1 hypertension. Lifestyle modification warranted.",
+    "actionRequired": "Confirm on two separate occasions. Initiate lifestyle modifications: DASH diet, sodium restriction, exercise. Reassess in 3 months.",
+    "sourceAuthority": "ACC/AHA 2017 Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"
+  },
+  {
+    "ruleId": "VITAL_BP_SYSTOLIC_STAGE2",
+    "name": "Blood Pressure — Stage 2 Hypertension",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 140,
+      "unit": "mmHg"
+    },
+    "severity": "HIGH",
+    "message": "Systolic BP ≥ 140 mmHg — Stage 2 hypertension. Pharmacological therapy indicated.",
+    "actionRequired": "Initiate antihypertensive therapy per ACC/AHA protocol. Lifestyle modification. Recheck in 1 month. Evaluate for end-organ damage.",
+    "sourceAuthority": "ACC/AHA 2017 Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"
+  },
+  {
+    "ruleId": "VITAL_BP_SYSTOLIC_CRISIS",
+    "name": "Blood Pressure — Hypertensive Crisis",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": ">=",
+      "value": 180,
+      "unit": "mmHg"
+    },
+    "severity": "CRITICAL",
+    "message": "Systolic BP ≥ 180 mmHg — HYPERTENSIVE CRISIS. Immediate evaluation required.",
+    "actionRequired": "URGENT: Assess for end-organ damage (hypertensive urgency vs emergency). Emergency department referral if symptoms present.",
+    "sourceAuthority": "ACC/AHA 2017 Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"
+  },
+  {
+    "ruleId": "VITAL_SPO2_LOW",
+    "name": "SpO2 — Hypoxemia",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": "<",
+      "value": 94,
+      "unit": "%"
+    },
+    "severity": "HIGH",
+    "message": "SpO2 < 94% — hypoxemia. Supplemental oxygen may be required.",
+    "actionRequired": "Assess for respiratory distress. Apply supplemental oxygen if symptomatic. Investigate underlying cause (pneumonia, CHF, PE). Escalate if SpO2 < 90%.",
+    "sourceAuthority": "WHO 2021 Oxygen Therapy for Children (adapted for adults); BTS 2017 Emergency Oxygen Guidelines",
+    "citationUrl": "https://www.brit-thoracic.org.uk/quality-improvement/guidelines/emergency-oxygen/"
+  },
+  {
+    "ruleId": "VITAL_SPO2_CRITICAL",
+    "name": "SpO2 — Critical Hypoxemia",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": "<",
+      "value": 90,
+      "unit": "%"
+    },
+    "severity": "CRITICAL",
+    "message": "SpO2 < 90% — CRITICAL hypoxemia. Immediate intervention required.",
+    "actionRequired": "URGENT: High-flow oxygen. Consider non-invasive ventilation. Emergency evaluation. Prepare for potential intubation.",
+    "sourceAuthority": "BTS 2017 Emergency Oxygen Guidelines for Adults",
+    "citationUrl": "https://www.brit-thoracic.org.uk/quality-improvement/guidelines/emergency-oxygen/"
+  },
+  {
+    "ruleId": "VITAL_TEMP_FEVER",
+    "name": "Temperature — Fever",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": ">",
+      "value": 38.5,
+      "unit": "°C"
+    },
+    "severity": "MEDIUM",
+    "message": "Temperature > 38.5°C — fever. Evaluate for infectious etiology.",
+    "actionRequired": "Assess clinical context. Blood cultures if sepsis suspected. Antipyretics per protocol. Investigate source.",
+    "sourceAuthority": "IDSA 2023 Guidelines on Fever Management",
+    "citationUrl": "https://www.idsociety.org/practice-guideline/fever/"
+  },
+  {
+    "ruleId": "VITAL_HEART_RATE_TACHYCARDIA",
+    "name": "Heart Rate — Tachycardia",
+    "category": "VITAL_ALERT",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "value",
+      "operator": ">",
+      "value": 100,
+      "unit": "bpm"
+    },
+    "severity": "MEDIUM",
+    "message": "Heart rate > 100 bpm — tachycardia. Assess for underlying cause.",
+    "actionRequired": "Evaluate for fever, dehydration, pain, anxiety, arrhythmia, or cardiac pathology. ECG if sustained or symptomatic.",
+    "sourceAuthority": "ACC/AHA 2015 Guideline for SVT, Section on Sinus Tachycardia",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000311"
+  }
+]

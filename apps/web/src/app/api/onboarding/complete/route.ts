@@ -3,7 +3,6 @@ import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const OnboardingSchema = z.object({
@@ -36,10 +35,7 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
       );
     }
 
-    const { leadId, password } = parsed.data;
-
-    // Hash password before entering the transaction
-    const passwordHash = await bcrypt.hash(password, 12);
+    const { leadId } = parsed.data;
 
     // Atomic transaction: User + Workspace + WaitlistEntry update
     // If any step fails, everything rolls back — no orphaned records.
@@ -71,13 +67,12 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
         throw new Error('EMAIL_EXISTS');
       }
 
-      // 3. Create User
+      // 3. Create User (auth via magic links, no passwordHash)
       const user = await tx.user.create({
         data: {
           email: entry.email,
           firstName: entry.firstName || 'User',
           lastName: entry.lastName || '',
-          passwordHash,
           role: 'CLINICIAN',
           onboardingCompleted: false,
         },

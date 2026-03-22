@@ -9,9 +9,11 @@
 
 import { BillingAgent } from '../billing-agent';
 
-jest.mock('node-fetch');
+const mockFetch = jest.fn();
 
-const fetch = require('node-fetch');
+beforeAll(() => {
+  globalThis.fetch = mockFetch as any;
+});
 
 describe('BillingAgent', () => {
   let agent: BillingAgent;
@@ -23,7 +25,7 @@ describe('BillingAgent', () => {
 
   describe('FIN-002 (TUSS Hallucination)', () => {
     it('detects FIN-002 and returns RED', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -65,7 +67,7 @@ describe('BillingAgent', () => {
 
   describe('FIN-001 (ICD-10 Mismatch)', () => {
     it('detects FIN-001 and returns AMBER', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -100,7 +102,7 @@ describe('BillingAgent', () => {
 
   describe('FIN-003 (Quantity Limit)', () => {
     it('detects FIN-003 and returns AMBER', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -138,7 +140,7 @@ describe('BillingAgent', () => {
 
   describe('TUSS format validation', () => {
     it('validates TUSS format in response', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -167,7 +169,7 @@ describe('BillingAgent', () => {
     });
 
     it('marks TUSS as invalid if FIN-002 fired', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -193,7 +195,7 @@ describe('BillingAgent', () => {
 
   describe('glosa amount estimation', () => {
     it('sums glosa amounts from multiple alerts', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
           signal: [
@@ -237,7 +239,7 @@ describe('BillingAgent', () => {
 
   describe('error handling', () => {
     it('returns default output on fetch failure', async () => {
-      fetch.mockRejectedValue(new Error('Network error'));
+      mockFetch.mockRejectedValue(new Error('Network error'));
 
       const result = await agent.evaluate({
         patientId: 'PAT-001',
@@ -251,7 +253,7 @@ describe('BillingAgent', () => {
     });
 
     it('returns default output on non-OK HTTP response', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
       });
@@ -268,7 +270,7 @@ describe('BillingAgent', () => {
 
   describe('POST call to /api/prescriptions/safety-check', () => {
     it('calls correct endpoint with correct payload', async () => {
-      fetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({ signal: [] }),
       });
@@ -285,14 +287,12 @@ describe('BillingAgent', () => {
         procedureCode: 'PROC-001',
       });
 
-      // Check the fetch was called with the right URL
-      expect(fetch).toHaveBeenCalled();
-      const call = (fetch as any).mock.calls[0];
+      expect(mockFetch).toHaveBeenCalled();
+      const call = mockFetch.mock.calls[0];
       expect(call[0]).toBe('http://localhost:3001/api/prescriptions/safety-check');
       expect(call[1].method).toBe('POST');
       expect(call[1].headers['Content-Type']).toBe('application/json');
 
-      // Parse the body to check contents
       const body = JSON.parse(call[1].body);
       expect(body.patientId).toBe('PAT-123');
       expect(body.medications[0].name).toBe('Metformin');

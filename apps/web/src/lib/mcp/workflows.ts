@@ -17,3 +17,5 @@ export {
   billingPreCheckWorkflow,
   type WorkflowTemplate,
 } from './workflows/index';
+
+export type { WorkflowStep, WorkflowResult } from './types';

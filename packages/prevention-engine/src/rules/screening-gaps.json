@@ -1,0 +1,98 @@
+[
+  {
+    "ruleId": "SCREEN_MAMMOGRAM_OVERDUE",
+    "name": "Mammography — Screening Overdue (Women 40+)",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "lastScreeningDates.MAMMOGRAM",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 365
+    },
+    "severity": "MEDIUM",
+    "message": "Mammography screening overdue. Annual screening recommended for women aged 40 and older.",
+    "actionRequired": "Schedule mammography. Discuss screening preferences and shared decision-making per USPSTF B-grade recommendation.",
+    "sourceAuthority": "USPSTF 2024 Recommendation Statement — Breast Cancer Screening",
+    "citationUrl": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening"
+  },
+  {
+    "ruleId": "SCREEN_COLONOSCOPY_OVERDUE",
+    "name": "Colonoscopy — Screening Overdue (Adults 45-75)",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "lastScreeningDates.COLONOSCOPY",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 3650
+    },
+    "severity": "MEDIUM",
+    "message": "Colonoscopy screening overdue. 10-year interval recommended for average-risk adults aged 45-75.",
+    "actionRequired": "Schedule colonoscopy or offer alternative CRC screening (FIT annually, CT colonography every 5 years) per patient preference.",
+    "sourceAuthority": "USPSTF 2021 Recommendation Statement — Colorectal Cancer Screening",
+    "citationUrl": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening"
+  },
+  {
+    "ruleId": "SCREEN_CERVICAL_OVERDUE",
+    "name": "Cervical Cancer Screening — Overdue",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "PATIENT_DEMOGRAPHICS",
+    "condition": {
+      "field": "lastScreeningDates.CERVICAL_CYTOLOGY",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 1095
+    },
+    "severity": "MEDIUM",
+    "message": "Cervical cancer screening overdue. Pap test every 3 years or co-test every 5 years recommended (ages 21-65).",
+    "actionRequired": "Schedule Pap smear and/or HPV co-testing. Discuss screening interval based on age and prior results.",
+    "sourceAuthority": "USPSTF 2018 Recommendation Statement — Cervical Cancer Screening",
+    "citationUrl": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/cervical-cancer-screening"
+  },
+  {
+    "ruleId": "SCREEN_DIABETES_A1C_OVERDUE",
+    "name": "HbA1c — Annual Monitoring Overdue (Prediabetes/Diabetes)",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "lastLabResults.HBA1C",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 365
+    },
+    "severity": "MEDIUM",
+    "message": "HbA1c monitoring overdue. Annual testing recommended for patients with prediabetes or diabetes.",
+    "actionRequired": "Order HbA1c. Assess medication adherence, lifestyle factors, and glycemic targets.",
+    "sourceAuthority": "ADA Standards of Diabetes Care 2024, Section 6: Glycemic Goals",
+    "citationUrl": "https://diabetesjournals.org/care/article/47/Supplement_1/S58/153962"
+  },
+  {
+    "ruleId": "SCREEN_LIPID_PANEL_OVERDUE",
+    "name": "Lipid Panel — Screening Overdue (Adults 40+)",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "LAB_RESULT",
+    "condition": {
+      "field": "lastLabResults.TOTAL_CHOLESTEROL",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 1825
+    },
+    "severity": "LOW",
+    "message": "Lipid panel overdue. 5-year screening interval recommended for average-risk adults.",
+    "actionRequired": "Order fasting lipid panel. Calculate 10-year ASCVD risk if not done recently.",
+    "sourceAuthority": "ACC/AHA 2019 Guideline on Primary Prevention of Cardiovascular Disease",
+    "citationUrl": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
+  },
+  {
+    "ruleId": "SCREEN_BP_ANNUAL_OVERDUE",
+    "name": "Blood Pressure — Annual Check Overdue",
+    "category": "SCREENING_GAP",
+    "targetRecordType": "VITAL_SIGN",
+    "condition": {
+      "field": "lastVitals.BLOOD_PRESSURE_SYSTOLIC",
+      "operator": "OVERDUE_BY_DAYS",
+      "value": 365
+    },
+    "severity": "LOW",
+    "message": "Annual blood pressure check overdue.",
+    "actionRequired": "Measure blood pressure at next visit. Reinforce lifestyle modification if elevated.",
+    "sourceAuthority": "USPSTF 2021 Recommendation Statement — Hypertension in Adults: Screening",
+    "citationUrl": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/hypertension-in-adults-screening"
+  }
+]

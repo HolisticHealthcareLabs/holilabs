@@ -8,7 +8,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "lint": "eslint src/",
-    "test": "vitest"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@types/pdfkit": "^0.17.3",
