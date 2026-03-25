@@ -2,24 +2,30 @@
  * AI Providers
  *
  * Central export for all AI provider implementations.
- * Supports local (Ollama), self-hosted (vLLM), and cloud (Together.ai) inference.
+ * Local: Ollama, vLLM
+ * Cloud (OpenAI-compatible): Together, Groq, Cerebras, Mistral, DeepSeek
  */
 
-// Ollama - Local inference
+// ── Base class ───────────────────────────────────────────────────────────────
+export {
+  OpenAICompatibleProvider,
+  type OpenAICompatibleConfig,
+} from './openai-compatible-provider';
+
+// ── Local inference ──────────────────────────────────────────────────────────
 export {
   OllamaProvider,
   OLLAMA_MODELS,
   type OllamaConfig,
 } from './ollama-provider';
 
-// vLLM - Self-hosted inference
 export {
   VLLMProvider,
   VLLM_MODELS,
   type VLLMConfig,
 } from './vllm-provider';
 
-// Together.ai - Cloud inference
+// ── Cloud inference ──────────────────────────────────────────────────────────
 export {
   TogetherProvider,
   TOGETHER_MODELS,
@@ -27,7 +33,12 @@ export {
   type TogetherConfig,
 } from './together-provider';
 
-// Task-based router
+export { GroqProvider } from './groq-provider';
+export { CerebrasProvider } from './cerebras-provider';
+export { MistralProvider } from './mistral-provider';
+export { DeepSeekProvider } from './deepseek-provider';
+
+// ── Task-based router ────────────────────────────────────────────────────────
 export {
   TaskRouter,
   selectModelForTask,

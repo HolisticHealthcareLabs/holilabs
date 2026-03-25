@@ -150,6 +150,13 @@ model User {
   grantedRoles    RoleAssignment[] @relation("RoleGrantor")
   receivedRoles   RoleAssignment[] @relation("RoleGrantee")
 
+  // Radiology & AI
+  radiologyReports RadiologyReport[] @relation("RadiologistReports")
+  aiResultReviews  ImagingAIResult[] @relation("AIResultReviewer")
+
+  // Pre-Authorization
+  preAuthRequests PreAuthorizationRequest[]
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
@@ -1103,6 +1110,9 @@ model Patient {
   // Escalation Queue
   escalations Escalation[]
 
+  // Pre-Authorization
+  preAuthRequests PreAuthorizationRequest[]
+
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
@@ -1505,7 +1515,10 @@ model ImagingStudy {
   notes       String? @db.Text
 
   // Privacy - Who can see this?
-  accessGrants DataAccessGrant[]
+  dicomSeries       DicomSeries[]
+  radiologyReports  RadiologyReport[]
+  aiResults         ImagingAIResult[]
+  accessGrants      DataAccessGrant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -6014,10 +6027,17 @@ enum ExerciseIntensity {
 }
 
 enum AIProvider {
-  GEMINI // Google Gemini (default)
-  CLAUDE // Anthropic Claude
-  OPENAI // OpenAI GPT
-  CUSTOM // User's custom provider
+  GEMINI   // Google Gemini (default)
+  CLAUDE   // Anthropic Claude
+  OPENAI   // OpenAI GPT
+  OLLAMA   // Local inference
+  VLLM     // Self-hosted inference
+  TOGETHER // Together.ai cloud
+  MISTRAL  // Mistral AI (EU)
+  GROQ     // Groq LPU inference
+  CEREBRAS // Cerebras wafer-scale
+  DEEPSEEK // DeepSeek (CN — LGPD Art. 33)
+  CUSTOM   // User's custom provider
 }
 
 enum ThemeMode {
@@ -8370,4 +8390,123 @@ model AgentIdempotencyLog {
 
   @@index([expiresAt])
   @@map("agent_idempotency_logs")
+}
+
+model DicomSeries {
+  id               String   @id @default(cuid())
+  seriesInstanceUID String  @unique
+  modality         String
+  description      String?
+  seriesNumber     Int?
+  instanceCount    Int      @default(0)
+
+  imagingStudyId   String
+  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+
+  instances        DicomInstance[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([imagingStudyId])
+  @@map("dicom_series")
+}
+
+model DicomInstance {
+  id                String   @id @default(cuid())
+  sopInstanceUID    String   @unique
+  instanceNumber    Int?
+  storageTier       String   @default("HOT")
+  fileSizeBytes     Int?
+  contentType       String?
+  storageUrl        String?  @db.Text
+  lastAccessedAt    DateTime?
+
+  seriesId          String
+  series            DicomSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([seriesId])
+  @@index([storageTier])
+  @@map("dicom_instances")
+}
+
+model RadiologyReport {
+  id               String   @id @default(cuid())
+  imagingStudyId   String
+  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+  radiologistId    String
+  radiologist      User     @relation("RadiologistReports", fields: [radiologistId], references: [id])
+  templateId       String?
+  status           String   @default("DRAFT")
+  findings         String?  @db.Text
+  impression       String?  @db.Text
+  technique        String?  @db.Text
+  comparison       String?  @db.Text
+  clinicalHistory  String?  @db.Text
+  structuredFindings Json?
+  signedAt         DateTime?
+  amendedAt        DateTime?
+  amendmentReason  String?  @db.Text
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([imagingStudyId])
+  @@index([radiologistId])
+  @@map("radiology_reports")
+}
+
+model ImagingAIResult {
+  id               String   @id @default(cuid())
+  imagingStudyId   String
+  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+  modelName        String
+  modelVersion     String
+  analysisType     String
+  status           String   @default("COMPLETED")
+  findings         String?  @db.Text
+  confidenceScore  Float?
+  processingTimeMs Int?
+  regulatoryStatus String?
+  regulatoryDisclaimer String? @db.Text
+  isAccepted       Boolean?
+  reviewedBy       String?
+  reviewer         User?    @relation("AIResultReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt       DateTime?
+  reviewNotes      String?  @db.Text
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([imagingStudyId])
+  @@map("imaging_ai_results")
+}
+
+// ============================================================================
+// PRE-AUTHORIZATION REQUESTS
+// ============================================================================
+
+enum PreAuthStatus {
+  SENT
+  FAILED
+  EXPIRED
+}
+
+model PreAuthorizationRequest {
+  id           String        @id @default(cuid())
+  patientId    String
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  channels     String[]
+  sentAt       DateTime      @default(now())
+  status       PreAuthStatus @default(SENT)
+  sentByUserId String
+  sentByUser   User          @relation(fields: [sentByUserId], references: [id])
+  createdAt    DateTime      @default(now())
+
+  @@index([patientId])
+  @@index([sentByUserId])
+  @@map("pre_authorization_requests")
 }

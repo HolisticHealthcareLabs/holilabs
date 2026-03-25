@@ -8,7 +8,10 @@ import { useTranslations } from 'next-intl';
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = 'gemini' | 'anthropic' | 'openai';
+type Provider =
+  | 'anthropic' | 'openai' | 'gemini' | 'groq'
+  | 'cerebras' | 'mistral' | 'deepseek' | 'together'
+  | 'ollama' | 'vllm';
 
 interface ProviderConfig {
   id?: string;
@@ -26,6 +29,7 @@ interface ProviderMeta {
   description: string;
   docsUrl: string;
   keyPrefix: string;
+  section: 'frontier' | 'specialized' | 'local';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,28 +43,92 @@ const DEMO_WORKSPACE = { workspaceId: 'demo-workspace-1', role: 'CLINICIAN' } as
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PROVIDERS: ProviderMeta[] = [
-  {
-    key: 'gemini',
-    label: 'Google Gemini',
-    description: 'Gemini 1.5 Pro — recommended for high-volume clinical tasks',
-    docsUrl: 'https://aistudio.google.com/app/apikey',
-    keyPrefix: 'AIza',
-  },
+  // ── Frontier ────────────────────────────────────────────────────────────
   {
     key: 'anthropic',
-    label: 'DeepSeek-R1 (Diagnostic Engine)',
-    badge: '96% Medical Precision',
-    description: 'Best for complex diagnostics and drug interactions. (Advanced Reasoning. $0.55/1M in)',
-    docsUrl: 'https://platform.deepseek.com/',
-    keyPrefix: 'sk-',
+    label: 'Anthropic Claude',
+    badge: 'Safety-Critical',
+    description: 'Claude Sonnet 4 — primary for diagnostics, drug interactions, prescriptions',
+    docsUrl: 'https://console.anthropic.com/settings/keys',
+    keyPrefix: 'sk-ant-',
+    section: 'frontier',
   },
   {
     key: 'openai',
-    label: 'OpenAI GPT-OSS-120B (High Efficiency)',
-    badge: 'MoE - High Speed',
-    description: 'Best for rapid transcription and chart completion. (5.1B active params. $0.039/1M in)',
+    label: 'OpenAI',
+    description: 'GPT-4o / o4-mini — general-purpose with strong tool use',
     docsUrl: 'https://platform.openai.com/api-keys',
     keyPrefix: 'sk-',
+    section: 'frontier',
+  },
+  {
+    key: 'gemini',
+    label: 'Google Gemini',
+    description: 'Gemini 2.5 Flash — high-volume clinical tasks, cost-optimized',
+    docsUrl: 'https://aistudio.google.com/app/apikey',
+    keyPrefix: 'AIza',
+    section: 'frontier',
+  },
+  {
+    key: 'groq',
+    label: 'Groq',
+    badge: 'Ultra-Fast',
+    description: 'Llama 3.3 70B — lowest latency inference for real-time workflows',
+    docsUrl: 'https://console.groq.com/keys',
+    keyPrefix: 'gsk_',
+    section: 'frontier',
+  },
+  // ── Specialized ─────────────────────────────────────────────────────────
+  {
+    key: 'mistral',
+    label: 'Mistral',
+    badge: 'EU Data Residency',
+    description: 'Mistral Large — EU-hosted, favorable for LGPD compliance',
+    docsUrl: 'https://console.mistral.ai/api-keys/',
+    keyPrefix: '',
+    section: 'specialized',
+  },
+  {
+    key: 'deepseek',
+    label: 'DeepSeek',
+    badge: 'CN Residency ⚠️',
+    description: 'DeepSeek-V3 / R1 — economy pricing, requires LGPD Art. 33 consent',
+    docsUrl: 'https://platform.deepseek.com/api_keys',
+    keyPrefix: 'sk-',
+    section: 'specialized',
+  },
+  {
+    key: 'cerebras',
+    label: 'Cerebras',
+    description: 'Llama 3.3 70B on wafer-scale — fast inference, competitive pricing',
+    docsUrl: 'https://cloud.cerebras.ai/',
+    keyPrefix: 'csk-',
+    section: 'specialized',
+  },
+  {
+    key: 'together',
+    label: 'Together.ai',
+    description: 'Meditron, Llama, Mixtral — broad model catalog for clinical NLP',
+    docsUrl: 'https://api.together.ai/settings/api-keys',
+    keyPrefix: '',
+    section: 'specialized',
+  },
+  // ── Local / Self-Hosted ─────────────────────────────────────────────────
+  {
+    key: 'ollama',
+    label: 'Ollama (Local)',
+    description: 'Local inference — no data leaves the machine. Configure in .env',
+    docsUrl: 'https://ollama.ai',
+    keyPrefix: '',
+    section: 'local',
+  },
+  {
+    key: 'vllm',
+    label: 'vLLM (Self-Hosted)',
+    description: 'GPU-accelerated inference server. Configure endpoint in .env',
+    docsUrl: 'https://docs.vllm.ai',
+    keyPrefix: '',
+    section: 'local',
   },
 ];
 
@@ -110,21 +178,15 @@ export default function AIProvidersSettingsPage() {
   const [isLoadingConfigs,   setIsLoadingConfigs]    = useState(false);
   /** Tracks whether configs have been loaded at least once (prevents skeleton re-showing on refresh). */
   const [configsLoaded,      setConfigsLoaded]       = useState(false);
-  const [configs, setConfigs]                        = useState<Record<Provider, ProviderConfig | null>>({
-    gemini: null, anthropic: null, openai: null,
-  });
-  const [keyInputs, setKeyInputs]                    = useState<Record<Provider, string>>({
-    gemini: '', anthropic: '', openai: '',
-  });
-  const [saving,  setSaving]                         = useState<Record<Provider, boolean>>({
-    gemini: false, anthropic: false, openai: false,
-  });
-  const [errors,  setErrors]                         = useState<Record<Provider, string>>({
-    gemini: '', anthropic: '', openai: '',
-  });
-  const [success, setSuccess]                        = useState<Record<Provider, boolean>>({
-    gemini: false, anthropic: false, openai: false,
-  });
+  const emptyConfigs = () => Object.fromEntries(PROVIDERS.map((p) => [p.key, null])) as Record<Provider, ProviderConfig | null>;
+  const emptyStrings = () => Object.fromEntries(PROVIDERS.map((p) => [p.key, ''])) as Record<Provider, string>;
+  const emptyBools   = () => Object.fromEntries(PROVIDERS.map((p) => [p.key, false])) as Record<Provider, boolean>;
+
+  const [configs, setConfigs]                        = useState<Record<Provider, ProviderConfig | null>>(emptyConfigs);
+  const [keyInputs, setKeyInputs]                    = useState<Record<Provider, string>>(emptyStrings);
+  const [saving,  setSaving]                         = useState<Record<Provider, boolean>>(emptyBools);
+  const [errors,  setErrors]                         = useState<Record<Provider, string>>(emptyStrings);
+  const [success, setSuccess]                        = useState<Record<Provider, boolean>>(emptyBools);
   // isAdmin only gates the revoke action — save/input is open to all roles.
   const [isAdmin, setIsAdmin]                        = useState(false);
 
@@ -155,11 +217,11 @@ export default function AIProvidersSettingsPage() {
     fetch(`/api/workspace/llm-config?workspaceId=${workspaceId}`)
       .then((r) => r.json())
       .then((data: { configs: ProviderConfig[] }) => {
-        const map: Record<Provider, ProviderConfig | null> = {
-          gemini: null, anthropic: null, openai: null,
-        };
+        const map = emptyConfigs();
         for (const cfg of data.configs ?? []) {
-          map[cfg.provider as Provider] = cfg;
+          if (cfg.provider in map) {
+            map[cfg.provider as Provider] = cfg;
+          }
         }
         setConfigs(map);
         setConfigsLoaded(true);
@@ -263,10 +325,19 @@ export default function AIProvidersSettingsPage() {
       </AnimatePresence>
 
       {/* Provider cards — skeleton while loading, real cards after */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {isLoading
-          ? PROVIDERS.map((_, i) => <ProviderCardSkeleton key={i} index={i} />)
-          : PROVIDERS.map((meta, idx) => {
+          ? PROVIDERS.slice(0, 4).map((_, i) => <ProviderCardSkeleton key={i} index={i} />)
+          : (['frontier', 'specialized', 'local'] as const).map((section) => {
+              const sectionProviders = PROVIDERS.filter((p) => p.section === section);
+              if (!sectionProviders.length) return null;
+              const sectionLabels = { frontier: 'Frontier', specialized: 'Specialized', local: 'Local / Self-Hosted' };
+              return (
+                <div key={section} className="space-y-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-1">
+                    {sectionLabels[section]}
+                  </h2>
+                  {sectionProviders.map((meta, idx) => {
               const cfg          = configs[meta.key];
               const isConfigured = cfg?.isConfigured ?? false;
               const isActive     = cfg?.isActive ?? false;
@@ -369,7 +440,8 @@ export default function AIProvidersSettingsPage() {
                   </AnimatePresence>
 
                   {/* API key input — open to all roles (clinicians can manage their own BYOK keys) */}
-                  {confirmRevoke !== meta.key && (
+                  {/* Local providers don't need API keys — configured via .env */}
+                  {confirmRevoke !== meta.key && meta.section !== 'local' && (
                     <div className="mt-4 space-y-2">
                       <div className="flex gap-2">
                         <input
@@ -462,6 +534,9 @@ export default function AIProvidersSettingsPage() {
                     </div>
                   )}
                 </motion.div>
+              );
+            })}
+                </div>
               );
             })}
       </div>

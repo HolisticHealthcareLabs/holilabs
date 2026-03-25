@@ -13,7 +13,8 @@
 import logger from '@/lib/logger';
 import { getAllRegisteredTools } from '@/lib/mcp/registry';
 
-export type AIProvider = 'claude' | 'openai' | 'gemini' | 'ollama' | 'vllm' | 'together';
+export type AIProvider = 'claude' | 'openai' | 'gemini' | 'ollama' | 'vllm' | 'together'
+  | 'groq' | 'cerebras' | 'mistral' | 'deepseek';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -156,6 +157,7 @@ export function buildAgentSystemPrompt(basePrompt?: string): string {
 // CLAUDE API (Anthropic) - Recommended for Healthcare
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithClaude(request: ChatRequest): Promise<ChatResponse> {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -233,6 +235,7 @@ async function chatWithClaude(request: ChatRequest): Promise<ChatResponse> {
 // OPENAI API (GPT-4)
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -310,6 +313,7 @@ async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
 // GOOGLE GEMINI API (Gemini 1.5 Flash) - Cost-Effective Alternative
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
   try {
     // Support both env var names used across the repo/docs.
@@ -442,6 +446,7 @@ async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
 // OLLAMA API (Local Inference)
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithOllama(request: ChatRequest): Promise<ChatResponse> {
   try {
     const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
@@ -515,6 +520,7 @@ async function chatWithOllama(request: ChatRequest): Promise<ChatResponse> {
 // VLLM API (Self-Hosted Inference)
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithVLLM(request: ChatRequest): Promise<ChatResponse> {
   try {
     const baseUrl = process.env.VLLM_BASE_URL || 'http://localhost:8000';
@@ -593,6 +599,7 @@ async function chatWithVLLM(request: ChatRequest): Promise<ChatResponse> {
 // TOGETHER.AI API (Cloud Inference)
 // ============================================================================
 
+/** @deprecated Use chatV2() instead. Kept for backward compatibility. */
 async function chatWithTogether(request: ChatRequest): Promise<ChatResponse> {
   try {
     const apiKey = process.env.TOGETHER_API_KEY;
@@ -675,6 +682,7 @@ async function chatWithTogether(request: ChatRequest): Promise<ChatResponse> {
 
 /**
  * Send chat request to AI provider
+ * @deprecated Use chatV2() for new code. This routes through legacy provider-specific functions.
  */
 export async function chat(request: ChatRequest): Promise<ChatResponse> {
   const provider = request.provider || 'claude'; // Default to Claude for healthcare
@@ -821,4 +829,116 @@ export async function getTreatmentRecommendations(
     systemPrompt: ClinicalSystemPrompts.treatment,
     provider: 'claude',
   });
+}
+
+// ============================================================================
+// V2 DISPATCHER — routes through AIProviderV2 interface
+// ============================================================================
+
+import { AIProviderFactory } from './factory';
+import type {
+  ProviderChatRequest,
+  ProviderChatResponse,
+  ProviderStreamChunk,
+  ChatMessage as V2ChatMessage,
+} from './types';
+
+/** Extended request for V2 dispatcher. */
+export interface ChatV2Request extends ChatRequest {
+  userId?: string;
+  workspaceId?: string;
+  tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>;
+  responseFormat?: 'text' | 'json';
+}
+
+/** V2 response wrapping the full provider response. */
+export interface ChatV2Response {
+  success: boolean;
+  content: string;
+  toolCalls?: ProviderChatResponse['toolCalls'];
+  usage: ProviderChatResponse['usage'];
+  model: string;
+  finishReason: ProviderChatResponse['finishReason'];
+  error?: string;
+}
+
+/** Stream event emitted by streamV2(). */
+export type StreamEvent = ProviderStreamChunk;
+
+/**
+ * V2 chat dispatcher. Routes through AIProviderV2.chat().
+ * All new code should use this instead of the legacy chat() function.
+ */
+export async function chatV2(request: ChatV2Request): Promise<ChatV2Response> {
+  try {
+    const provider = await AIProviderFactory.getProviderV2(
+      request.userId ?? 'system',
+      request.provider,
+      { workspaceId: request.workspaceId },
+    );
+
+    const providerRequest = toProviderRequest(request);
+    const result = await provider.chat(providerRequest);
+
+    return {
+      success: true,
+      content: result.content,
+      toolCalls: result.toolCalls,
+      usage: result.usage,
+      model: result.model,
+      finishReason: result.finishReason,
+    };
+  } catch (error: any) {
+    logger.error({
+      event: 'chat_v2_error',
+      provider: request.provider,
+      errorType: error?.name || 'UnknownError',
+    });
+    return {
+      success: false,
+      content: '',
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      model: request.model || '',
+      finishReason: 'error',
+      error: error.message,
+    };
+  }
+}
+
+/**
+ * V2 streaming dispatcher. Returns an async generator of stream events.
+ * Use with ReadableStream for SSE endpoints.
+ */
+export async function* streamV2(request: ChatV2Request): AsyncGenerator<StreamEvent> {
+  const provider = await AIProviderFactory.getProviderV2(
+    request.userId ?? 'system',
+    request.provider,
+    { workspaceId: request.workspaceId },
+  );
+
+  if (!provider.stream) {
+    throw new Error(`Provider ${provider.providerId} does not support streaming`);
+  }
+
+  const providerRequest = toProviderRequest(request);
+  yield* provider.stream(providerRequest);
+}
+
+// ── V2 Mapping Helpers ───────────────────────────────────────────────────────
+
+function toProviderRequest(request: ChatV2Request): ProviderChatRequest {
+  const messages: V2ChatMessage[] = request.messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  return {
+    messages,
+    model: request.model,
+    temperature: request.temperature,
+    maxTokens: request.maxTokens,
+    systemPrompt: request.systemPrompt,
+    tools: request.tools,
+    responseFormat: request.responseFormat,
+  };
 }
