@@ -15,7 +15,116 @@
 /**
  * Unified AI provider types
  */
-export type AIProviderType = 'gemini' | 'claude' | 'openai' | 'ollama' | 'vllm' | 'together';
+export type AIProviderType =
+  | 'gemini' | 'claude' | 'openai'
+  | 'ollama' | 'vllm' | 'together'
+  | 'mistral' | 'groq' | 'cerebras' | 'deepseek';
+
+// ── Provider V2 Request/Response Types ───────────────────────────────────────
+
+export type ChatMessageRole = 'system' | 'user' | 'assistant' | 'tool';
+
+export interface ChatMessage {
+  role: ChatMessageRole;
+  content: string;
+  /** Present when role === 'tool' — the ID of the tool call this responds to. */
+  toolCallId?: string;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  /** JSON Schema describing the tool's parameters. */
+  parameters: Record<string, unknown>;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface ProviderChatRequest {
+  messages: ChatMessage[];
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
+  tools?: ToolDefinition[];
+  responseFormat?: 'text' | 'json';
+  /** Provider-specific options (e.g., topP, topK). */
+  extra?: Record<string, unknown>;
+}
+
+export interface ProviderChatResponse {
+  content: string;
+  toolCalls?: ToolCall[];
+  usage: TokenUsage;
+  model: string;
+  finishReason: 'stop' | 'tool_calls' | 'length' | 'error';
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export type StreamChunkType = 'text_delta' | 'tool_call_delta' | 'usage' | 'done';
+
+export interface ProviderStreamChunk {
+  type: StreamChunkType;
+  content?: string;
+  toolCall?: Partial<ToolCall>;
+  usage?: TokenUsage;
+}
+
+/** Static metadata for a model in the catalog. */
+export interface ModelInfo {
+  id: string;
+  provider: AIProviderType;
+  displayName: string;
+  contextWindow: number;
+  maxOutputTokens: number;
+  costPer1kInput: number;
+  costPer1kOutput: number;
+  supportsTools: boolean;
+  supportsStreaming: boolean;
+  supportsVision: boolean;
+  tier: 'frontier' | 'standard' | 'economy';
+  dataResidency: string[];
+}
+
+export const MODEL_CATALOG: ModelInfo[] = [
+  // ── Anthropic ────────────────────────────────────────────────────────────
+  { id: 'claude-opus-4-20250514', provider: 'claude', displayName: 'Claude Opus 4', contextWindow: 200_000, maxOutputTokens: 32_000, costPer1kInput: 0.015, costPer1kOutput: 0.075, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'frontier', dataResidency: ['US'] },
+  { id: 'claude-sonnet-4-20250514', provider: 'claude', displayName: 'Claude Sonnet 4', contextWindow: 200_000, maxOutputTokens: 16_000, costPer1kInput: 0.003, costPer1kOutput: 0.015, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'frontier', dataResidency: ['US'] },
+  { id: 'claude-haiku-4-5-20251001', provider: 'claude', displayName: 'Claude Haiku 4.5', contextWindow: 200_000, maxOutputTokens: 8_192, costPer1kInput: 0.0008, costPer1kOutput: 0.004, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'economy', dataResidency: ['US'] },
+
+  // ── OpenAI ───────────────────────────────────────────────────────────────
+  { id: 'gpt-4o', provider: 'openai', displayName: 'GPT-4o', contextWindow: 128_000, maxOutputTokens: 16_384, costPer1kInput: 0.0025, costPer1kOutput: 0.010, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'frontier', dataResidency: ['US'] },
+  { id: 'gpt-4o-mini', provider: 'openai', displayName: 'GPT-4o Mini', contextWindow: 128_000, maxOutputTokens: 16_384, costPer1kInput: 0.00015, costPer1kOutput: 0.0006, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'economy', dataResidency: ['US'] },
+  { id: 'o4-mini', provider: 'openai', displayName: 'o4-mini', contextWindow: 200_000, maxOutputTokens: 100_000, costPer1kInput: 0.0011, costPer1kOutput: 0.0044, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'frontier', dataResidency: ['US'] },
+
+  // ── Google ───────────────────────────────────────────────────────────────
+  { id: 'gemini-2.5-pro', provider: 'gemini', displayName: 'Gemini 2.5 Pro', contextWindow: 1_000_000, maxOutputTokens: 65_536, costPer1kInput: 0.00125, costPer1kOutput: 0.010, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'frontier', dataResidency: ['US', 'EU'] },
+  { id: 'gemini-2.5-flash', provider: 'gemini', displayName: 'Gemini 2.5 Flash', contextWindow: 1_000_000, maxOutputTokens: 65_536, costPer1kInput: 0.000075, costPer1kOutput: 0.0003, supportsTools: true, supportsStreaming: true, supportsVision: true, tier: 'economy', dataResidency: ['US', 'EU'] },
+
+  // ── Groq ─────────────────────────────────────────────────────────────────
+  { id: 'llama-3.3-70b-versatile', provider: 'groq', displayName: 'Llama 3.3 70B (Groq)', contextWindow: 128_000, maxOutputTokens: 32_768, costPer1kInput: 0.00059, costPer1kOutput: 0.00079, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'economy', dataResidency: ['US'] },
+  { id: 'llama-3.1-8b-instant', provider: 'groq', displayName: 'Llama 3.1 8B (Groq)', contextWindow: 128_000, maxOutputTokens: 8_192, costPer1kInput: 0.00005, costPer1kOutput: 0.00008, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'economy', dataResidency: ['US'] },
+
+  // ── Cerebras ─────────────────────────────────────────────────────────────
+  { id: 'llama-3.3-70b', provider: 'cerebras', displayName: 'Llama 3.3 70B (Cerebras)', contextWindow: 128_000, maxOutputTokens: 8_192, costPer1kInput: 0.00085, costPer1kOutput: 0.0012, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'economy', dataResidency: ['US'] },
+
+  // ── Mistral ──────────────────────────────────────────────────────────────
+  { id: 'mistral-large-latest', provider: 'mistral', displayName: 'Mistral Large', contextWindow: 128_000, maxOutputTokens: 8_192, costPer1kInput: 0.002, costPer1kOutput: 0.006, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'standard', dataResidency: ['EU'] },
+  { id: 'codestral-latest', provider: 'mistral', displayName: 'Codestral', contextWindow: 256_000, maxOutputTokens: 8_192, costPer1kInput: 0.0003, costPer1kOutput: 0.0009, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'standard', dataResidency: ['EU'] },
+
+  // ── DeepSeek ─────────────────────────────────────────────────────────────
+  { id: 'deepseek-chat', provider: 'deepseek', displayName: 'DeepSeek V3', contextWindow: 128_000, maxOutputTokens: 8_192, costPer1kInput: 0.00014, costPer1kOutput: 0.00028, supportsTools: true, supportsStreaming: true, supportsVision: false, tier: 'economy', dataResidency: ['CN'] },
+  { id: 'deepseek-reasoner', provider: 'deepseek', displayName: 'DeepSeek R1', contextWindow: 128_000, maxOutputTokens: 8_192, costPer1kInput: 0.00055, costPer1kOutput: 0.00219, supportsTools: false, supportsStreaming: true, supportsVision: false, tier: 'standard', dataResidency: ['CN'] },
+];
 
 /**
  * Unified AI task type for all routing decisions.
@@ -96,11 +205,11 @@ export interface TaskConfig {
  * Resolves divergences between router.ts and task-router.ts.
  */
 export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
-  // Safety-critical → Claude (highest accuracy)
+  // Safety-critical → Claude (highest accuracy), fallback: OpenAI, then Gemini
   'drug-interaction': {
     task: 'drug-interaction',
     primaryProvider: 'claude',
-    fallbackProviders: ['gemini'],
+    fallbackProviders: ['openai', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
@@ -110,7 +219,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'diagnosis-support': {
     task: 'diagnosis-support',
     primaryProvider: 'claude',
-    fallbackProviders: ['gemini'],
+    fallbackProviders: ['openai', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
@@ -120,7 +229,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'prescription-review': {
     task: 'prescription-review',
     primaryProvider: 'claude',
-    fallbackProviders: ['gemini'],
+    fallbackProviders: ['openai', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
@@ -130,7 +239,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'lab-interpretation': {
     task: 'lab-interpretation',
     primaryProvider: 'claude',
-    fallbackProviders: ['gemini'],
+    fallbackProviders: ['openai', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
@@ -138,11 +247,11 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
     rationale: 'Accuracy critical for abnormal/critical values',
   },
 
-  // High-volume commodity → Gemini (cost-efficient)
+  // High-volume commodity → Gemini (cost-efficient), fallback: mistral (EU) → deepseek → claude
   'translation': {
     task: 'translation',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude', 'together'],
+    fallbackProviders: ['mistral', 'deepseek', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -152,7 +261,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'summarization': {
     task: 'summarization',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude'],
+    fallbackProviders: ['mistral', 'deepseek', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -162,7 +271,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'clinical-notes': {
     task: 'clinical-notes',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude', 'ollama'],
+    fallbackProviders: ['mistral', 'groq', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -172,7 +281,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'patient-education': {
     task: 'patient-education',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude'],
+    fallbackProviders: ['mistral', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -182,7 +291,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'billing-codes': {
     task: 'billing-codes',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude'],
+    fallbackProviders: ['mistral', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -192,7 +301,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'scheduling': {
     task: 'scheduling',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude'],
+    fallbackProviders: ['groq', 'claude'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -202,7 +311,7 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'referral-letter': {
     task: 'referral-letter',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude', 'ollama'],
+    fallbackProviders: ['mistral', 'claude', 'ollama'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
@@ -214,17 +323,17 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'transcript-summary': {
     task: 'transcript-summary',
     primaryProvider: 'ollama',
-    fallbackProviders: ['gemini', 'claude'],
+    fallbackProviders: ['deepseek', 'together', 'gemini'],
     preferLocal: true,
     estimatedLatency: 'fast',
     privacyLevel: 'local',
     estimatedCostPer1k: 0,
-    rationale: 'Local inference preferred for privacy and speed',
+    rationale: 'Local inference preferred for privacy and speed; economy cloud fallbacks',
   },
   'soap-generation': {
     task: 'soap-generation',
     primaryProvider: 'claude',
-    fallbackProviders: ['gemini'],
+    fallbackProviders: ['openai', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
@@ -234,24 +343,24 @@ export const UNIFIED_TASK_CONFIG: Record<UnifiedAITask, TaskConfig> = {
   'icd-coding': {
     task: 'icd-coding',
     primaryProvider: 'together',
-    fallbackProviders: ['claude', 'gemini'],
+    fallbackProviders: ['deepseek', 'gemini'],
     preferLocal: false,
     estimatedLatency: 'medium',
     privacyLevel: 'cloud',
     estimatedCostPer1k: 0.0002,
-    rationale: 'Medical domain fine-tuned model (Meditron)',
+    rationale: 'Medical domain fine-tuned model (Meditron); economy cloud fallbacks',
   },
 
   // Default
   'general': {
     task: 'general',
     primaryProvider: 'gemini',
-    fallbackProviders: ['claude', 'together', 'ollama'],
+    fallbackProviders: ['groq', 'mistral', 'claude', 'ollama'],
     preferLocal: false,
     estimatedLatency: 'fast',
     privacyLevel: 'cloud',
     estimatedCostPer1k: 0.0001,
-    rationale: 'Default cost-efficient option',
+    rationale: 'Default cost-efficient option with broad fallback chain',
   },
 };
 
