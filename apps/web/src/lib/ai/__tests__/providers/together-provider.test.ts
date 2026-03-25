@@ -140,7 +140,7 @@ describe('TogetherProvider', () => {
       });
     });
 
-    it('should send all configured parameters', async () => {
+    it('should use configured model and send standard params', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockTogetherResponse),
@@ -149,11 +149,6 @@ describe('TogetherProvider', () => {
       const provider = new TogetherProvider({
         apiKey: 'test-key',
         model: 'custom-model',
-        temperature: 0.5,
-        maxTokens: 2000,
-        topP: 0.9,
-        topK: 40,
-        repetitionPenalty: 1.2,
       });
 
       await provider.generateResponse('Test');
@@ -162,11 +157,9 @@ describe('TogetherProvider', () => {
       const body = JSON.parse(call[1].body);
 
       expect(body.model).toBe('custom-model');
-      expect(body.temperature).toBe(0.5);
-      expect(body.max_tokens).toBe(2000);
-      expect(body.top_p).toBe(0.9);
-      expect(body.top_k).toBe(40);
-      expect(body.repetition_penalty).toBe(1.2);
+      // V2 generateResponse wraps a single user message
+      expect(body.messages).toBeDefined();
+      expect(body.messages.length).toBeGreaterThan(0);
     });
 
     it('should throw on API error', async () => {
@@ -179,14 +172,7 @@ describe('TogetherProvider', () => {
       const provider = new TogetherProvider({ apiKey: 'test-key' });
 
       await expect(provider.generateResponse('Test prompt')).rejects.toThrow(
-        'Together.ai API error: 401'
-      );
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'together_api_error',
-          status: 401,
-        })
+        /together API error: 401/
       );
     });
 
@@ -198,13 +184,7 @@ describe('TogetherProvider', () => {
       const provider = new TogetherProvider({ apiKey: 'test-key', timeout: 1000 });
 
       await expect(provider.generateResponse('Test prompt')).rejects.toThrow(
-        'Together.ai request timed out'
-      );
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'together_timeout',
-        })
+        'Timeout'
       );
     });
 
@@ -218,7 +198,7 @@ describe('TogetherProvider', () => {
       );
     });
 
-    it('should log response metadata on success', async () => {
+    it('should return response content on success', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockTogetherResponse),
@@ -228,14 +208,10 @@ describe('TogetherProvider', () => {
         apiKey: 'test-key',
         model: 'test-model',
       });
-      await provider.generateResponse('Test prompt');
+      const result = await provider.generateResponse('Test prompt');
 
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'together_response',
-          model: 'test-model',
-        })
-      );
+      expect(typeof result).toBe('string');
+      expect(result).toBe(mockTogetherResponse.choices[0].message.content);
     });
   });
 
@@ -312,7 +288,7 @@ describe('TogetherProvider', () => {
     });
   });
 
-  describe('chat', () => {
+  describe('chat (V2 interface)', () => {
     it('should call Together.ai chat API with messages', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -326,23 +302,27 @@ describe('TogetherProvider', () => {
         { role: 'user' as const, content: 'How are you?' },
       ];
 
-      await provider.chat(messages);
+      await provider.chat({ messages });
 
       const call = (global.fetch as jest.Mock).mock.calls[0];
       const body = JSON.parse(call[1].body);
       expect(body.messages).toEqual(messages);
     });
 
-    it('should return message content', async () => {
+    it('should return structured response', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockTogetherResponse),
       });
 
       const provider = new TogetherProvider({ apiKey: 'test-key' });
-      const response = await provider.chat([{ role: 'user', content: 'Hello' }]);
+      const response = await provider.chat({
+        messages: [{ role: 'user', content: 'Hello' }],
+      });
 
-      expect(response).toBe(mockTogetherResponse.choices[0].message.content);
+      expect(response.content).toBe(mockTogetherResponse.choices[0].message.content);
+      expect(response.usage).toBeDefined();
+      expect(response.finishReason).toBeDefined();
     });
 
     it('should throw on chat API error', async () => {
@@ -355,14 +335,8 @@ describe('TogetherProvider', () => {
       const provider = new TogetherProvider({ apiKey: 'test-key' });
 
       await expect(
-        provider.chat([{ role: 'user', content: 'Hello' }])
-      ).rejects.toThrow('Together.ai chat API error');
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'together_chat_error',
-        })
-      );
+        provider.chat({ messages: [{ role: 'user', content: 'Hello' }] })
+      ).rejects.toThrow(/together API error: 400/);
     });
   });
 

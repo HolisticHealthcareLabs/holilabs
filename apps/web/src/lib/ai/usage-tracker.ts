@@ -97,6 +97,22 @@ const PROVIDER_COSTS: Record<AIProvider, { input: number; output: number }> = {
     input: 0.20,     // ~$0.20 per 1M tokens for 7B models
     output: 0.20,
   },
+  groq: {
+    input: 0.59,     // $0.59 per 1M tokens (Llama 3.3 70B)
+    output: 0.79,
+  },
+  cerebras: {
+    input: 0.85,     // $0.85 per 1M tokens (Llama 3.3 70B)
+    output: 1.12,
+  },
+  mistral: {
+    input: 2.00,     // $2.00 per 1M tokens (Mistral Large)
+    output: 6.00,
+  },
+  deepseek: {
+    input: 0.14,     // $0.14 per 1M tokens (DeepSeek-V3)
+    output: 0.28,
+  },
 };
 
 /**
@@ -294,6 +310,10 @@ export async function getUsageSummary(
           ollama: { count: 0, cost: 0 },
           vllm: { count: 0, cost: 0 },
           together: { count: 0, cost: 0 },
+          groq: { count: 0, cost: 0 },
+          cerebras: { count: 0, cost: 0 },
+          mistral: { count: 0, cost: 0 },
+          deepseek: { count: 0, cost: 0 },
         },
       });
     }

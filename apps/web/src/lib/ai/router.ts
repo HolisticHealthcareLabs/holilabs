@@ -152,6 +152,10 @@ function getEstimatedCost(
     ollama: 0,         // Local inference - no cost
     vllm: 0,           // Self-hosted - infrastructure cost only
     together: 0.2,     // ~$0.20 per 1M tokens for 7B models
+    groq: 0.69,        // ~$0.59 input + $0.79 output / 1M avg
+    cerebras: 0.985,   // ~$0.85 input + $1.12 output / 1M avg
+    mistral: 4.0,      // $2 input + $6 output / 1M avg
+    deepseek: 0.21,    // $0.14 input + $0.28 output / 1M avg
   };
 
   return (costs[provider] * tokenCount) / 10000; // Convert to cents per query

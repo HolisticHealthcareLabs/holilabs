@@ -1,7 +1,15 @@
-import { AIProvider } from "./provider-interface";
+import { AIProvider, AIProviderV2, LegacyProviderAdapter } from "./provider-interface";
 import { GeminiProvider } from "./gemini-provider";
 import { AnthropicProvider } from "./anthropic-provider";
-import { OllamaProvider, VLLMProvider, TogetherProvider } from "./providers";
+import {
+    OllamaProvider,
+    VLLMProvider,
+    TogetherProvider,
+    GroqProvider,
+    CerebrasProvider,
+    MistralProvider,
+    DeepSeekProvider,
+} from "./providers";
 import { createGeminiProvider } from "./vertex-ai-provider";
 import { prisma } from "../prisma";
 import { decryptPHIWithVersion } from "../security/encryption";
@@ -25,7 +33,11 @@ export type ProviderType =
     | "claude"
     | "ollama"
     | "vllm"
-    | "together";
+    | "together"
+    | "groq"
+    | "cerebras"
+    | "mistral"
+    | "deepseek";
 
 // ---------------------------------------------------------------------------
 // Redis cache for workspace LLM configs (encrypted blob, TTL 300s)
@@ -324,8 +336,19 @@ export class AIProviderFactory {
             case "together":
                 return new TogetherProvider({ apiKey });
 
+            case "groq":
+                return new GroqProvider(apiKey);
+
+            case "cerebras":
+                return new CerebrasProvider(apiKey);
+
+            case "mistral":
+                return new MistralProvider(apiKey);
+
+            case "deepseek":
+                return new DeepSeekProvider(apiKey);
+
             case "ollama":
-                // Ollama doesn't use API keys, but accept it for consistency
                 return new OllamaProvider({
                     baseUrl: process.env.OLLAMA_BASE_URL,
                     model: process.env.OLLAMA_MODEL,
@@ -449,6 +472,34 @@ export class AIProviderFactory {
         // Use the primary provider from configuration
         return this.getProvider(userId, config.primaryProvider, options);
     }
+
+    /**
+     * Get an AIProviderV2 instance. If the resolved provider already
+     * implements V2 it is returned directly; otherwise it is wrapped
+     * in a LegacyProviderAdapter.
+     */
+    static async getProviderV2(
+        userId: string,
+        preferredProvider?: string,
+        options: GetProviderOptions & { workspaceId?: string } = {}
+    ): Promise<AIProviderV2> {
+        const provider = await this.getProvider(userId, preferredProvider, options);
+
+        // Anthropic, Gemini, Together, Groq, Cerebras, Mistral, DeepSeek
+        // all implement AIProviderV2 natively now.
+        if (isV2Provider(provider)) {
+            return provider;
+        }
+
+        // Ollama, vLLM, VertexAI — wrapped until migrated
+        const id = preferredProvider ?? 'unknown';
+        return new LegacyProviderAdapter(provider, id, id);
+    }
+}
+
+function isV2Provider(p: AIProvider): p is AIProviderV2 {
+    return typeof (p as AIProviderV2).chat === 'function'
+        && 'providerId' in p;
 }
 
 // P2-005: Re-export unified types for convenience
