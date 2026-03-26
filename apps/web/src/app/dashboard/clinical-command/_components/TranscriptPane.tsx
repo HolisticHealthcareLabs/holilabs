@@ -1,11 +1,12 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { HeartPulse, XCircle, Loader2, Shield, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { maskPHI, PHI_TOKEN_REGEX } from '@/lib/deid';
-import { useTranscriptAudio, type AudioLanguage } from './useTranscriptAudio';
-import { AudioWaveform } from './AudioWaveform';
+// useTranscriptAudio removed — TTS playback deleted per MVP session
+type AudioLanguage = 'en' | 'es' | 'pt';
 import type { ConsentRecord } from '../../../../../../../packages/shared-kernel/src/types/clinical-ui';
 
 // ---------------------------------------------------------------------------
@@ -22,6 +23,8 @@ interface TranscriptPaneProps {
   /** True when the FSM is in 'finalizing_audio' (tail delay active). */
   isFinalizing?:  boolean;
   onToggleRecord: () => void;
+  /** Run a demo conversation for prospects testing the app */
+  onRunDemo?:     () => void;
   /** Record button is locked until the doctor selects a patient. */
   disabled:       boolean;
   /** BCP-47 language for the audio playback engine. Default: 'en'. */
@@ -141,6 +144,7 @@ export function TranscriptPane({
   isRecording,
   isFinalizing = false,
   onToggleRecord,
+  onRunDemo,
   disabled,
   audioLanguage = 'en',
   consentRecord,
@@ -150,19 +154,34 @@ export function TranscriptPane({
 }: TranscriptPaneProps) {
   const t = useTranslations('portal.transcriptPane');
   const consentMissing = !consentRecord.timestamp;
+  const [showVerbalPrompt, setShowVerbalPrompt] = useState(false);
+  const [consentBannerHidden, setConsentBannerHidden] = useState(false);
+
+  // Auto-hide the consent banner 11.11s after consent is granted
+  useEffect(() => {
+    if (consentRecord.granted) {
+      const timer = setTimeout(() => setConsentBannerHidden(true), 11110);
+      return () => clearTimeout(timer);
+    }
+    setConsentBannerHidden(false);
+  }, [consentRecord.granted]);
+
+  // Show verbal consent prompt for 15s after verbal consent is granted, then fade
+  useEffect(() => {
+    if (consentRecord.method === 'verbal' && consentRecord.granted && !isRecording) {
+      setShowVerbalPrompt(true);
+      const timer = setTimeout(() => setShowVerbalPrompt(false), 15000);
+      return () => clearTimeout(timer);
+    }
+    setShowVerbalPrompt(false);
+  }, [consentRecord.method, consentRecord.granted, isRecording]);
   const buttonDisabled = disabled || isFinalizing || consentMissing;
-  // Ambient audio playback: reads each chunk aloud, Doctor vs Patient voices
-  const { isMuted, toggleMute, isSupported } = useTranscriptAudio({
-    segments,
-    language: audioLanguage,
-    active:   isRecording,
-  });
+  // TTS playback removed — useTranscriptAudio hook no longer called
 
   return (
     <div className="
-      flex flex-col h-full rounded-2xl p-5 gap-4 overflow-hidden
-      bg-white dark:bg-slate-800/40
-      border border-slate-200 dark:border-slate-700/60
+      flex flex-col h-full p-4 gap-4 overflow-hidden
+      bg-white dark:bg-gray-950
     ">
       {/* Header row */}
       <div className="flex items-center justify-between flex-shrink-0">
@@ -185,7 +204,7 @@ export function TranscriptPane({
                 <span className="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full" />
                 REC
               </motion.span>
-              <AudioWaveform isRecording={isRecording} volume={volume} />
+              {/* Waveform removed — TTS playback deleted per MVP session */}
             </div>
           )}
           {isFinalizing && (
@@ -211,9 +230,9 @@ export function TranscriptPane({
         role="log"
         aria-live="polite"
         aria-label="Live transcript"
-        className="flex-1 overflow-y-auto min-h-0 text-sm leading-relaxed
+        className="flex-1 overflow-y-auto min-h-0 text-[13px] leading-relaxed
                    text-slate-700 dark:text-slate-300
-                   font-mono whitespace-pre-wrap"
+                   whitespace-pre-wrap"
       >
         {segments.length === 0 ? (
           <p className="text-sm not-italic font-sans
@@ -253,9 +272,10 @@ export function TranscriptPane({
       </div>
 
       {/* LGPD / HIPAA Consent Gate (RUTH: immutable audit heuristic) */}
+      {!(consentRecord.granted && consentBannerHidden) && (
       <div
         className={`
-          flex-shrink-0 rounded-xl p-3.5 transition-colors duration-300
+          flex-shrink-0 rounded-xl p-3.5 transition-all duration-700
           border
           ${consentRecord.granted
             ? 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5'
@@ -265,76 +285,54 @@ export function TranscriptPane({
         role="region"
         aria-label="Patient consent control"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            {consentRecord.granted ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-            ) : (
-              <Shield className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-            )}
-            <div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {t('recordingAuthorization')}
-              </p>
-              {consentRecord.timestamp ? (
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
-                  {t('authorizedAt', { time: new Date(consentRecord.timestamp).toLocaleTimeString(), method: consentRecord.method })}
-                </p>
+        <div className="space-y-2">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {consentRecord.granted ? (
+                <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               ) : (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                  {t('authorizationRequired')}
-                </p>
+                <Shield className="w-4 h-4 text-amber-500 dark:text-amber-400" />
               )}
+              <div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {t('recordingAuthorization')}
+                </p>
+                {consentRecord.timestamp ? (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
+                    {t('authorizedAt', { time: new Date(consentRecord.timestamp).toLocaleTimeString(), method: consentRecord.method })}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                    {t('authorizationRequired')}
+                  </p>
+                )}
+              </div>
             </div>
+            {consentRecord.granted && (
+              <button
+                onClick={onRevokeConsent}
+                disabled={isRecording}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-lg text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                aria-label={t('revoke')}
+              >
+                {t('revoke')}
+              </button>
+            )}
           </div>
 
-          {consentRecord.granted ? (
-            <button
-              onClick={onRevokeConsent}
-              disabled={isRecording}
-              className="
-                text-[10px] font-semibold px-2.5 py-1 rounded-lg
-                text-red-500 dark:text-red-400
-                bg-red-50 dark:bg-red-500/10
-                border border-red-200 dark:border-red-500/25
-                hover:bg-red-100 dark:hover:bg-red-500/20
-                disabled:opacity-40 disabled:cursor-not-allowed
-                transition-colors
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
-              "
-              aria-label={t('revoke')}
-            >
-              {t('revoke')}
-            </button>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 w-full sm:w-auto">
+          {/* Verbal | Digital — thin horizontal bar */}
+          {!consentRecord.granted && (
+            <div className="flex rounded-lg border border-emerald-200 dark:border-emerald-500/25 overflow-hidden">
               <button
                 onClick={() => onGrantConsent('verbal')}
-                className="
-                  text-[10px] font-semibold px-2.5 py-1 rounded-lg
-                  text-emerald-700 dark:text-emerald-400
-                  bg-emerald-50 dark:bg-emerald-500/10
-                  border border-emerald-200 dark:border-emerald-500/25
-                  hover:bg-emerald-100 dark:hover:bg-emerald-500/20
-                  transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
-                "
-                aria-label={t('verbal')}
+                className="flex-1 text-[11px] font-semibold py-1.5 text-center text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors border-r border-emerald-200 dark:border-emerald-500/25"
               >
                 {t('verbal')}
               </button>
               <button
                 onClick={() => onGrantConsent('digital')}
-                className="
-                  text-[10px] font-semibold px-2.5 py-1 rounded-lg
-                  text-emerald-700 dark:text-emerald-400
-                  bg-emerald-50 dark:bg-emerald-500/10
-                  border border-emerald-200 dark:border-emerald-500/25
-                  hover:bg-emerald-100 dark:hover:bg-emerald-500/20
-                  transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
-                "
-                aria-label={t('digital')}
+                className="flex-1 text-[11px] font-semibold py-1.5 text-center text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
               >
                 {t('digital')}
               </button>
@@ -342,19 +340,30 @@ export function TranscriptPane({
           )}
         </div>
       </div>
-
-      {/* Verbal consent prompt — guides clinician through informed consent statement */}
-      {consentRecord.method === 'verbal' && consentRecord.granted && !isRecording && (
-        <div className="flex-shrink-0 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
-          <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1.5">{t('verbalConsentTitle')}</p>
-          <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed italic">
-            {t('verbalConsentText')}
-          </p>
-          <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-1.5">
-            {t('confirmVerbalAgreement')}
-          </p>
-        </div>
       )}
+
+      {/* Verbal consent prompt — auto-fades after 15 seconds */}
+      <AnimatePresence>
+        {showVerbalPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex-shrink-0 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20"
+          >
+            <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1.5">
+              Verbal Informed Consent
+            </p>
+            <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed italic">
+              &ldquo;I am informing you that this consultation will be recorded for documentation purposes. The recording will be used solely for your medical records and clinical decision support. You may revoke consent at any time. Do you agree to proceed?&rdquo;
+            </p>
+            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2">
+              Confirm patient&apos;s verbal agreement, then press Record to begin.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Button row: Record/Stop + Audio toggle */}
       <div className="flex-shrink-0 relative">
@@ -393,7 +402,7 @@ export function TranscriptPane({
                   ? 'bg-slate-100 dark:bg-slate-700/30 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/40 cursor-not-allowed'
                   : isRecording
                     ? 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30'
-                    : 'bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30'
+                    : 'bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-500 text-white border border-red-600 dark:border-red-500 shadow-lg shadow-red-500/20'
               }
             `}
             aria-label={
@@ -408,13 +417,27 @@ export function TranscriptPane({
             ) : isRecording ? (
               <><XCircle className="w-4 h-4" /> {t('stopRecording')}</>
             ) : (
-              <><HeartPulse className="w-4 h-4" /> {t('startRecording')}</>
+              <><HeartPulse className="w-4 h-4 text-red-500" /> {t('startRecording')}</>
             )}
           </motion.button>
 
-          {/* Speaker toggle: only rendered when Web Speech API is available */}
-          {isSupported && (
-            <AudioToggleButton isMuted={isMuted} onToggle={toggleMute} />
+          {/* Run Demo — simulates a doctor-patient conversation */}
+          {onRunDemo && !isRecording && !isFinalizing && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={onRunDemo}
+              disabled={disabled}
+              className="
+                flex items-center justify-center gap-2 py-2.5 rounded-xl
+                text-[13px] font-semibold transition-all flex-1
+                bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20
+                text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30
+                disabled:opacity-40 disabled:cursor-not-allowed
+              "
+              aria-label="Run demo conversation"
+            >
+              <span className="text-base">▶</span> Run Demo
+            </motion.button>
           )}
         </div>
       </div>

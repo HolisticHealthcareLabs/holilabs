@@ -84,6 +84,10 @@ export type CDSCard = {
   detail?: string;
   indicator: 'info' | 'warning' | 'critical';
   source?: { label: string };
+  assuranceEventId?: string;
+  ruleId?: string;
+  eventType?: string;
+  patientIdHash?: string;
 };
 
 export type ModelId = 'anthropic' | 'openai' | 'gemini';
@@ -107,6 +111,7 @@ type ChatMessage = {
   content: string;
   indicator?: 'info' | 'warning' | 'critical';
   rationale?: { confidence: number; reasoning: string };
+  assuranceEventId?: string;
 };
 
 /** Full LLM-ready payload -- swap `simulateLLMResponse` for real endpoints. */
@@ -563,8 +568,36 @@ function RationalePopover({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SystemMessage({ message }: { message: ChatMessage }) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const cfg = message.indicator ? INDICATOR_CONFIG[message.indicator] : null;
   const Icon = cfg?.Icon;
+  const [feedbackState, setFeedbackState] = useState<'idle' | 'accepted' | 'rejected' | 'noted'>('idle');
+
+  const handleAccept = async () => {
+    if (!message.assuranceEventId) return;
+    setFeedbackState('accepted');
+    try {
+      await fetch('/api/assurance', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: message.assuranceEventId, decision: { action: 'ACCEPT' }, override: false }),
+      });
+    } catch { /* non-blocking */ }
+    setTimeout(() => setFeedbackState('noted'), 2000);
+  };
+
+  const handleReject = async () => {
+    if (!message.assuranceEventId) return;
+    setFeedbackState('rejected');
+    try {
+      await fetch('/api/assurance/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assuranceEventId: message.assuranceEventId, feedbackType: 'THUMBS_DOWN' }),
+      });
+    } catch { /* non-blocking */ }
+    setTimeout(() => setFeedbackState('noted'), 2000);
+  };
 
   return (
     <motion.div
@@ -593,6 +626,35 @@ function SystemMessage({ message }: { message: ChatMessage }) {
           >
             {message.content}
           </p>
+
+          {/* Feedback buttons — RLHF ground truth capture */}
+          {message.indicator && message.assuranceEventId && feedbackState === 'idle' && (
+            <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
+              <button
+                onClick={handleAccept}
+                aria-label="Accept this recommendation"
+                className="p-1 rounded-md text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017a2 2 0 01-.95-.24l-3.296-1.882V10l4-7h.5A2.5 2.5 0 0114 5.5V10z" /></svg>
+              </button>
+              <button
+                onClick={handleReject}
+                aria-label="Reject this recommendation"
+                className="p-1 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.95.24l3.296 1.882V14l-4 7h-.5A2.5 2.5 0 0110 18.5V14z" /></svg>
+              </button>
+            </div>
+          )}
+          {feedbackState === 'accepted' && (
+            <p className="text-[10px] text-emerald-400 mt-1.5 animate-pulse">{t('cdssFeedbackAccepted')}</p>
+          )}
+          {feedbackState === 'rejected' && (
+            <p className="text-[10px] text-red-400 mt-1.5 animate-pulse">{t('cdssFeedbackNoted')}</p>
+          )}
+          {feedbackState === 'noted' && (
+            <p className="text-[10px] text-slate-500 mt-1.5">{t('cdssFeedbackNoted')}</p>
+          )}
         </div>
         {message.rationale && (
           <RationalePopover rationale={message.rationale} />
@@ -727,6 +789,7 @@ export function CdssAlertsPane({
       try {
         const res = await fetch('/api/upload/patient-document', {
           method: 'POST',
+          headers: { 'X-Access-Reason': 'CLINICAL_CARE' },
           body:   form,
         });
 
@@ -776,6 +839,7 @@ export function CdssAlertsPane({
       role:      'system',
       content:   card.summary + (card.detail ? `\n${card.detail}` : ''),
       indicator: card.indicator,
+      assuranceEventId: card.assuranceEventId,
       rationale: {
         confidence: CONFIDENCES[i % CONFIDENCES.length],
         reasoning: `Rule triggered from patient medication profile, vitals, and diagnosis history. ` +
@@ -817,7 +881,7 @@ export function CdssAlertsPane({
     try {
       const apiResponse = await fetch('/api/cdss/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Access-Reason': 'CLINICAL_CARE' },
         body: JSON.stringify({
           patientId: selectedPatient.id,
           model: activeModel,
@@ -923,9 +987,8 @@ export function CdssAlertsPane({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="
-      relative rounded-2xl p-5 flex flex-col gap-3 overflow-hidden h-full
-      bg-white dark:bg-slate-800/40
-      border border-slate-200 dark:border-slate-700/60
+      relative p-4 flex flex-col gap-3 overflow-hidden h-full
+      bg-white dark:bg-gray-950
     ">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center flex-shrink-0">
