@@ -3,6 +3,7 @@
 import { FileText, Save, AlertTriangle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useLanguage } from '@/hooks/useLanguage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Temporal SOAP alignment
@@ -21,11 +22,28 @@ import { useTranslations } from 'next-intl';
 
 export const SOAP_THRESHOLDS = { S: 5, O: 10, A: 14, P: 15 } as const;
 
-const CONTENT = {
+export const SOAP_DEMO_CONTENT = {
   S: 'Patient reports precordial pain for 3 days, radiating to the left arm, with cold sweats. Worsens with physical exertion.',
   O: 'BP: 162/95 mmHg · HR: 94 bpm · SpO2: 93% · ECG: ordered urgent · BNP: pending · Troponin I: pending',
   A: 'Acute decompensated heart failure (primary) · Possible ACS given family history. Risk factors: CKD Stage 3, T2DM, HTN, dyslipidemia.',
   P: '1. Urgent 12-lead ECG + Troponin I series\n2. BNP, CMP, chest X-ray stat\n3. IV Furosemide 80 mg — hold oral Metformin\n4. Cardiology consult · return in 48 h or SOS',
+};
+
+// Locale-keyed SOAP content with proper clinical terminology
+export const SOAP_DEMO_BY_LOCALE: Record<string, typeof SOAP_DEMO_CONTENT> = {
+  en: SOAP_DEMO_CONTENT,
+  pt: {
+    S: 'Paciente refere dor precordial há 3 dias, com irradiação para membro superior esquerdo, acompanhada de sudorese fria. Piora ao esforço físico.',
+    O: 'PA: 162/95 mmHg · FC: 94 bpm · SpO2: 93% · ECG: solicitado urgente · BNP: pendente · Troponina I: pendente',
+    A: 'Insuficiência cardíaca descompensada (diagnóstico principal) · Possível SCA dado histórico familiar. Fatores de risco: DRC Estágio 3, DM2, HAS, dislipidemia.',
+    P: '1. ECG de 12 derivações urgente + série de Troponina I\n2. BNP, painel metabólico, radiografia de tórax STAT\n3. Furosemida 80 mg IV — suspender Metformina oral\n4. Parecer cardiológico · retorno em 48 h ou SOS',
+  },
+  es: {
+    S: 'Paciente refiere dolor precordial de 3 días de evolución, con irradiación a miembro superior izquierdo, acompañado de diaforesis. Empeora con el esfuerzo físico.',
+    O: 'PA: 162/95 mmHg · FC: 94 lpm · SpO2: 93% · ECG: solicitado urgente · BNP: pendiente · Troponina I: pendiente',
+    A: 'Insuficiencia cardíaca descompensada (diagnóstico principal) · Posible SCA dado antecedentes familiares. Factores de riesgo: ERC Estadio 3, DM2, HTA, dislipidemia.',
+    P: '1. ECG de 12 derivaciones urgente + serie de Troponina I\n2. BNP, panel metabólico, radiografía de tórax STAT\n3. Furosemida 80 mg IV — suspender Metformina oral\n4. Interconsulta cardiología · control en 48 h o SOS',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +230,8 @@ interface SoapNotePaneProps {
   isCompleted?:      boolean;
   soapError?:        string | null;
   onRetry?:          () => void;
+  /** Override SOAP content (e.g. from persona). Falls back to SOAP_DEMO_CONTENT. */
+  soapContent?:      { S: string; O: string; A: string; P: string } | null;
 }
 
 export function SoapNotePane({
@@ -222,8 +242,11 @@ export function SoapNotePane({
   isCompleted = false,
   soapError = null,
   onRetry,
+  soapContent,
 }: SoapNotePaneProps) {
   const t = useTranslations('dashboard.clinicalCommand');
+  const { locale } = useLanguage();
+  const soap = soapContent ?? SOAP_DEMO_BY_LOCALE[locale] ?? SOAP_DEMO_CONTENT;
   const isPopulating = segmentCount > 0;
   const hasError     = !!soapError;
   const canSign      = patientSelected && isCompleted;
@@ -249,9 +272,8 @@ export function SoapNotePane({
 
   return (
     <div className="
-      rounded-2xl p-4 flex flex-col gap-3 overflow-hidden h-full
-      bg-white dark:bg-slate-800/40
-      border border-slate-200 dark:border-slate-700/60
+      p-4 flex flex-col gap-3 overflow-hidden h-full
+      bg-white dark:bg-gray-950
     ">
       {/* Header */}
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -282,25 +304,25 @@ export function SoapNotePane({
               <SoapField
                 label={t('soapSubjective')}
                 color="text-cyan-600 dark:text-cyan-500"
-                content={CONTENT.S}
+                content={soap.S}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.S}
               />
               <SoapField
                 label={t('soapObjective')}
                 color="text-emerald-600 dark:text-emerald-500"
-                content={CONTENT.O}
+                content={soap.O}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.O}
               />
               <SoapField
                 label={t('soapAssessment')}
                 color="text-amber-600 dark:text-amber-500"
-                content={CONTENT.A}
+                content={soap.A}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.A}
               />
               <SoapField
                 label={t('soapPlan')}
                 color="text-rose-600 dark:text-rose-500"
-                content={CONTENT.P}
+                content={soap.P}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.P}
               />
             </div>
@@ -310,25 +332,25 @@ export function SoapNotePane({
             <SoapField
               label={t('soapSubjective')}
               color="text-cyan-600 dark:text-cyan-500"
-              content={CONTENT.S}
+              content={soap.S}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.S}
             />
             <SoapField
               label={t('soapObjective')}
               color="text-emerald-600 dark:text-emerald-500"
-              content={CONTENT.O}
+              content={soap.O}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.O}
             />
             <SoapField
               label={t('soapAssessment')}
               color="text-amber-600 dark:text-amber-500"
-              content={CONTENT.A}
+              content={soap.A}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.A}
             />
             <SoapField
               label={t('soapPlan')}
               color="text-rose-600 dark:text-rose-500"
-              content={CONTENT.P}
+              content={soap.P}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.P}
             />
           </div>
