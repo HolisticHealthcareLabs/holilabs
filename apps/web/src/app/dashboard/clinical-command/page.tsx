@@ -1105,10 +1105,9 @@ export default function ClinicalCommandCenterPage() {
       {/* ── 3-Column Layout: Transcript | SOAP (center stage) | Co-Pilot ──── */}
       <main className="flex-1 flex gap-px p-0 min-h-0">
         {/* ── Col 1: Live Meeting Notes (narrow — secondary focus) ──────── */}
-        <motion.div
-          layout
+        <div
           id="live-meeting-notes"
-          className={`hidden md:flex min-h-0 shrink-0 transition-all duration-300 border-r border-white/[0.06] ${viewingStudy ? 'w-[22%]' : 'w-[26%]'}`}
+          className={`hidden md:flex min-h-0 shrink-0 transition-[width] duration-150 ease-out border-r border-white/[0.06] ${viewingStudy ? 'w-[22%]' : 'w-[26%]'}`}
         >
           <TranscriptPane
             segments={segments}
@@ -1122,10 +1121,10 @@ export default function ClinicalCommandCenterPage() {
             onRevokeConsent={revokeConsent}
             volume={volume}
           />
-        </motion.div>
+        </div>
 
         {/* ── Col 2: Tabbed Center Panel ─────────────────────────────────── */}
-        <motion.div layout id="center-panel" className="min-h-0 flex-1 min-w-0 flex flex-col border-r border-white/[0.06]">
+        <div id="center-panel" className="min-h-0 flex-1 min-w-0 flex flex-col border-r border-white/[0.06]">
           {/* Tab bar */}
           <div className="flex items-center gap-1 px-3 pt-2 pb-1.5 shrink-0 border-b border-white/[0.04]">
             {(['history', 'imaging', 'documents', 'soap'] as const).map((tab) => (
@@ -1188,13 +1187,12 @@ export default function ClinicalCommandCenterPage() {
               />
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* ── Col 3: AI Co-Pilot (full height — room to breathe) ───────── */}
-        <motion.div
-          layout
+        <div
           id="cdss-pane"
-          className={`hidden md:flex min-h-0 shrink-0 transition-all duration-300 ${viewingStudy ? 'w-[24%]' : 'w-[32%]'}`}
+          className={`hidden md:flex min-h-0 shrink-0 transition-[width] duration-150 ease-out ${viewingStudy ? 'w-[24%]' : 'w-[32%]'}`}
         >
           <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">{t('loadingCoPilot')}</div>}>
           <CdssAlertsPane
@@ -1216,7 +1214,7 @@ export default function ClinicalCommandCenterPage() {
             resetSignal={resetSignal}
           />
           </Suspense>
-        </motion.div>
+        </div>
 
         {/* ── Right Sidebar — My Day Summary + PACS Imaging ──────────────── */}
         <AnimatePresence>
