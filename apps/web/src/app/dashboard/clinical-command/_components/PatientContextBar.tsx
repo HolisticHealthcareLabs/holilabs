@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import {
   Search, User, X, Eye, Heart, AlertTriangle, Clock, FileText,
-  Upload, Stethoscope, Calendar,
+  Upload, Stethoscope, Calendar, Plus,
 } from 'lucide-react';
 import { filterRecordsForOrganization } from '../../../../../../../packages/shared-kernel/src/types/auth';
 
@@ -20,6 +20,8 @@ export interface Patient {
   name: string;
   dob: string;
   mrn: string;
+  email?: string;
+  phone?: string;
 }
 
 interface Problem    { description: string; status: 'active' | 'chronic' | 'resolved'; onset: string }
@@ -517,20 +519,42 @@ interface PatientContextBarProps {
   onSelectPatient: (patient: Patient | null) => void;
   /** When provided, auto-selects the matching patient on mount (deep link from My Day). */
   initialPatientId?: string | null;
+  /** Override patient roster (e.g. from workspace persona). Falls back to internal DEMO_PATIENTS. */
+  patients?: Patient[] | null;
+  /** Controlled chart drawer state from parent. */
+  chartOpen?: boolean;
+  onChartOpenChange?: (open: boolean) => void;
+  attachMode?: boolean;
+  onAttachModeChange?: (attach: boolean) => void;
+  /** Render inline (no border/bg wrapper) for embedding in the header row. */
+  inline?: boolean;
 }
 
-export function PatientContextBar({ onSelectPatient, initialPatientId }: PatientContextBarProps) {
+export function PatientContextBar({ onSelectPatient, initialPatientId, patients, chartOpen: controlledChartOpen, onChartOpenChange, attachMode: controlledAttachMode, onAttachModeChange, inline }: PatientContextBarProps) {
   const t = useTranslations('dashboard.clinicalCommand');
   const { data: session } = useSession();
   const [query,       setQuery]       = useState('');
   const [open,        setOpen]        = useState(false);
   const [selected,    setSelected]    = useState<Patient | null>(null);
-  const [chartOpen,   setChartOpen]   = useState(false);
-  const [attachMode,  setAttachMode]  = useState(false);
+  const [chartOpenInternal,   setChartOpenInternal]   = useState(false);
+  const [attachModeInternal,  setAttachModeInternal]  = useState(false);
+  const chartOpen = controlledChartOpen ?? chartOpenInternal;
+  const attachMode = controlledAttachMode ?? attachModeInternal;
+  const setChartOpen = onChartOpenChange ?? setChartOpenInternal;
+  const setAttachMode = onAttachModeChange ?? setAttachModeInternal;
   const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientDob,  setNewPatientDob]  = useState('');
-  const [roster, setRoster] = useState<Patient[]>(DEMO_PATIENTS);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const searchPillRef = useRef<HTMLDivElement>(null);
+  const [roster, setRoster] = useState<Patient[]>(patients ?? DEMO_PATIENTS);
+
+  // Update roster when external patients prop changes
+  useEffect(() => {
+    if (patients && patients.length > 0) {
+      setRoster(patients);
+    }
+  }, [patients]);
   const activeOrganizationId = session?.user.organizationId ?? 'org-demo-clinic';
   const organizationScopedRoster = filterRecordsForOrganization(roster, activeOrganizationId);
 
@@ -542,6 +566,19 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
       onSelectPatient(match);
     }
   }, [initialPatientId, onSelectPatient, organizationScopedRoster, selected]);
+
+  // Collapse search pill on click outside when query is empty
+  useEffect(() => {
+    if (!searchExpanded) return;
+    function onClickOutside(e: MouseEvent) {
+      if (searchPillRef.current && !searchPillRef.current.contains(e.target as Node) && !query.trim()) {
+        setSearchExpanded(false);
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [searchExpanded, query]);
 
   const filtered = query.trim()
     ? organizationScopedRoster.filter((p) =>
@@ -594,22 +631,23 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
 
   return (
     <>
-      <div className="
-        flex-shrink-0 px-4 py-2.5 border-b
-        bg-slate-50 dark:bg-slate-800/50
-        border-slate-200 dark:border-slate-700/60
-      ">
-        <div className="flex items-center gap-3 max-w-2xl">
-          <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0
-                           text-slate-500 dark:text-slate-400">
-            {t('patientLabel')}
-          </span>
+      <div className={inline
+        ? 'flex-1 min-w-0 flex items-center justify-center'
+        : 'flex-shrink-0 px-4 py-2.5 border-b bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60'
+      }>
+        <div className={`flex items-center ${inline ? 'gap-2.5' : 'gap-3 max-w-2xl'}`}>
+          {!inline && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0
+                             text-slate-500 dark:text-slate-400">
+              {t('patientLabel')}
+            </span>
+          )}
 
-          <div className="relative flex-1 max-w-xs">
+          <div className={`relative ${inline ? '' : 'flex-1 max-w-xs'}`} ref={searchPillRef}>
             {selected ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl
-                             bg-cyan-50 dark:bg-cyan-900/25
-                             border border-cyan-200 dark:border-cyan-700/50">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg
+                             bg-cyan-50 dark:bg-cyan-500/[0.08]
+                             border border-cyan-200/80 dark:border-cyan-500/20">
                 <User className="w-3 h-3 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   {selected.name}
@@ -627,42 +665,71 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                   <X className="w-3 h-3" />
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2
-                                     w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    role="combobox"
-                    aria-label="Search patients"
-                    aria-controls="patient-search-results"
-                    aria-expanded={open}
-                    aria-autocomplete="list"
-                    placeholder={t('searchPatients')}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setOpen(true)}
-                    onBlur={() => setTimeout(() => setOpen(false), 150)}
-                    className="
-                      w-full pl-8 pr-3 py-1.5 text-xs rounded-xl
-                      bg-white dark:bg-slate-900
-                      border border-slate-200 dark:border-slate-600
-                      text-slate-700 dark:text-slate-300
-                      placeholder-slate-400 dark:placeholder-slate-500
-                      focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent
-                      transition-colors
-                    "
-                  />
-                </div>
+            ) : !showNewPatientForm ? (
+              <div className="relative">
+                {/* Single-element morph: magnifying glass circle ↔ search pill */}
+                <motion.div
+                  className="flex items-center rounded-full cursor-pointer"
+                  style={{ willChange: 'width, background-color' }}
+                  initial={false}
+                  animate={searchExpanded ? {
+                    width: 260,
+                    height: 40,
+                    backgroundColor: 'rgb(17, 24, 39)',
+                    paddingLeft: 12,
+                    paddingRight: 12,
+                  } : {
+                    width: 36,
+                    height: 36,
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    paddingLeft: 0,
+                    paddingRight: 0,
+                  }}
+                  transition={{ duration: 0.15, ease: [0.32, 0.72, 0, 1] }}
+                  onClick={() => { if (!searchExpanded) setSearchExpanded(true); }}
+                >
+                  {/* Collapsed: centered magnifying glass */}
+                  <div className={`flex items-center justify-center transition-opacity duration-100 ${
+                    searchExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-full h-full'
+                  }`}>
+                    <Search className="w-4 h-4 text-gray-400" />
+                  </div>
 
-                {open && filtered.length > 0 && (
+                  {/* Expanded: search icon + input */}
+                  <div className={`flex items-center gap-2 min-w-0 transition-opacity duration-150 ${
+                    searchExpanded ? 'opacity-100 flex-1 delay-[60ms]' : 'opacity-0 w-0 overflow-hidden'
+                  }`}>
+                    <Search className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    {searchExpanded && (
+                      <input
+                        type="text"
+                        role="combobox"
+                        autoFocus
+                        aria-label="Search patients"
+                        aria-controls="patient-search-results"
+                        aria-expanded={open}
+                        aria-autocomplete="list"
+                        placeholder={t('searchPatients')}
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onFocus={() => setOpen(true)}
+                        onBlur={() => setTimeout(() => setOpen(false), 150)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 min-w-0 bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Dropdown — shows when expanded */}
+                {searchExpanded && open && (
                   <ul
                     id="patient-search-results"
                     role="listbox"
                     aria-label="Patient search results"
                     className="
-                      absolute top-full left-0 right-0 mt-1 z-50 rounded-xl overflow-hidden
+                      absolute top-full left-0 mt-1 z-50 rounded-xl overflow-hidden
+                      min-w-[340px] w-max
                       bg-white dark:bg-slate-800
                       border border-slate-200 dark:border-slate-700
                       shadow-xl
@@ -674,26 +741,50 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                         role="option"
                         aria-selected={false}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => select(p)}
+                        onClick={() => { select(p); setSearchExpanded(false); }}
                         className="
-                          flex items-center gap-2.5 px-3 py-2.5 cursor-pointer
+                          flex items-center gap-2.5 px-3 py-2 cursor-pointer whitespace-nowrap
                           hover:bg-slate-50 dark:hover:bg-slate-700/60
                           transition-colors
                         "
                       >
-                        <User className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                        <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                           {p.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                          DOB {p.dob} · {p.mrn}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
+                          {p.dob} · {p.mrn}
                         </span>
                       </li>
                     ))}
+
+                    {/* Add Patient — contextual action */}
+                    <li
+                      role="option"
+                      aria-selected={false}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setShowNewPatientForm(true);
+                        setSearchExpanded(false);
+                        setQuery('');
+                        setOpen(false);
+                      }}
+                      className="
+                        flex items-center gap-2.5 px-3 py-2.5 cursor-pointer whitespace-nowrap
+                        border-t border-slate-200 dark:border-slate-700
+                        hover:bg-blue-50 dark:hover:bg-blue-900/20
+                        transition-colors
+                      "
+                    >
+                      <Plus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        {t('addPatient')}
+                      </span>
+                    </li>
                   </ul>
                 )}
-              </>
-            )}
+              </div>
+            ) : null}
           </div>
 
           {selected && (
@@ -742,24 +833,6 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                 {t('attachDocument')}
               </motion.button>
             </>
-          )}
-
-          {!selected && !showNewPatientForm && (
-            <button
-              onClick={() => setShowNewPatientForm(true)}
-              className="
-                flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
-                text-slate-600 dark:text-slate-400
-                border border-dashed border-slate-300 dark:border-slate-600
-                hover:border-cyan-400 dark:hover:border-cyan-500
-                hover:text-cyan-600 dark:hover:text-cyan-400
-                transition-colors
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
-              "
-            >
-              <User className="w-3 h-3" />
-              {t('addPatient')}
-            </button>
           )}
 
           {showNewPatientForm && !selected && (
@@ -816,11 +889,6 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
             </div>
           )}
 
-          {!selected && !showNewPatientForm && (
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:block">
-              {t('selectPatientHint')}
-            </p>
-          )}
         </div>
       </div>
 

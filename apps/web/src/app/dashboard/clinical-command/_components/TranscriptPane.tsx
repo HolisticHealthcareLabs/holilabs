@@ -180,7 +180,7 @@ export function TranscriptPane({
 
   return (
     <div className="
-      flex flex-col h-full p-4 gap-4 overflow-hidden
+      flex flex-col h-full px-4 pt-2.5 pb-4 gap-3 overflow-hidden
       bg-white dark:bg-gray-950
     ">
       {/* Header row */}
