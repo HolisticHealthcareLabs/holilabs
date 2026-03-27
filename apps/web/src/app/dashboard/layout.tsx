@@ -305,7 +305,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 isolate ${profileMenuOpen ? 'overflow-visible' : 'overflow-hidden'} ${showCollapsedSidebar ? 'w-[68px]' : 'w-[200px] sm:w-[210px] lg:w-[200px]'} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`fixed inset-y-0 left-0 z-50 isolate ${profileMenuOpen ? 'overflow-visible' : 'overflow-hidden'} ${showCollapsedSidebar ? 'w-[68px]' : 'w-[200px] sm:w-[210px] lg:w-[200px]'} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-[width,transform] duration-150 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           <div className="relative z-10 flex flex-col h-full">
@@ -601,7 +601,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <div className={(showCollapsedSidebar ? 'lg:pl-[68px]' : 'lg:pl-[200px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950 transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]'}>
+        <div className={(showCollapsedSidebar ? 'lg:pl-[68px]' : 'lg:pl-[200px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950 transition-[padding] duration-150 ease-out'}>
           {/* Top Mobile Header */}
           <header className={`lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/50 sticky top-0 z-30 shadow-sm dark:shadow-none ${isSettingsPage ? 'hidden' : ''}`}>
             <div className="flex items-center justify-between h-16 px-4">
