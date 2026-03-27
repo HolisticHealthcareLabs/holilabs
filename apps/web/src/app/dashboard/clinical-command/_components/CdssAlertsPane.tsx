@@ -987,7 +987,7 @@ export function CdssAlertsPane({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="
-      relative p-4 flex flex-col gap-3 overflow-hidden h-full
+      relative px-4 pt-2.5 pb-4 flex flex-col gap-2.5 overflow-hidden h-full
       bg-white dark:bg-gray-950
     ">
       {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -997,9 +997,6 @@ export function CdssAlertsPane({
           {t('coPilotHeader')}
         </h2>
       </div>
-
-      {/* Divider */}
-      <div className="border-t flex-shrink-0 border-slate-200 dark:border-slate-700/40" />
 
       {/* ── Chat messages area ─────────────────────────────────────────────── */}
       <div
