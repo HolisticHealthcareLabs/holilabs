@@ -22,10 +22,14 @@ export type CanonicalRecordType =
   | 'ALLERGY'
   | 'IMMUNIZATION'
   | 'IMAGING'
+  | 'IMAGING_META'
   | 'CLINICAL_NOTE'
   | 'PROCEDURE'
   | 'ENCOUNTER'
   | 'DEMOGRAPHICS'
+  | 'PATIENT_DEMOGRAPHICS'
+  | 'SUPPLY_CHAIN_ITEM'
+  | 'DEVICE_READING'
   | 'SUPPLY_CHAIN'
   | 'DEVICE_READING';
 
@@ -185,6 +189,178 @@ export type LaudoMedicoGeneratedEvent = {
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HEALTH 3.0 — VALUE-BASED CARE & COORDINATION EVENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PathwayStepCompletedEvent = {
+  type: 'pathway.step.completed';
+  payload: {
+    pathwayInstanceId: string;
+    stepId: string;
+    patientId: string;
+    pathwayDefinitionId: string;
+    stepName: string;
+    tenantId: string;
+  };
+};
+
+export type PathwayDeviationDetectedEvent = {
+  type: 'pathway.deviation.detected';
+  payload: {
+    pathwayInstanceId: string;
+    stepId: string;
+    patientId: string;
+    deviationType: 'TIMEOUT' | 'SKIP' | 'OUT_OF_ORDER' | 'UNEXPECTED_RESULT';
+    description: string;
+    tenantId: string;
+  };
+};
+
+export type PathwayEscalatedEvent = {
+  type: 'pathway.escalated';
+  payload: {
+    pathwayInstanceId: string;
+    patientId: string;
+    reason: string;
+    escalationLevel: number;
+    tenantId: string;
+  };
+};
+
+export type CareConferenceScheduledEvent = {
+  type: 'care.conference.scheduled';
+  payload: {
+    conferenceId: string;
+    patientId: string;
+    scheduledAt: string;
+    participantCount: number;
+    tenantId: string;
+  };
+};
+
+export type CareConferenceCompletedEvent = {
+  type: 'care.conference.completed';
+  payload: {
+    conferenceId: string;
+    patientId: string;
+    actionItemCount: number;
+    tenantId: string;
+  };
+};
+
+export type QualityMeasureTriggeredEvent = {
+  type: 'quality.measure.triggered';
+  payload: {
+    measureId: string;
+    patientId: string;
+    measureName: string;
+    tenantId: string;
+  };
+};
+
+export type QualityMeasureMetEvent = {
+  type: 'quality.measure.met';
+  payload: {
+    measureId: string;
+    patientId: string;
+    measureName: string;
+    score: number;
+    tenantId: string;
+  };
+};
+
+export type QualityMeasureFailedEvent = {
+  type: 'quality.measure.failed';
+  payload: {
+    measureId: string;
+    patientId: string;
+    measureName: string;
+    gaps: string[];
+    tenantId: string;
+  };
+};
+
+export type SafetyIncidentReportedEvent = {
+  type: 'safety.incident.reported';
+  payload: {
+    incidentId: string;
+    patientId: string;
+    eventType: 'ADVERSE_EVENT' | 'NEAR_MISS' | 'SENTINEL';
+    severity: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+    tenantId: string;
+  };
+};
+
+export type RCACompletedEvent = {
+  type: 'rca.completed';
+  payload: {
+    rcaId: string;
+    incidentId: string;
+    patientId: string;
+    rootCauseCount: number;
+    correctiveActionCount: number;
+    tenantId: string;
+  };
+};
+
+export type CorrectiveActionDueEvent = {
+  type: 'corrective.action.due';
+  payload: {
+    actionId: string;
+    incidentId: string;
+    deadline: string;
+    responsible: string;
+    tenantId: string;
+  };
+};
+
+export type SafetyEscalationCreatedEvent = {
+  type: 'safety.escalation.created';
+  payload: {
+    escalationId: string;
+    incidentId: string;
+    correctiveActionId: string;
+    severity: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+    daysOverdue: number;
+    tenantId: string;
+  };
+};
+
+export type CrossOrgReferralCreatedEvent = {
+  type: 'referral.cross_org.created';
+  payload: {
+    referralId: string;
+    patientId: string;
+    fromOrgId: string;
+    toOrgId: string;
+    specialty: string;
+    tenantId: string;
+  };
+};
+
+export type CrossOrgReferralAcceptedEvent = {
+  type: 'referral.cross_org.accepted';
+  payload: {
+    referralId: string;
+    patientId: string;
+    acceptedByOrgId: string;
+    estimatedDate: string;
+    tenantId: string;
+  };
+};
+
+export type ClinicalConflictDetectedEvent = {
+  type: 'clinical.conflict.detected';
+  payload: {
+    carePlanId: string;
+    patientId: string;
+    conflictType: string;
+    severity: 'LOW' | 'MEDIUM' | 'HIGH';
+    tenantId: string;
+  };
+};
+
 /**
  * Discriminated union of all clinical events.
  * Every event flowing through Redis Streams must be one of these types.
@@ -202,7 +378,22 @@ export type ClinicalEvent =
   | PrescriptionSignedEvent
   | ComplaintRecordedEvent
   | FamilyHistoryUpdatedEvent
-  | LaudoMedicoGeneratedEvent;
+  | LaudoMedicoGeneratedEvent
+  | PathwayStepCompletedEvent
+  | PathwayDeviationDetectedEvent
+  | PathwayEscalatedEvent
+  | CareConferenceScheduledEvent
+  | CareConferenceCompletedEvent
+  | QualityMeasureTriggeredEvent
+  | QualityMeasureMetEvent
+  | QualityMeasureFailedEvent
+  | SafetyIncidentReportedEvent
+  | RCACompletedEvent
+  | CorrectiveActionDueEvent
+  | SafetyEscalationCreatedEvent
+  | CrossOrgReferralCreatedEvent
+  | CrossOrgReferralAcceptedEvent
+  | ClinicalConflictDetectedEvent;
 
 export type ClinicalEventType = ClinicalEvent['type'];
 
