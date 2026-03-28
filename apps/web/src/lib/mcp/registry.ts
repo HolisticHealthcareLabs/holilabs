@@ -37,6 +37,10 @@ import { clinicalDecisionTools } from './tools/clinical-decision.tools';
 import { roleAdminTools } from './tools/role-admin.tools';
 import { escalationTools } from './tools/escalation.tools';
 import { workspaceAdminTools } from './tools/workspace-admin.tools';
+import { safetyIncidentTools } from './tools/safety-incident.tools';
+import { disciplinePreventionTools } from './tools/discipline-prevention.tools';
+import { vbcTools } from './tools/vbc.tools';
+import { careCoordinationTools } from './tools/care-coordination.tools';
 import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult, MCPToolExample } from './types';
 import {
     getWorkflowTemplates,
@@ -46,8 +50,9 @@ import {
     getWorkflowSchemas,
     executeWorkflow,
     type WorkflowTemplate,
-    type WorkflowResult,
 } from './workflows';
+
+type WorkflowResult = any;
 
 // =============================================================================
 // TOOL REGISTRY
@@ -98,6 +103,10 @@ class MCPToolRegistry implements MCPRegistry {
             ...roleAdminTools,
             ...escalationTools,
             ...workspaceAdminTools,
+            ...safetyIncidentTools,
+            ...disciplinePreventionTools,
+            ...vbcTools,
+            ...careCoordinationTools,
         ];
 
         for (const tool of allTools) {
@@ -245,7 +254,7 @@ class MCPToolRegistry implements MCPRegistry {
                 return {
                     tool: toolName,
                     success: true,
-                    result: existing.result as MCPResult,
+                    result: existing.result as unknown as MCPResult,
                     executionTimeMs: Date.now() - startTime,
                     timestamp: new Date().toISOString(),
                 };
@@ -276,7 +285,7 @@ class MCPToolRegistry implements MCPRegistry {
                             return {
                                 tool: toolName,
                                 success: true,
-                                result: existing.result as MCPResult,
+                                result: existing.result as unknown as MCPResult,
                                 executionTimeMs: Date.now() - startTime,
                                 timestamp: new Date().toISOString(),
                             };
@@ -466,7 +475,7 @@ class MCPToolRegistry implements MCPRegistry {
         context: MCPContext,
         initialInputs: Record<string, any>
     ): Promise<WorkflowResult> {
-        return executeWorkflow(workflowId, context, initialInputs);
+        return executeWorkflow(workflowId, initialInputs);
     }
 
     /**
@@ -744,5 +753,5 @@ export function getToolDependencies(toolName: string): MCPTool[] {
 }
 
 // Re-export workflow types
-export type { WorkflowTemplate, WorkflowResult } from './workflows';
-export type { WorkflowStep, WorkflowStepResult } from './workflows';
+export type { WorkflowTemplate } from './workflows';
+export type { WorkflowResult };

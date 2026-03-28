@@ -1,0 +1,10 @@
+import './cardiology';
+import './endocrinology';
+import './oncology';
+import './mental-health';
+import './pediatrics';
+import './geriatrics';
+import './nephrology';
+import './pulmonology';
+import './ob-gyn';
+import './primary-care';

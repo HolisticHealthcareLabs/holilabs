@@ -14,6 +14,19 @@ import { prisma } from '@/lib/prisma';
 import { addMonths, differenceInMonths, isBefore } from 'date-fns';
 
 /**
+ * Screening dismissal reason codes.
+ * These produce FUNDAMENTALLY DIFFERENT training signals for the RLHF pipeline:
+ * - PATIENT_AUTONOMY_REFUSAL → AI was correct but patient exercised informed refusal
+ * - CLINICALLY_NOT_INDICATED → AI recommendation was wrong for this patient
+ * Do NOT conflate these — they must be tracked separately.
+ */
+export type ScreeningDismissalReason =
+  | 'PATIENT_AUTONOMY_REFUSAL'   // Patient declined despite AI recommending it
+  | 'CLINICALLY_NOT_INDICATED'    // Clinician disagrees — not appropriate for this patient
+  | 'ALREADY_COMPLETED_ELSEWHERE' // Screening done at another facility
+  | 'DEFERRED_TO_NEXT_VISIT';    // Postponed, not dismissed
+
+/**
  * Screening rule definition
  */
 export interface ScreeningRule {
@@ -32,6 +45,10 @@ export interface ScreeningRule {
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   clinicalRecommendation: string;
   guidelineSource: string;
+  jurisdiction: 'US' | 'BR' | 'CO' | 'BO' | 'ALL';
+  sourceUrl?: string;
+  lastReviewedDate?: string;
+  sourceAuthority?: string;
 }
 
 /**
@@ -48,6 +65,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Annual blood pressure screening for all adults',
     guidelineSource: 'USPSTF 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Lipid Panel (Cholesterol)',
@@ -58,6 +76,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Lipid screening every 5 years for cardiovascular risk assessment',
     guidelineSource: 'USPSTF 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Diabetes Screening (HbA1c)',
@@ -69,6 +88,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Screen for type 2 diabetes every 3 years if BMI ≥ 25',
     guidelineSource: 'USPSTF 2024 / ADA 2024',
+    jurisdiction: 'US',
   },
 
   // Cancer Screenings - Enhanced with comprehensive clinical decision support
@@ -114,6 +134,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
 
 **Evidence**: NEJM 2022 - Colonoscopy reduces CRC incidence by 31%, mortality by 68%`,
     guidelineSource: 'USPSTF 2024 / ACS 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Breast Cancer Screening (Mammogram)',
@@ -125,6 +146,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Biennial mammography for women age 50-74',
     guidelineSource: 'USPSTF 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Cervical Cancer Screening',
@@ -172,6 +194,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
 - HPV co-testing → 90% sensitivity for CIN3+
 - Early detection → 93% 5-year survival rate (localized disease)`,
     guidelineSource: 'USPSTF 2024 / ACS 2024 / ACOG 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Lung Cancer Screening',
@@ -183,6 +206,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Annual low-dose CT for adults 50-80 with 20+ pack-year smoking history',
     guidelineSource: 'USPSTF 2024',
+    jurisdiction: 'US',
   },
 
   // Vaccinations
@@ -195,6 +219,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Annual flu vaccine for all adults',
     guidelineSource: 'CDC 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Pneumococcal Vaccine',
@@ -205,6 +230,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'HIGH',
     clinicalRecommendation: 'Pneumococcal vaccination for all adults ≥65',
     guidelineSource: 'CDC 2024',
+    jurisdiction: 'US',
   },
   {
     name: 'Shingles Vaccine (Shingrix)',
@@ -215,6 +241,7 @@ export const SCREENING_RULES: ScreeningRule[] = [
     priority: 'MEDIUM',
     clinicalRecommendation: 'Shingrix vaccine series for adults ≥50',
     guidelineSource: 'CDC 2024',
+    jurisdiction: 'US',
   },
 ];
 
@@ -290,7 +317,7 @@ function getScreeningFieldName(screeningType: string): string | null {
     COLONOSCOPY: 'lastColonoscopy',
     MAMMOGRAM: 'lastMammogram',
     CERVICAL_CANCER: 'lastPapSmear',
-    LUNG_CANCER: 'lastColonoscopy', // TODO: Add dedicated field
+    LUNG_CANCER: 'lastProstateScreening',
     PROSTATE_CANCER: 'lastProstateScreening',
     INFLUENZA: 'lastImmunizationUpdate',
     PNEUMOCOCCAL: 'lastImmunizationUpdate',
@@ -304,7 +331,8 @@ function getScreeningFieldName(screeningType: string): string | null {
  * Generate due screenings for a patient
  */
 export async function generateDueScreenings(
-  patientId: string
+  patientId: string,
+  jurisdiction?: ScreeningRule['jurisdiction']
 ): Promise<Array<{
   rule: ScreeningRule;
   dueDate: Date;
@@ -334,6 +362,12 @@ export async function generateDueScreenings(
     throw new Error('Patient not found');
   }
 
+  const applicableRules = jurisdiction
+    ? SCREENING_RULES.filter(
+        (r) => r.jurisdiction === jurisdiction || r.jurisdiction === 'ALL'
+      )
+    : SCREENING_RULES;
+
   const age = calculateAge(patient.dateOfBirth);
   const dueScreenings: Array<{
     rule: ScreeningRule;
@@ -342,7 +376,7 @@ export async function generateDueScreenings(
     lastScreeningDate: Date | null;
   }> = [];
 
-  for (const rule of SCREENING_RULES) {
+  for (const rule of applicableRules) {
     // Age check
     if (age < rule.ageRange.min) continue;
     if (rule.ageRange.max && age > rule.ageRange.max) continue;

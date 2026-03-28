@@ -40,4 +40,5 @@ export type {
   EncounterStartedEvent,
   EncounterCompletedEvent,
   PrescriptionSignedEvent,
+  SafetyEscalationCreatedEvent,
 } from './types';

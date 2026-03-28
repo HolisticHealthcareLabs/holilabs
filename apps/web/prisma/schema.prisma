@@ -25,17 +25,17 @@ model User {
   publicKey     String?
 
   // Profile
-  firstName         String
-  lastName          String
-  profilePictureUrl String? // Profile picture URL
-  role              UserRole @default(CLINICIAN)
-  permissions       String[] @default([]) // Granular permissions (e.g., ["patient:read", "prescription:write"])
-  specialty         String?
-  licenseNumber     String?
-  npi               String? // National Provider Identifier (US only)
-  username            String?   @unique
-  onboardingCompleted Boolean   @default(false)
-  isEphemeral         Boolean   @default(false)
+  firstName           String
+  lastName            String
+  profilePictureUrl   String? // Profile picture URL
+  role                UserRole @default(CLINICIAN)
+  permissions         String[] @default([]) // Granular permissions (e.g., ["patient:read", "prescription:write"])
+  specialty           String?
+  licenseNumber       String?
+  npi                 String? // National Provider Identifier (US only)
+  username            String?  @unique
+  onboardingCompleted Boolean  @default(false)
+  isEphemeral         Boolean  @default(false)
 
   // Security
   passwordHash   String? // Optional for OAuth-only users
@@ -147,8 +147,8 @@ model User {
   clinicianNetworks ClinicianNetwork[]
 
   // Role Assignment (delegated RBAC)
-  grantedRoles    RoleAssignment[] @relation("RoleGrantor")
-  receivedRoles   RoleAssignment[] @relation("RoleGrantee")
+  grantedRoles  RoleAssignment[] @relation("RoleGrantor")
+  receivedRoles RoleAssignment[] @relation("RoleGrantee")
 
   // Radiology & AI
   radiologyReports RadiologyReport[] @relation("RadiologistReports")
@@ -156,6 +156,11 @@ model User {
 
   // Pre-Authorization
   preAuthRequests PreAuthorizationRequest[]
+
+  // Health 3.0 — Safety & Coordination
+  reportedIncidents     SafetyIncident[]         @relation("IncidentReporter")
+  investigatedIncidents SafetyIncident[]         @relation("IncidentInvestigator")
+  correctiveActions     SafetyCorrectiveAction[] @relation("ActionResponsible")
 
   @@index([email])
   @@index([walletAddress])
@@ -1113,6 +1118,23 @@ model Patient {
   // Pre-Authorization
   preAuthRequests PreAuthorizationRequest[]
 
+  // Account Distribution
+  invitations PatientInvitation[]
+
+  // Health 3.0 — Value-Based Care & Coordination
+  safetyIncidents           SafetyIncident[]           @relation("PatientSafetyIncidents")
+  careTeams                 CareTeam[]                 @relation("PatientCareTeams")
+  careConferences           CareConference[]           @relation("PatientCareConferences")
+  sharingConsents           PatientSharingConsent[]    @relation("PatientSharingConsents")
+  sharedCarePlans           SharedCarePlan[]           @relation("PatientSharedCarePlans")
+  sharedCareRecords         SharedCareRecord[]         @relation("PatientSharedCareRecords")
+  careGoals                 CareGoal[]                 @relation("PatientCareGoals")
+  vbcOutcomes               VBCOutcomeRecord[]         @relation("PatientVBCOutcomes")
+  patientAttributions       PatientAttribution[]       @relation("PatientAttributions")
+  carePathwayInstances      CarePathwayInstance[]      @relation("PatientCarePathways")
+  healthGraphEdges          HealthGraphEdge[]          @relation("PatientHealthGraph")
+  qualityMeasureEvaluations QualityMeasureEvaluation[] @relation("PatientQualityEvaluations")
+
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
@@ -1515,10 +1537,10 @@ model ImagingStudy {
   notes       String? @db.Text
 
   // Privacy - Who can see this?
-  dicomSeries       DicomSeries[]
-  radiologyReports  RadiologyReport[]
-  aiResults         ImagingAIResult[]
-  accessGrants      DataAccessGrant[]
+  dicomSeries      DicomSeries[]
+  radiologyReports RadiologyReport[]
+  aiResults        ImagingAIResult[]
+  accessGrants     DataAccessGrant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2189,8 +2211,8 @@ model AuditLog {
   accessPurpose String?       @db.Text // Optional free-text justification
 
   // Actor Classification (agent audit trail)
-  actorType  String?   // 'USER' | 'AGENT' | 'SYSTEM'
-  agentId    String?   // MCP agent identifier when actorType is 'AGENT'
+  actorType String? // 'USER' | 'AGENT' | 'SYSTEM'
+  agentId   String? // MCP agent identifier when actorType is 'AGENT'
 
   // Result
   success      Boolean @default(true)
@@ -2204,12 +2226,12 @@ model AuditLog {
   entryHash    String? // SHA-256 hash of this entry including previousHash
 
   // Hash Version & Extended Compliance Fields
-  hashVersion  Int     @default(1) @map("hash_version") // v1: 8-field hash, v2: 13-field hash (includes model/prompt/consent/legal/phi)
-  modelVersion String? @map("model_version") // LLM model identifier for agent executions
-  promptHash   String? @map("prompt_hash") // SHA-256 hash of LLM prompt (for reproducibility)
-  consentBasis String? @map("consent_basis") // Consent type granted (e.g., "explicit", "implicit", "emergency")
-  legalBasis   String? @map("legal_basis") // LGPD Art. 7 legal basis citation
-  phiAccessScore Float? @map("phi_access_score") // Risk score for this access (0.0-1.0, higher = more sensitive)
+  hashVersion    Int     @default(1) @map("hash_version") // v1: 8-field hash, v2: 13-field hash (includes model/prompt/consent/legal/phi)
+  modelVersion   String? @map("model_version") // LLM model identifier for agent executions
+  promptHash     String? @map("prompt_hash") // SHA-256 hash of LLM prompt (for reproducibility)
+  consentBasis   String? @map("consent_basis") // Consent type granted (e.g., "explicit", "implicit", "emergency")
+  legalBasis     String? @map("legal_basis") // LGPD Art. 7 legal basis citation
+  phiAccessScore Float?  @map("phi_access_score") // Risk score for this access (0.0-1.0, higher = more sensitive)
 
   @@index([userId])
   @@index([action])
@@ -4508,6 +4530,9 @@ enum NotificationTemplateType {
   FOLLOWUP_2
   FOLLOWUP_3
   CUSTOM
+  PATIENT_INVITATION
+  PATIENT_INVITATION_REMINDER
+  PATIENT_WELCOME
 }
 
 enum NotificationChannel {
@@ -4516,6 +4541,46 @@ enum NotificationChannel {
   SMS
   PUSH
   IN_APP
+}
+
+// Patient Account Distribution — Invitation Tracking
+enum InvitationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  CLICKED
+  REGISTERED
+  FAILED
+  EXPIRED
+}
+
+model PatientInvitation {
+  id             String              @id @default(cuid())
+  patientId      String
+  patient        Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  batchId        String?
+  channel        NotificationChannel
+  language       String              @default("es")
+  status         InvitationStatus    @default(QUEUED)
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+  clickedAt      DateTime?
+  registeredAt   DateTime?
+  tokenHash      String              @unique
+  expiresAt      DateTime
+  reminderCount  Int                 @default(0)
+  lastReminderAt DateTime?
+  createdBy      String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([patientId])
+  @@index([batchId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("patient_invitations")
 }
 
 enum TemplateLevel {
@@ -4618,17 +4683,17 @@ model Escalation {
   patient   Patient? @relation(fields: [patientId], references: [id])
 
   // Escalation details
-  status      EscalationStatus @default(OPEN)
-  reason      String           @db.Text
-  channel     String?          // SMS, EMAIL, WHATSAPP
-  attempt     Int              @default(0) // Which attempt triggered escalation
+  status  EscalationStatus @default(OPEN)
+  reason  String           @db.Text
+  channel String? // SMS, EMAIL, WHATSAPP
+  attempt Int              @default(0) // Which attempt triggered escalation
 
   // SLA tracking
   slaDeadline DateTime // When this escalation must be resolved by
 
   // Assignment (state machine: OPEN → ASSIGNED)
   assignedToId String?
-  assignedTo   User? @relation("EscalationAssignee", fields: [assignedToId], references: [id])
+  assignedTo   User?     @relation("EscalationAssignee", fields: [assignedToId], references: [id])
   assignedAt   DateTime?
 
   // Notification channels (default: in-app only)
@@ -4638,10 +4703,10 @@ model Escalation {
   escalationLevel Int @default(1)
 
   // Resolution
-  resolvedAt  DateTime?
-  resolvedBy  String?
-  resolvedByUser User? @relation("EscalationResolvedBy", fields: [resolvedBy], references: [id])
-  resolution  String?  @db.Text // Free-text resolution notes
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  resolvedByUser User?     @relation("EscalationResolvedBy", fields: [resolvedBy], references: [id])
+  resolution     String?   @db.Text // Free-text resolution notes
 
   // Audit
   createdAt DateTime @default(now())
@@ -6027,17 +6092,17 @@ enum ExerciseIntensity {
 }
 
 enum AIProvider {
-  GEMINI   // Google Gemini (default)
-  CLAUDE   // Anthropic Claude
-  OPENAI   // OpenAI GPT
-  OLLAMA   // Local inference
-  VLLM     // Self-hosted inference
+  GEMINI // Google Gemini (default)
+  CLAUDE // Anthropic Claude
+  OPENAI // OpenAI GPT
+  OLLAMA // Local inference
+  VLLM // Self-hosted inference
   TOGETHER // Together.ai cloud
-  MISTRAL  // Mistral AI (EU)
-  GROQ     // Groq LPU inference
+  MISTRAL // Mistral AI (EU)
+  GROQ // Groq LPU inference
   CEREBRAS // Cerebras wafer-scale
   DEEPSEEK // DeepSeek (CN — LGPD Art. 33)
-  CUSTOM   // User's custom provider
+  CUSTOM // User's custom provider
 }
 
 enum ThemeMode {
@@ -6746,7 +6811,7 @@ model WorkspaceLLMConfig {
   id              String    @id @default(cuid())
   workspaceId     String
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  provider        String    // "gemini" | "anthropic" | "openai"
+  provider        String // "gemini" | "anthropic" | "openai"
   encryptedKey    String    @db.Text
   isActive        Boolean   @default(true)
   createdByUserId String?
@@ -6768,12 +6833,12 @@ model WebAuthnCredential {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   credentialId String   @unique // Base64URL
-  publicKey    Bytes              // COSE-encoded
+  publicKey    Bytes // COSE-encoded
   counter      BigInt   @default(0)
-  deviceType   String             // "singleDevice" | "multiDevice"
+  deviceType   String // "singleDevice" | "multiDevice"
   backedUp     Boolean  @default(false)
   transports   String[]
-  name         String?            // user label e.g. "MacBook Touch ID"
+  name         String? // user label e.g. "MacBook Touch ID"
 
   createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
@@ -7581,21 +7646,21 @@ enum RateConfidence {
 
 /// Payer directory — covers all seven countries.
 model Insurer {
-  id          String  @id @default(cuid())
+  id          String @id @default(cuid())
   name        String
   shortName   String
   country     String // "BR" | "AR" | "BO" | "US" | "CA" | "CO" | "MX"
   insurerType String // "PRIVATE_COMMERCIAL" | "OBRAS_SOCIALES" | "PUBLIC_FUND" | "MILITARY_FUND" | "COOPERATIVE" | "SECTOR_FUND" | "SOCIAL_SECURITY" | "PROVINCIAL_PUBLIC" | "EPS_CONTRIBUTIVO" | "EPS_SUBSIDIADO"
 
   // Country-specific identifiers
-  ansCode  String? @unique // Brazil ANS 6-digit registry code: "005711"
-  cnpj     String? // Brazil tax ID (CNPJ)
-  cuitCode String? @unique // Argentina CUIT
-  rnos     String? @unique // Argentina RNOS (Registro Nacional de Obras Sociales)
-  cnsCode  String? @unique // Bolivia CNS institutional code
+  ansCode      String? @unique // Brazil ANS 6-digit registry code: "005711"
+  cnpj         String? // Brazil tax ID (CNPJ)
+  cuitCode     String? @unique // Argentina CUIT
+  rnos         String? @unique // Argentina RNOS (Registro Nacional de Obras Sociales)
+  cnsCode      String? @unique // Bolivia CNS institutional code
   npiNumber    String? @unique // US NPI (National Provider Identifier) — 10 digits
   naicCode     String? @unique // US NAIC (National Association of Insurance Commissioners) — 5 digits
-  provinceCode String?          // Canada 2-letter province code (ON, QC, BC, AB)
+  provinceCode String? // Canada 2-letter province code (ON, QC, BC, AB)
   rutCode      String? @unique // Colombia RUT tax ID
   rfcCode      String? @unique // Mexico RFC tax ID
 
@@ -7724,21 +7789,21 @@ model FeeSchedule {
 
 /// Per-procedure rate within a fee schedule.
 model FeeScheduleLine {
-  id              String          @id @default(cuid())
+  id              String        @id @default(cuid())
   feeScheduleId   String
-  feeSchedule     FeeSchedule     @relation(fields: [feeScheduleId], references: [id], onDelete: Cascade)
+  feeSchedule     FeeSchedule   @relation(fields: [feeScheduleId], references: [id], onDelete: Cascade)
   procedureCodeId String
-  procedureCode   ProcedureCode   @relation(fields: [procedureCodeId], references: [id])
+  procedureCode   ProcedureCode @relation(fields: [procedureCodeId], references: [id])
 
   negotiatedRate Decimal         @db.Decimal(12, 2)
   currency       BillingCurrency
   confidence     RateConfidence  @default(REFERENCE)
 
   // Coverage details
-  isCovered      Boolean  @default(true)
-  coverageLimit  Decimal? @db.Decimal(12, 2) // Annual or per-event limit
-  copayFlat      Decimal? @db.Decimal(8, 2) // Fixed copay amount
-  copayPercent   Decimal? @db.Decimal(5, 4) // Percentage copay (0.0–1.0)
+  isCovered     Boolean  @default(true)
+  coverageLimit Decimal? @db.Decimal(12, 2) // Annual or per-event limit
+  copayFlat     Decimal? @db.Decimal(8, 2) // Fixed copay amount
+  copayPercent  Decimal? @db.Decimal(5, 4) // Percentage copay (0.0–1.0)
 
   effectiveDate  DateTime
   expirationDate DateTime?
@@ -7766,7 +7831,7 @@ model PriorAuthRule {
   requiredDocuments String[] // ["REFERRAL_LETTER", "CLINICAL_REPORT", "LAB_RESULTS"]
   requiredDiagnoses String[] // ICD-10/CIE-10 codes that trigger this rule
 
-  notes          String?  @db.Text
+  notes          String?   @db.Text
   effectiveDate  DateTime
   expirationDate DateTime?
 
@@ -7806,15 +7871,15 @@ model ClinicianNetwork {
 // ============================================================================
 
 model WaitlistEntry {
-  id          String            @id @default(cuid())
-  email       String            @unique
+  id          String              @id @default(cuid())
+  email       String              @unique
   firstName   String?
   lastName    String?
-  companyName String?           // Hospital or clinic name
-  plan        String?           // "safety" | "complete" — from pricing page attribution
+  companyName String? // Hospital or clinic name
+  plan        String? // "safety" | "complete" — from pricing page attribution
   status      WaitlistEntryStatus @default(PENDING)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
   approvedAt  DateTime?
   rejectedAt  DateTime?
 
@@ -8097,53 +8162,53 @@ model NetworkReferral {
 
 /// Source registry for a physician record
 enum PhysicianRegistrySource {
-  CFM_BR    // Conselho Federal de Medicina (Brazil)
-  SISA_AR   // Sistema Integrado de Información Sanitaria (Argentina)
-  MSP_UY    // Ministerio de Salud Pública (Uruguay)
-  CMP_PY    // Colegio Médico del Paraguay
-  MANUAL    // Manually entered by org admin
+  CFM_BR // Conselho Federal de Medicina (Brazil)
+  SISA_AR // Sistema Integrado de Información Sanitaria (Argentina)
+  MSP_UY // Ministerio de Salud Pública (Uruguay)
+  CMP_PY // Colegio Médico del Paraguay
+  MANUAL // Manually entered by org admin
 }
 
 /// Global canonical physician identity — one row per licensed doctor in Mercosur.
 /// Imported from official government registries. Upserted on each import run.
 model PhysicianCatalog {
-  id               String                 @id @default(cuid())
+  id                   String                  @id @default(cuid())
   /// "BR" | "AR" | "UY" | "PY"
-  country          String
+  country              String
   /// CRM number (Brazil), MP number (Argentina), or equivalent
-  registryId       String                 @map("registry_id")
+  registryId           String                  @map("registry_id")
   /// State/province of registration — "SP", "RJ" etc. (null for non-BR)
-  registryState    String?                @map("registry_state")
-  registrySource   PhysicianRegistrySource @map("registry_source")
-  name             String
-  photoUrl         String?                @map("photo_url")
-  gender           String?                // "M" | "F" | null
+  registryState        String?                 @map("registry_state")
+  registrySource       PhysicianRegistrySource @map("registry_source")
+  name                 String
+  photoUrl             String?                 @map("photo_url")
+  gender               String? // "M" | "F" | null
   /// Decimal lat for PostGIS — populated by geocoding pipeline
-  lat              Decimal?               @db.Decimal(9, 6)
+  lat                  Decimal?                @db.Decimal(9, 6)
   /// Decimal lng for PostGIS — populated by geocoding pipeline
-  lng              Decimal?               @db.Decimal(9, 6)
-  addressCity      String?                @map("address_city")
-  addressState     String?                @map("address_state")
-  addressCep       String?                @map("address_cep")
-  addressStreet    String?                @map("address_street")
+  lng                  Decimal?                @db.Decimal(9, 6)
+  addressCity          String?                 @map("address_city")
+  addressState         String?                 @map("address_state")
+  addressCep           String?                 @map("address_cep")
+  addressStreet        String?                 @map("address_street")
   /// Commercial phone — public per CFM Res. 2.299/2021 for Brazil
-  phone            String?
+  phone                String?
   /// Commercial email — only if from registry (not personally supplied)
-  email            String?
+  email                String?
   /// Whether the registry record is active (not suspended, not cancelled)
-  isRegistryActive Boolean                @default(true) @map("is_registry_active")
+  isRegistryActive     Boolean                 @default(true) @map("is_registry_active")
   /// True = included in public unauthenticated directory responses
-  publicProfileEnabled Boolean            @default(true) @map("public_profile_enabled")
+  publicProfileEnabled Boolean                 @default(true) @map("public_profile_enabled")
   /// Timestamp of last sync with the source registry
-  lastSyncedAt     DateTime?              @map("last_synced_at")
+  lastSyncedAt         DateTime?               @map("last_synced_at")
   /// Profile completeness score 0–100 (computed on upsert)
-  completenessScore Int                   @default(0) @map("completeness_score")
-  createdAt        DateTime               @default(now()) @map("created_at")
-  updatedAt        DateTime               @updatedAt @map("updated_at")
+  completenessScore    Int                     @default(0) @map("completeness_score")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
 
-  specialties      PhysicianSpecialty[]
-  orgLinks         NetworkProviderLink[]
-  establishments   PhysicianEstablishment[]
+  specialties    PhysicianSpecialty[]
+  orgLinks       NetworkProviderLink[]
+  establishments PhysicianEstablishment[]
 
   @@unique([country, registryId, registryState])
   @@index([country])
@@ -8158,25 +8223,25 @@ model PhysicianCatalog {
 /// Reference table for all medical specialties — bilingual PT/ES, mapped to official codes.
 /// Supports hierarchy: parentId links Areas of Expertise (RQE) to parent specialties.
 model MedicalSpecialty {
-  id          String  @id @default(cuid())
+  id                String             @id @default(cuid())
   /// Official CFM specialty code (Brazil)
-  cfmCode     String? @unique @map("cfm_code")
+  cfmCode           String?            @unique @map("cfm_code")
   /// SISA specialty code (Argentina)
-  sisaCode    String? @map("sisa_code")
+  sisaCode          String?            @map("sisa_code")
   /// Portuguese display name (Brazil)
-  displayPt   String  @map("display_pt")
+  displayPt         String             @map("display_pt")
   /// Spanish display name (Argentina/Uruguay/Paraguay)
-  displayEs   String  @map("display_es")
+  displayEs         String             @map("display_es")
   /// Slug for URL use — e.g. "cardiologia"
-  slug        String  @unique
+  slug              String             @unique
   /// True = Area of Expertise (RQE), False = main specialty
-  isAreaOfExpertise Boolean @default(false) @map("is_area_of_expertise")
+  isAreaOfExpertise Boolean            @default(false) @map("is_area_of_expertise")
   /// Parent specialty ID (for RQEs/sub-specialties)
-  parentId    String? @map("parent_id")
-  parent      MedicalSpecialty?  @relation("SpecialtyHierarchy", fields: [parentId], references: [id])
-  children    MedicalSpecialty[] @relation("SpecialtyHierarchy")
+  parentId          String?            @map("parent_id")
+  parent            MedicalSpecialty?  @relation("SpecialtyHierarchy", fields: [parentId], references: [id])
+  children          MedicalSpecialty[] @relation("SpecialtyHierarchy")
 
-  physicians  PhysicianSpecialty[]
+  physicians PhysicianSpecialty[]
 
   @@index([slug])
   @@index([parentId])
@@ -8194,8 +8259,8 @@ model PhysicianSpecialty {
   /// True = primary specialty (used for default search categorization)
   isPrimary   Boolean @default(false) @map("is_primary")
 
-  physician   PhysicianCatalog @relation(fields: [physicianId], references: [id], onDelete: Cascade)
-  specialty   MedicalSpecialty @relation(fields: [specialtyId], references: [id])
+  physician PhysicianCatalog @relation(fields: [physicianId], references: [id], onDelete: Cascade)
+  specialty MedicalSpecialty @relation(fields: [specialtyId], references: [id])
 
   @@unique([physicianId, specialtyId])
   @@index([physicianId])
@@ -8207,17 +8272,17 @@ model PhysicianSpecialty {
 /// Replaces the direct org-scoped NetworkProvider for network-enrolled doctors.
 /// Legacy NetworkProvider rows remain for manually-added doctors not in the global catalog.
 model NetworkProviderLink {
-  id              String   @id @default(cuid())
-  orgId           String   @map("org_id")
-  physicianId     String   @map("physician_id")
-  calcomUsername  String?  @map("calcom_username")
-  calcomEventSlug String?  @map("calcom_event_slug")
-  acceptedPlans   String[] @map("accepted_plans")
-  isActive        Boolean  @default(true) @map("is_active")
+  id              String    @id @default(cuid())
+  orgId           String    @map("org_id")
+  physicianId     String    @map("physician_id")
+  calcomUsername  String?   @map("calcom_username")
+  calcomEventSlug String?   @map("calcom_event_slug")
+  acceptedPlans   String[]  @map("accepted_plans")
+  isActive        Boolean   @default(true) @map("is_active")
   /// When the doctor claimed their profile and joined the network
   claimedAt       DateTime? @map("claimed_at")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   physician PhysicianCatalog @relation(fields: [physicianId], references: [id])
 
@@ -8229,15 +8294,15 @@ model NetworkProviderLink {
 }
 
 model RoleAssignment {
-  id           String    @id @default(cuid())
-  grantorId    String
-  grantor      User      @relation("RoleGrantor", fields: [grantorId], references: [id])
-  granteeId    String
-  grantee      User      @relation("RoleGrantee", fields: [granteeId], references: [id])
-  role         UserRole
-  scope        String?
-  grantedAt    DateTime  @default(now())
-  revokedAt    DateTime?
+  id        String    @id @default(cuid())
+  grantorId String
+  grantor   User      @relation("RoleGrantor", fields: [grantorId], references: [id])
+  granteeId String
+  grantee   User      @relation("RoleGrantee", fields: [granteeId], references: [id])
+  role      UserRole
+  scope     String?
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
 
   @@unique([granteeId, role, scope])
   @@index([grantorId])
@@ -8265,21 +8330,21 @@ enum EstablishmentType {
 /// Health insurance plan operator + product, sourced from ANS (Brazil).
 /// Enables `?plans=amil` directory filter using official ANS codes.
 model InsurancePlan {
-  id               String  @id @default(cuid())
+  id              String    @id @default(cuid())
   /// ANS operator registry number
-  ansOperatorCode  String  @map("ans_operator_code")
+  ansOperatorCode String    @map("ans_operator_code")
   /// ANS plan product code (unique per plan product)
-  ansPlanCode      String? @unique @map("ans_plan_code")
-  operatorName     String  @map("operator_name")
-  planName         String? @map("plan_name")
+  ansPlanCode     String?   @unique @map("ans_plan_code")
+  operatorName    String    @map("operator_name")
+  planName        String?   @map("plan_name")
   /// Slug for URL/search use — e.g. "amil", "sulamerica", "unimed-sp"
-  slug             String  @unique
+  slug            String    @unique
   /// Country code — "BR" for ANS-sourced plans
-  country          String  @default("BR")
-  isActive         Boolean @default(true) @map("is_active")
-  lastSyncedAt     DateTime? @map("last_synced_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  country         String    @default("BR")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastSyncedAt    DateTime? @map("last_synced_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@index([ansOperatorCode])
   @@index([slug])
@@ -8290,29 +8355,29 @@ model InsurancePlan {
 /// Healthcare establishment (hospital, clinic, lab) sourced from CNES (Brazil).
 /// Includes lat/lng for geospatial queries and physician affiliation mapping.
 model HealthcareEstablishment {
-  id              String            @id @default(cuid())
+  id            String            @id @default(cuid())
   /// CNES code — unique per establishment
-  cnesCode        String            @unique @map("cnes_code")
+  cnesCode      String            @unique @map("cnes_code")
   /// CNPJ of the legal entity
-  cnpj            String?
-  name            String
-  tradeName       String?           @map("trade_name")
-  type            EstablishmentType
-  country         String            @default("BR")
-  addressCity     String?           @map("address_city")
-  addressState    String?           @map("address_state")
-  addressCep      String?           @map("address_cep")
-  addressStreet   String?           @map("address_street")
-  lat             Decimal?          @db.Decimal(9, 6)
-  lng             Decimal?          @db.Decimal(9, 6)
-  phone           String?
-  email           String?
-  isActive        Boolean           @default(true) @map("is_active")
-  lastSyncedAt    DateTime?         @map("last_synced_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
+  cnpj          String?
+  name          String
+  tradeName     String?           @map("trade_name")
+  type          EstablishmentType
+  country       String            @default("BR")
+  addressCity   String?           @map("address_city")
+  addressState  String?           @map("address_state")
+  addressCep    String?           @map("address_cep")
+  addressStreet String?           @map("address_street")
+  lat           Decimal?          @db.Decimal(9, 6)
+  lng           Decimal?          @db.Decimal(9, 6)
+  phone         String?
+  email         String?
+  isActive      Boolean           @default(true) @map("is_active")
+  lastSyncedAt  DateTime?         @map("last_synced_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  physicians      PhysicianEstablishment[]
+  physicians PhysicianEstablishment[]
 
   @@index([type])
   @@index([addressState])
@@ -8324,14 +8389,14 @@ model HealthcareEstablishment {
 /// Many-to-many: physician ↔ establishment (doctor works at hospital/clinic).
 /// Sourced from CNES professional linkage data.
 model PhysicianEstablishment {
-  id              String @id @default(cuid())
-  physicianId     String @map("physician_id")
-  establishmentId String @map("establishment_id")
-  isPrimary       Boolean @default(false) @map("is_primary")
+  id              String    @id @default(cuid())
+  physicianId     String    @map("physician_id")
+  establishmentId String    @map("establishment_id")
+  isPrimary       Boolean   @default(false) @map("is_primary")
   startDate       DateTime? @map("start_date")
 
-  physician       PhysicianCatalog        @relation(fields: [physicianId], references: [id], onDelete: Cascade)
-  establishment   HealthcareEstablishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  physician     PhysicianCatalog        @relation(fields: [physicianId], references: [id], onDelete: Cascade)
+  establishment HealthcareEstablishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
 
   @@unique([physicianId, establishmentId])
   @@index([physicianId])
@@ -8341,15 +8406,15 @@ model PhysicianEstablishment {
 
 /// Tracks import/sync runs for each data source for audit and monitoring.
 model DataSourceSyncLog {
-  id              String   @id @default(cuid())
-  sourceId        String   @map("source_id")
-  startedAt       DateTime @map("started_at")
+  id              String    @id @default(cuid())
+  sourceId        String    @map("source_id")
+  startedAt       DateTime  @map("started_at")
   completedAt     DateTime? @map("completed_at")
-  status          String   @default("running") // running | completed | failed
-  recordsImported Int      @default(0) @map("records_imported")
-  recordsUpdated  Int      @default(0) @map("records_updated")
-  recordsErrored  Int      @default(0) @map("records_errored")
-  errorMessage    String?  @map("error_message")
+  status          String    @default("running") // running | completed | failed
+  recordsImported Int       @default(0) @map("records_imported")
+  recordsUpdated  Int       @default(0) @map("records_updated")
+  recordsErrored  Int       @default(0) @map("records_errored")
+  errorMessage    String?   @map("error_message")
 
   @@index([sourceId])
   @@index([startedAt])
@@ -8357,17 +8422,17 @@ model DataSourceSyncLog {
 }
 
 model PatientCommPreference {
-  id           String    @id @default(cuid())
-  patientId    String
-  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  channel      String
+  id            String    @id @default(cuid())
+  patientId     String
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  channel       String
   preferredTime String?
-  frequency    String?
-  responseRate Float     @default(0)
-  lastSentAt   DateTime?
-  lastOpenedAt DateTime?
-  score        Float     @default(0.5)
-  updatedAt    DateTime  @updatedAt
+  frequency     String?
+  responseRate  Float     @default(0)
+  lastSentAt    DateTime?
+  lastOpenedAt  DateTime?
+  score         Float     @default(0.5)
+  updatedAt     DateTime  @updatedAt
 
   @@unique([patientId, channel])
   @@index([patientId])
@@ -8393,40 +8458,40 @@ model AgentIdempotencyLog {
 }
 
 model DicomSeries {
-  id               String   @id @default(cuid())
+  id                String  @id @default(cuid())
   seriesInstanceUID String  @unique
-  modality         String
-  description      String?
-  seriesNumber     Int?
-  instanceCount    Int      @default(0)
+  modality          String
+  description       String?
+  seriesNumber      Int?
+  instanceCount     Int     @default(0)
 
-  imagingStudyId   String
-  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+  imagingStudyId String
+  imagingStudy   ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
 
-  instances        DicomInstance[]
+  instances DicomInstance[]
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([imagingStudyId])
   @@map("dicom_series")
 }
 
 model DicomInstance {
-  id                String   @id @default(cuid())
-  sopInstanceUID    String   @unique
-  instanceNumber    Int?
-  storageTier       String   @default("HOT")
-  fileSizeBytes     Int?
-  contentType       String?
-  storageUrl        String?  @db.Text
-  lastAccessedAt    DateTime?
+  id             String    @id @default(cuid())
+  sopInstanceUID String    @unique
+  instanceNumber Int?
+  storageTier    String    @default("HOT")
+  fileSizeBytes  Int?
+  contentType    String?
+  storageUrl     String?   @db.Text
+  lastAccessedAt DateTime?
 
-  seriesId          String
-  series            DicomSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seriesId String
+  series   DicomSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([seriesId])
   @@index([storageTier])
@@ -8434,25 +8499,25 @@ model DicomInstance {
 }
 
 model RadiologyReport {
-  id               String   @id @default(cuid())
-  imagingStudyId   String
-  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
-  radiologistId    String
-  radiologist      User     @relation("RadiologistReports", fields: [radiologistId], references: [id])
-  templateId       String?
-  status           String   @default("DRAFT")
-  findings         String?  @db.Text
-  impression       String?  @db.Text
-  technique        String?  @db.Text
-  comparison       String?  @db.Text
-  clinicalHistory  String?  @db.Text
+  id                 String       @id @default(cuid())
+  imagingStudyId     String
+  imagingStudy       ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+  radiologistId      String
+  radiologist        User         @relation("RadiologistReports", fields: [radiologistId], references: [id])
+  templateId         String?
+  status             String       @default("DRAFT")
+  findings           String?      @db.Text
+  impression         String?      @db.Text
+  technique          String?      @db.Text
+  comparison         String?      @db.Text
+  clinicalHistory    String?      @db.Text
   structuredFindings Json?
-  signedAt         DateTime?
-  amendedAt        DateTime?
-  amendmentReason  String?  @db.Text
+  signedAt           DateTime?
+  amendedAt          DateTime?
+  amendmentReason    String?      @db.Text
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([imagingStudyId])
   @@index([radiologistId])
@@ -8460,26 +8525,26 @@ model RadiologyReport {
 }
 
 model ImagingAIResult {
-  id               String   @id @default(cuid())
-  imagingStudyId   String
-  imagingStudy     ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
-  modelName        String
-  modelVersion     String
-  analysisType     String
-  status           String   @default("COMPLETED")
-  findings         String?  @db.Text
-  confidenceScore  Float?
-  processingTimeMs Int?
-  regulatoryStatus String?
-  regulatoryDisclaimer String? @db.Text
-  isAccepted       Boolean?
-  reviewedBy       String?
-  reviewer         User?    @relation("AIResultReviewer", fields: [reviewedBy], references: [id])
-  reviewedAt       DateTime?
-  reviewNotes      String?  @db.Text
+  id                   String       @id @default(cuid())
+  imagingStudyId       String
+  imagingStudy         ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+  modelName            String
+  modelVersion         String
+  analysisType         String
+  status               String       @default("COMPLETED")
+  findings             String?      @db.Text
+  confidenceScore      Float?
+  processingTimeMs     Int?
+  regulatoryStatus     String?
+  regulatoryDisclaimer String?      @db.Text
+  isAccepted           Boolean?
+  reviewedBy           String?
+  reviewer             User?        @relation("AIResultReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt           DateTime?
+  reviewNotes          String?      @db.Text
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([imagingStudyId])
   @@map("imaging_ai_results")
@@ -8509,4 +8574,874 @@ model PreAuthorizationRequest {
   @@index([patientId])
   @@index([sentByUserId])
   @@map("pre_authorization_requests")
+}
+
+// ============================================================================
+// HEALTH 3.0 — VALUE-BASED CARE & COORDINATION
+// ============================================================================
+
+// --- Enums ---
+
+enum SafetyIncidentType {
+  ADVERSE_EVENT
+  NEAR_MISS
+  SENTINEL
+}
+
+enum IncidentSeverity {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  REPORTED
+  TRIAGED
+  UNDER_INVESTIGATION
+  ACTIONS_PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum ActionStrengthEnum {
+  ARCHITECTURAL
+  PROCESS
+  ADMINISTRATIVE
+  TRAINING
+}
+
+enum CorrectiveActionStatus {
+  PROPOSED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  VERIFIED
+}
+
+enum CareTeamStatus {
+  ACTIVE
+  DISSOLVED
+  ON_HOLD
+}
+
+enum CareTeamMemberRole {
+  LEAD
+  SPECIALIST
+  NURSE
+  COORDINATOR
+  PHARMACIST
+  SOCIAL_WORKER
+  EXTERNAL_CONSULTANT
+}
+
+enum DataSharingScope {
+  DEMOGRAPHICS
+  DIAGNOSES
+  MEDICATIONS
+  LAB_RESULTS
+  IMAGING
+  CARE_PLANS
+  ENCOUNTERS
+  VITAL_SIGNS
+  ALLERGIES
+  PRESCRIPTIONS
+}
+
+enum DataSharingAgreementStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+enum SharedCarePlanStatus {
+  DRAFT
+  ACTIVE
+  REVIEW_PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum GoalStatus {
+  PROPOSED
+  ACCEPTED
+  IN_PROGRESS
+  ACHIEVED
+  CANCELLED
+  ON_HOLD
+}
+
+enum VBCOutcomeType {
+  CLINICAL_MEASURE
+  PATIENT_REPORTED
+  PROCESS_MEASURE
+  COST_MEASURE
+  READMISSION_CHECK
+  ADVERSE_EVENT_CHECK
+}
+
+enum MeasureCategory {
+  PROCESS
+  OUTCOME
+  PATIENT_REPORTED
+  COST
+  EFFICIENCY
+}
+
+enum MeasurePeriod {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum VBCContractType {
+  PAY_FOR_PERFORMANCE
+  SHARED_SAVINGS
+  BUNDLED_PAYMENT
+  CAPITATION
+  GLOBAL_BUDGET
+}
+
+enum AttributionMethod {
+  PRIMARY_CARE
+  SPECIALIST_EPISODE
+  CONTRACTUAL
+  VOLUNTARY
+}
+
+enum MedicalDiscipline {
+  CARDIOLOGY
+  ENDOCRINOLOGY
+  ONCOLOGY
+  MENTAL_HEALTH
+  PEDIATRICS
+  GERIATRICS
+  NEPHROLOGY
+  PULMONOLOGY
+  OB_GYN
+  PRIMARY_CARE
+}
+
+enum PathwayStatus {
+  ACTIVE
+  COMPLETED
+  DEVIATED
+  PAUSED
+  ABANDONED
+}
+
+enum HealthNodeType {
+  CONDITION
+  TREATMENT
+  OUTCOME
+  ENCOUNTER
+  PROVIDER
+  ORGANIZATION
+  SCREENING
+  RISK_SCORE
+  INTERVENTION
+  PATHWAY
+  INCIDENT
+}
+
+enum EdgeRelationship {
+  CAUSED_BY
+  TREATED_WITH
+  RESULTED_IN
+  SCREENED_FOR
+  REFERRED_BY
+  MANAGED_BY
+  OCCURRED_DURING
+  PART_OF
+  TRIGGERED
+  CONTRIBUTED_TO
+  RISK_FACTOR_FOR
+}
+
+enum PromptTemplateType {
+  DISCIPLINE_CONTEXT
+  SCREENING_SELECTION
+  RISK_ASSESSMENT
+  INTERVENTION_RANKING
+  MONITORING_SCHEDULE
+}
+
+enum ConferenceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SharedRecordType {
+  NOTE
+  LAB_RESULT
+  IMAGING
+  PRESCRIPTION
+  REFERRAL
+  HANDOFF
+  TASK_UPDATE
+  GOAL_UPDATE
+  CONFERENCE_SUMMARY
+}
+
+enum QualityMeasureStatus {
+  MET
+  NOT_MET
+  EXCLUDED
+  PENDING
+}
+
+// --- Models ---
+
+model SafetyIncident {
+  id                 String                   @id @default(cuid())
+  reportedById       String?                  @map("reported_by_id")
+  reportedBy         User?                    @relation("IncidentReporter", fields: [reportedById], references: [id])
+  isAnonymous        Boolean                  @default(false)
+  patientId          String?                  @map("patient_id")
+  patient            Patient?                 @relation("PatientSafetyIncidents", fields: [patientId], references: [id])
+  encounterId        String?                  @map("encounter_id")
+  eventType          SafetyIncidentType
+  severity           IncidentSeverity
+  status             IncidentStatus           @default(REPORTED)
+  title              String
+  description        String                   @db.Text
+  location           String?
+  involvedStaff      String[]                 @default([])
+  involvedSystems    String[]                 @default([])
+  requiresFullRCA    Boolean                  @default(false)
+  triageNotes        String?                  @db.Text
+  triagedAt          DateTime?
+  triagedById        String?                  @map("triaged_by_id")
+  fishboneFindings   Json?                    @db.JsonB
+  fiveWhysChain      Json?                    @db.JsonB
+  rootCauses         String[]                 @default([])
+  rcaCompletedAt     DateTime?
+  rcaReviewedById    String?                  @map("rca_reviewed_by_id")
+  leadInvestigatorId String?                  @map("lead_investigator_id")
+  leadInvestigator   User?                    @relation("IncidentInvestigator", fields: [leadInvestigatorId], references: [id])
+  tags               String[]                 @default([])
+  fishboneBones      String[]                 @default([])
+  dateOccurred       DateTime
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  correctiveActions  SafetyCorrectiveAction[]
+  escalations        SafetyEscalation[]
+  healthEdges        HealthGraphEdge[]
+
+  @@index([status])
+  @@index([eventType])
+  @@index([severity])
+  @@index([patientId])
+  @@index([reportedById])
+  @@index([dateOccurred])
+  @@map("safety_incidents")
+}
+
+model SafetyCorrectiveAction {
+  id                 String                 @id @default(cuid())
+  incidentId         String                 @map("incident_id")
+  incident           SafetyIncident         @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  description        String                 @db.Text
+  strength           ActionStrengthEnum
+  responsibleId      String                 @map("responsible_id")
+  responsible        User                   @relation("ActionResponsible", fields: [responsibleId], references: [id])
+  status             CorrectiveActionStatus @default(PROPOSED)
+  deadline           DateTime
+  completedAt        DateTime?
+  verifiedAt         DateTime?
+  verifiedById       String?                @map("verified_by_id")
+  escalatedAt        DateTime?
+  remindersSent      Int                    @default(0)
+  measurableOutcome  String                 @db.Text
+  completionEvidence String?                @db.Text
+  verificationNotes  String?                @db.Text
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  escalations        SafetyEscalation[]
+
+  @@index([incidentId])
+  @@index([status])
+  @@index([deadline])
+  @@index([responsibleId])
+  @@map("safety_corrective_actions")
+}
+
+enum SafetyEscalationStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model SafetyEscalation {
+  id                  String                   @id @default(cuid())
+  incidentId          String                   @map("incident_id")
+  incident            SafetyIncident           @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  correctiveActionId  String                   @map("corrective_action_id")
+  correctiveAction    SafetyCorrectiveAction   @relation(fields: [correctiveActionId], references: [id], onDelete: Cascade)
+  severity            IncidentSeverity
+  title               String
+  description         String                   @db.Text
+  status              SafetyEscalationStatus   @default(OPEN)
+  assignedToId        String?                  @map("assigned_to_id")
+  daysOverdue         Int                      @default(0)
+  resolvedAt          DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  @@index([incidentId])
+  @@index([correctiveActionId])
+  @@index([status])
+  @@map("safety_escalations")
+}
+
+model CareTeam {
+  id                 String               @id @default(cuid())
+  patientId          String               @map("patient_id")
+  patient            Patient              @relation("PatientCareTeams", fields: [patientId], references: [id], onDelete: Cascade)
+  name               String
+  description        String?              @db.Text
+  status             CareTeamStatus       @default(ACTIVE)
+  owningOrgId        String               @map("owning_org_id")
+  sharingAgreementId String?              @map("sharing_agreement_id")
+  createdBy          String               @map("created_by")
+  dissolvedAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  members            CareTeamMembership[]
+  tasks              CareTeamTask[]
+  conferences        CareConference[]
+  sharedCarePlans    SharedCarePlan[]
+  goals              CareGoal[]           @relation("TeamGoals")
+
+  @@index([patientId])
+  @@index([owningOrgId])
+  @@index([status])
+  @@map("care_teams")
+}
+
+model CareTeamMembership {
+  id             String             @id @default(cuid())
+  careTeamId     String             @map("care_team_id")
+  careTeam       CareTeam           @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  userId         String             @map("user_id")
+  role           CareTeamMemberRole
+  specialty      String?
+  organizationId String             @map("organization_id")
+  isExternal     Boolean            @default(false)
+  isActive       Boolean            @default(true)
+  joinedAt       DateTime           @default(now())
+  leftAt         DateTime?
+  leftReason     String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([careTeamId, userId])
+  @@index([careTeamId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("care_team_memberships")
+}
+
+model CareTeamTask {
+  id               String              @id @default(cuid())
+  careTeamId       String              @map("care_team_id")
+  careTeam         CareTeam            @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId        String              @map("patient_id")
+  title            String
+  description      String?             @db.Text
+  assignedToRole   CareTeamMemberRole?
+  assignedToUserId String?             @map("assigned_to_user_id")
+  status           TaskStatus          @default(PENDING)
+  priority         TaskPriority        @default(NORMAL)
+  dueDate          DateTime?
+  slaHours         Int?
+  completedAt      DateTime?
+  completedBy      String?             @map("completed_by")
+  escalatedAt      DateTime?
+  escalatedTo      String?             @map("escalated_to")
+  escalationReason String?
+  createdBy        String              @map("created_by")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([assignedToUserId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("care_team_tasks")
+}
+
+model CareConference {
+  id                 String           @id @default(cuid())
+  careTeamId         String           @map("care_team_id")
+  careTeam           CareTeam         @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId          String           @map("patient_id")
+  patient            Patient          @relation("PatientCareConferences", fields: [patientId], references: [id])
+  title              String
+  status             ConferenceStatus @default(SCHEDULED)
+  scheduledAt        DateTime
+  startedAt          DateTime?
+  endedAt            DateTime?
+  agendaItems        Json?            @db.JsonB
+  decisions          Json?            @db.JsonB
+  conflictsNoted     Json?            @db.JsonB
+  actionItems        Json?            @db.JsonB
+  requiredAttendees  String[]         @default([])
+  optionalAttendees  String[]         @default([])
+  actualAttendees    String[]         @default([])
+  summary            String?          @db.Text
+  nextConferenceDate DateTime?
+  triggerReason      String?
+  triggerSourceId    String?
+  scheduledBy        String           @map("scheduled_by")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("care_conferences")
+}
+
+model DataSharingAgreement {
+  id               String                     @id @default(cuid())
+  requestingOrgId  String                     @map("requesting_org_id")
+  receivingOrgId   String                     @map("receiving_org_id")
+  title            String
+  description      String?                    @db.Text
+  status           DataSharingAgreementStatus @default(DRAFT)
+  scopes           DataSharingScope[]
+  legalBasis       String
+  lgpdArticle      String?
+  effectiveFrom    DateTime
+  effectiveUntil   DateTime?
+  autoRenew        Boolean                    @default(false)
+  requestedBy      String                     @map("requested_by")
+  approvedBy       String?                    @map("approved_by")
+  approvedAt       DateTime?
+  revokedBy        String?                    @map("revoked_by")
+  revokedAt        DateTime?
+  revocationReason String?                    @db.Text
+  consentHash      String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  patientConsents  PatientSharingConsent[]
+  sharedRecords    SharedCareRecord[]
+
+  @@index([requestingOrgId])
+  @@index([receivingOrgId])
+  @@index([status])
+  @@map("data_sharing_agreements")
+}
+
+model PatientSharingConsent {
+  id              String               @id @default(cuid())
+  patientId       String               @map("patient_id")
+  patient         Patient              @relation("PatientSharingConsents", fields: [patientId], references: [id], onDelete: Cascade)
+  agreementId     String               @map("agreement_id")
+  agreement       DataSharingAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  consentedScopes DataSharingScope[]
+  deniedScopes    DataSharingScope[]
+  grantedAt       DateTime
+  revokedAt       DateTime?
+  expiresAt       DateTime?
+  consentVersion  String               @default("1.0")
+  signatureData   String?              @db.Text
+  consentText     String               @db.Text
+  consentHash     String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@unique([patientId, agreementId])
+  @@index([patientId])
+  @@index([agreementId])
+  @@map("patient_sharing_consents")
+}
+
+model SharedCarePlan {
+  id              String               @id @default(cuid())
+  careTeamId      String               @map("care_team_id")
+  careTeam        CareTeam             @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId       String               @map("patient_id")
+  patient         Patient              @relation("PatientSharedCarePlans", fields: [patientId], references: [id])
+  title           String
+  description     String?              @db.Text
+  status          SharedCarePlanStatus @default(DRAFT)
+  discipline      String
+  templateId      String?              @map("template_id")
+  interventions   Json?                @db.JsonB
+  targetOutcomes  Json?                @db.JsonB
+  lastReviewedAt  DateTime?
+  nextReviewAt    DateTime?
+  reviewCycleDays Int                  @default(30)
+  createdByUserId String               @map("created_by_user_id")
+  createdByOrgId  String               @map("created_by_org_id")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  goals           CareGoal[]           @relation("SharedPlanGoals")
+  sharedRecords   SharedCareRecord[]
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([status])
+  @@map("shared_care_plans")
+}
+
+model SharedCareRecord {
+  id                String               @id @default(cuid())
+  patientId         String               @map("patient_id")
+  patient           Patient              @relation("PatientSharedCareRecords", fields: [patientId], references: [id])
+  agreementId       String               @map("agreement_id")
+  agreement         DataSharingAgreement @relation(fields: [agreementId], references: [id])
+  sharedPlanId      String?              @map("shared_plan_id")
+  sharedPlan        SharedCarePlan?      @relation(fields: [sharedPlanId], references: [id])
+  recordType        SharedRecordType
+  scope             DataSharingScope
+  title             String
+  content           String               @db.Text
+  structuredData    Json?                @db.JsonB
+  sourceOrgId       String               @map("source_org_id")
+  sourceUserId      String               @map("source_user_id")
+  sourceEncounterId String?              @map("source_encounter_id")
+  fhirResourceType  String?              @map("fhir_resource_type")
+  fhirResourceId    String?              @map("fhir_resource_id")
+  createdAt         DateTime             @default(now())
+
+  @@index([patientId])
+  @@index([agreementId])
+  @@index([sharedPlanId])
+  @@index([recordType])
+  @@index([sourceOrgId])
+  @@index([createdAt])
+  @@map("shared_care_records")
+}
+
+model CareGoal {
+  id            String             @id @default(cuid())
+  careTeamId    String?            @map("care_team_id")
+  careTeam      CareTeam?          @relation("TeamGoals", fields: [careTeamId], references: [id], onDelete: Cascade)
+  sharedPlanId  String?            @map("shared_plan_id")
+  sharedPlan    SharedCarePlan?    @relation("SharedPlanGoals", fields: [sharedPlanId], references: [id], onDelete: Cascade)
+  patientId     String             @map("patient_id")
+  patient       Patient            @relation("PatientCareGoals", fields: [patientId], references: [id])
+  title         String
+  description   String?            @db.Text
+  status        GoalStatus         @default(PROPOSED)
+  priority      Priority           @default(MEDIUM)
+  discipline    String?
+  measureCode   String?
+  measureName   String?
+  targetValue   Float?
+  targetUnit    String?
+  baselineValue Float?
+  currentValue  Float?
+  startDate     DateTime?
+  targetDate    DateTime?
+  achievedDate  DateTime?
+  proposedBy    String             @map("proposed_by")
+  acceptedBy    String?            @map("accepted_by")
+  achievedBy    String?            @map("achieved_by")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  outcomes      VBCOutcomeRecord[]
+
+  @@index([careTeamId])
+  @@index([sharedPlanId])
+  @@index([patientId])
+  @@index([status])
+  @@map("care_goals")
+}
+
+model VBCOutcomeRecord {
+  id              String         @id @default(cuid())
+  goalId          String?        @map("goal_id")
+  goal            CareGoal?      @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  patientId       String         @map("patient_id")
+  patient         Patient        @relation("PatientVBCOutcomes", fields: [patientId], references: [id])
+  outcomeType     VBCOutcomeType
+  measureCode     String?
+  measureName     String
+  value           Float?
+  unit            String?
+  valueText       String?
+  valueJson       Json?          @db.JsonB
+  encounterId     String?        @map("encounter_id")
+  providerId      String?        @map("provider_id")
+  organizationId  String?        @map("organization_id")
+  sourceAuthority String?
+  recordedAt      DateTime       @default(now())
+  recordedBy      String         @map("recorded_by")
+  createdAt       DateTime       @default(now())
+
+  @@index([goalId])
+  @@index([patientId])
+  @@index([outcomeType])
+  @@index([recordedAt])
+  @@map("vbc_outcome_records")
+}
+
+model QualityMeasure {
+  id              String                 @id @default(cuid())
+  code            String                 @unique
+  name            String
+  description     String?                @db.Text
+  category        MeasureCategory
+  period          MeasurePeriod          @default(QUARTERLY)
+  numeratorRule   Json                   @db.JsonB
+  denominatorRule Json                   @db.JsonB
+  exclusionRule   Json?                  @db.JsonB
+  targetRate      Float?
+  benchmarkRate   Float?
+  sourceAuthority String
+  citationUrl     String?
+  effectiveDate   DateTime
+  jurisdiction    String                 @default("BR")
+  isActive        Boolean                @default(true)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  results         QualityMeasureResult[]
+
+  @@index([code])
+  @@index([category])
+  @@map("quality_measures")
+}
+
+model QualityMeasureResult {
+  id                     String         @id @default(cuid())
+  measureId              String         @map("measure_id")
+  measure                QualityMeasure @relation(fields: [measureId], references: [id], onDelete: Cascade)
+  organizationId         String         @map("organization_id")
+  providerId             String?        @map("provider_id")
+  payerContractId        String?        @map("payer_contract_id")
+  periodStart            DateTime       @map("period_start")
+  periodEnd              DateTime       @map("period_end")
+  numerator              Int
+  denominator            Int
+  exclusions             Int            @default(0)
+  rate                   Float
+  meetsTarget            Boolean
+  attributedPatientCount Int            @default(0)
+  gapPatientIds          String[]       @default([])
+  calculatedAt           DateTime       @default(now())
+  calculatedBy           String         @map("calculated_by")
+
+  @@index([measureId])
+  @@index([organizationId])
+  @@index([periodStart, periodEnd])
+  @@map("quality_measure_results")
+}
+
+model PatientAttribution {
+  id              String            @id @default(cuid())
+  patientId       String            @map("patient_id")
+  patient         Patient           @relation("PatientAttributions", fields: [patientId], references: [id])
+  providerId      String            @map("provider_id")
+  organizationId  String            @map("organization_id")
+  payerContractId String?           @map("payer_contract_id")
+  method          AttributionMethod
+  effectiveFrom   DateTime
+  effectiveUntil  DateTime?
+  isActive        Boolean           @default(true)
+  riskTier        String?
+  riskScore       Float?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([patientId, providerId, organizationId, effectiveFrom])
+  @@index([patientId])
+  @@index([providerId])
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("patient_attributions")
+}
+
+model VBCPayerContract {
+  id                 String          @id @default(cuid())
+  organizationId     String          @map("organization_id")
+  payerName          String          @map("payer_name")
+  payerCode          String?         @map("payer_code")
+  contractType       VBCContractType
+  effectiveFrom      DateTime
+  effectiveUntil     DateTime
+  isActive           Boolean         @default(true)
+  baseBudgetBRL      Decimal?        @db.Decimal(12, 2)
+  savingsSharePct    Float?
+  qualityBonusPct    Float?
+  linkedMeasureCodes String[]        @default([])
+  contractHash       String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("vbc_payer_contracts")
+}
+
+model CarePathwayDefinition {
+  id                     String                @id @default(cuid())
+  name                   String
+  version                String
+  jurisdiction           String
+  conditionIcd10Codes    String[]
+  conditionCategory      String
+  sourceAuthority        String
+  citationUrl            String?
+  steps                  Json                  @db.JsonB
+  expectedDurationMonths Int
+  reviewIntervalDays     Int
+  isActive               Boolean               @default(true)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  instances              CarePathwayInstance[]
+
+  @@index([jurisdiction])
+  @@index([isActive])
+  @@map("care_pathway_definitions")
+}
+
+model CarePathwayInstance {
+  id                  String                @id @default(cuid())
+  patientId           String                @map("patient_id")
+  patient             Patient               @relation("PatientCarePathways", fields: [patientId], references: [id], onDelete: Cascade)
+  tenantId            String                @map("tenant_id")
+  pathwayDefinitionId String                @map("pathway_definition_id")
+  pathwayDefinition   CarePathwayDefinition @relation(fields: [pathwayDefinitionId], references: [id])
+  currentStepId       String                @map("current_step_id")
+  status              PathwayStatus         @default(ACTIVE)
+  enrolledAt          DateTime              @default(now())
+  enrolledBy          String                @map("enrolled_by")
+  completedAt         DateTime?
+  stepHistory         Json                  @db.JsonB
+  deviationCount      Int                   @default(0)
+  adherenceScore      Float                 @default(100)
+  version             Int                   @default(1)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  healthEdges         HealthGraphEdge[]     @relation("PathwayEdges")
+
+  @@index([patientId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([pathwayDefinitionId])
+  @@map("care_pathway_instances")
+}
+
+model Health3ProcessedEvent {
+  eventId        String   @id
+  eventType      String
+  tenantId       String
+  processedAt    DateTime @default(now())
+  handlerResults Json?    @db.JsonB
+
+  @@index([tenantId])
+  @@index([processedAt])
+  @@map("health3_processed_events")
+}
+
+model HealthGraphEdge {
+  id                String               @id @default(cuid())
+  tenantId          String
+  patientId         String               @map("patient_id")
+  patient           Patient              @relation("PatientHealthGraph", fields: [patientId], references: [id], onDelete: Cascade)
+  sourceType        HealthNodeType
+  sourceId          String               @map("source_id")
+  targetType        HealthNodeType
+  targetId          String               @map("target_id")
+  relationship      EdgeRelationship
+  strength          Float?
+  metadata          Json?                @db.JsonB
+  effectiveFrom     DateTime             @default(now())
+  effectiveTo       DateTime?
+  pathwayInstanceId String?              @map("pathway_instance_id")
+  pathwayInstance   CarePathwayInstance? @relation("PathwayEdges", fields: [pathwayInstanceId], references: [id])
+  safetyIncidentId  String?              @map("safety_incident_id")
+  safetyIncident    SafetyIncident?      @relation(fields: [safetyIncidentId], references: [id])
+  createdAt         DateTime             @default(now())
+
+  @@index([patientId])
+  @@index([tenantId])
+  @@index([sourceType, sourceId])
+  @@index([targetType, targetId])
+  @@index([relationship])
+  @@map("health_graph_edges")
+}
+
+model DisciplineProtocol {
+  id                    String            @id @default(cuid())
+  discipline            MedicalDiscipline
+  version               Int               @default(1)
+  isActive              Boolean           @default(true)
+  screeningRuleIds      String[]          @default([])
+  riskWeights           Json              @db.JsonB
+  interventionPriority  Json              @db.JsonB
+  monitoringSchedule    Json              @db.JsonB
+  referralTriggers      Json              @db.JsonB
+  jurisdictionOverrides Json?             @db.JsonB
+  guidelineSources      String[]          @default([])
+  lastReviewedDate      String?
+  sourceAuthority       String?
+  createdBy             String            @map("created_by")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@unique([discipline, version])
+  @@index([discipline, isActive])
+  @@map("discipline_protocols")
+}
+
+model PromptTemplate {
+  id                String             @id @default(cuid())
+  name              String
+  type              PromptTemplateType
+  discipline        MedicalDiscipline?
+  version           Int                @default(1)
+  isActive          Boolean            @default(true)
+  templateSchema    Json               @db.JsonB
+  templateLogic     Json               @db.JsonB
+  defaultParams     Json?              @db.JsonB
+  jurisdiction      String?
+  previousVersionId String?            @map("previous_version_id")
+  changeLog         String?            @db.Text
+  useCount          Int                @default(0)
+  lastUsedAt        DateTime?
+  createdBy         String             @map("created_by")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([name, version])
+  @@index([type, discipline, isActive])
+  @@index([discipline, jurisdiction, isActive])
+  @@map("prompt_templates")
+}
+
+model QualityMeasureEvaluation {
+  id          String               @id @default(cuid())
+  patientId   String               @map("patient_id")
+  patient     Patient              @relation("PatientQualityEvaluations", fields: [patientId], references: [id])
+  tenantId    String
+  measureId   String               @map("measure_id")
+  measureName String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      QualityMeasureStatus
+  score       Float?
+  gaps        Json?                @db.JsonB
+  evaluatedAt DateTime             @default(now())
+  encounterId String?              @map("encounter_id")
+  createdAt   DateTime             @default(now())
+
+  @@index([patientId])
+  @@index([tenantId])
+  @@index([measureId])
+  @@index([status])
+  @@map("quality_measure_evaluations")
 }
