@@ -38,7 +38,7 @@ export interface ApiContext {
     role: string;
     tenantRole?: TenantUserRole;
     workspaceRole?: string;
-    organizationId: string;
+    organizationId?: string;
     organizationName?: string;
     organizationType?: 'CLINIC' | 'HOSPITAL';
   };
