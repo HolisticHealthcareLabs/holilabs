@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
@@ -505,7 +505,9 @@ export default function PatientsPage() {
   const [quickLookPatient, setQuickLookPatient] = useState<RegistryPatient | null>(null);
   const [editPatient, setEditPatient] = useState<RegistryPatient | null>(null);
   const [kebabOpenId, setKebabOpenId] = useState<string | null>(null);
-  const [roster, setRoster] = useState<RegistryPatient[]>(PATIENTS);
+  const [roster, setRoster] = useState<RegistryPatient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
@@ -513,6 +515,49 @@ export default function PatientsPage() {
   const [newSex, setNewSex] = useState<Sex>('M');
   const [newDiagnosis, setNewDiagnosis] = useState('');
   const activeOrganizationId = session?.user.organizationId ?? 'org-demo-clinic';
+
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await fetch('/api/patients?limit=100');
+      if (!res.ok) throw new Error(t('fetchError'));
+      const data = await res.json();
+      if (data.success && data.data?.length > 0) {
+        const mapped: RegistryPatient[] = data.data.map((p: any) => ({
+          id: p.id,
+          organizationId: p.organizationId || activeOrganizationId,
+          firstName: p.firstName || '',
+          lastName: p.lastName || '',
+          mrn: p.mrn || p.id.slice(0, 8).toUpperCase(),
+          dateOfBirth: p.dateOfBirth?.split('T')[0] || '1990-01-01',
+          sex: (p.gender === 'FEMALE' ? 'F' : p.gender === 'MALE' ? 'M' : 'O') as Sex,
+          primaryDiagnosis: p.primaryDiagnosis || 'Pending Assessment',
+          icd10: p.icd10 || 'Z00.00',
+          lastVisitDate: p.lastVisitDate?.split('T')[0] || p.updatedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+          riskLevel: (p.riskLevel as RiskLevel) || 'low',
+          statusFlags: p.statusFlags || ([] as StatusFlag[]),
+          latestBP: p.latestBP || 'N/A',
+          medications: p.medications || [],
+          allergies: p.allergies || [],
+          payer: p.payer || 'Pending',
+        }));
+        setRoster(mapped);
+      } else {
+        setRoster([]);
+      }
+    } catch {
+      setFetchError(t('fetchError'));
+      setRoster(PATIENTS);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeOrganizationId, t]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
   const organizationScopedRoster = useMemo(
     () => filterRecordsForOrganization(roster, activeOrganizationId),
     [roster, activeOrganizationId]
@@ -690,7 +735,71 @@ export default function PatientsPage() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {fetchError && (
+        <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/5 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <span className="text-xs font-medium text-red-700 dark:text-red-400">{fetchError}</span>
+          </div>
+          <button
+            onClick={() => fetchPatients()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors min-h-[44px]"
+          >
+            {t('retry')}
+          </button>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+            <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1fr_40px] gap-4 px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="h-2.5 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="h-3.5 w-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse self-center" />
+              <div className="h-3.5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse self-center" />
+              <div className="h-3.5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse self-center" />
+              <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse self-center" />
+              <div />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* True empty state — no patients at all */}
+      {!loading && !fetchError && roster.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col items-center justify-center py-20 px-6">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
+            <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+            {t('emptyStateTitle')}
+          </h3>
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-xs mb-4">
+            {t('emptyStateDescription')}
+          </p>
+          <a
+            href="/dashboard/patients/intake"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors min-h-[44px]"
+          >
+            <Plus className="w-4 h-4" />
+            {t('addFirstPatient')}
+          </a>
+        </div>
+      )}
+
       {/* Table */}
+      {!loading && roster.length > 0 && (
       <div id="patient-list" className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         {/* Column headers */}
         <div className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1fr_40px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
@@ -834,6 +943,7 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Add Patient Modal */}
       {showAddForm && (
