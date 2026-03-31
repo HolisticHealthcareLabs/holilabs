@@ -2390,6 +2390,10 @@
       "syncMobileAdmin": "Sincronizar {label}"
     }
   },
+  "demoBanner": {
+    "title": "Credenciais de demonstração",
+    "dismiss": "Fechar"
+  },
   "errorPages": {
     "somethingWentWrong": "Algo deu errado",
     "unexpectedError": "Ocorreu um erro inesperado",

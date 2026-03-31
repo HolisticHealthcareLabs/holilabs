@@ -32,6 +32,7 @@ import {
   CreditCard,
   Plug,
   HelpCircle,
+  Pill,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react';
@@ -216,6 +217,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: Sun },
         { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/co-pilot', icon: Stethoscope },
         { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Users },
+        { key: 'prescriptions', label: t('dashboard.sidebar.prescriptions'), href: '/dashboard/prescriptions', icon: Pill },
         { key: 'reminders', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Inbox, badge: '3' },
       ],
     },
@@ -245,6 +247,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (currentPath.includes('/dashboard/billing')) return 'claims-intelligence';
     if (currentPath.includes('/dashboard/analytics')) return 'analytics';
     if (currentPath.includes('/dashboard/reminders')) return 'reminders';
+    if (currentPath.includes('/dashboard/prescriptions')) return 'prescriptions';
     if (currentPath.includes('/dashboard/patients')) return 'patients';
     if (currentPath.includes('/dashboard/auditor') || currentPath.includes('/dashboard/admin/audit-logs')) return 'audit-compliance';
     if (currentPath.includes('/dashboard/settings')) return 'settings-team';
