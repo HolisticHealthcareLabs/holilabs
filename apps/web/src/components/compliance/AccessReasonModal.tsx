@@ -107,22 +107,22 @@ export function AccessReasonModal({
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
-          <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-gray-100">
+        <Dialog.Panel className="mx-auto max-w-2xl p-6" style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-primary)', boxShadow: 'var(--token-shadow-lg)' }}>
+          <Dialog.Title className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
             Motivo de Acesso aos Dados do Paciente
           </Dialog.Title>
 
-          <Dialog.Description className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <Dialog.Description className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
             <strong>Paciente:</strong> {patientName}
             <br />
             {/* Decorative - low contrast intentional for legal reference */}
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Conformidade: LGPD Art. 11, II (Tutela da saúde) + Lei 25.326 Argentina
             </span>
           </Dialog.Description>
 
           {/* Auto-select countdown */}
-          <div className="mt-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          <div className="mt-4 p-3 text-sm" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-accent)', color: 'var(--text-accent)' }}>
             ⏱️ Seleção automática em <strong>{countdown} segundos</strong> (Atendimento Direto)
           </div>
 
@@ -131,11 +131,16 @@ export function AccessReasonModal({
             {REASON_OPTIONS.map((option) => (
               <label
                 key={option.value}
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-colors ${
+                className={`flex cursor-pointer items-start gap-3 border-2 p-4 transition-colors ${
                   selectedReason === option.value
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                    ? 'border-blue-600'
+                    : 'hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  backgroundColor: selectedReason === option.value ? 'var(--surface-accent)' : undefined,
+                  borderColor: selectedReason === option.value ? undefined : 'var(--border-default)',
+                }}
               >
                 <input
                   type="radio"
@@ -146,10 +151,10 @@ export function AccessReasonModal({
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-gray-100">{option.label}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
+                  <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{option.label}</div>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{option.description}</div>
                   {/* Decorative - low contrast intentional for legal reference */}
-                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{option.lgpdArticle}</div>
+                  <div className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>{option.lgpdArticle}</div>
                 </div>
               </label>
             ))}
@@ -157,14 +162,15 @@ export function AccessReasonModal({
 
           {/* Optional purpose field */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               Finalidade Específica (Opcional)
             </label>
             <textarea
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               placeholder="Ex: Renovação de receita controlada, consulta de retorno pós-cirúrgico"
-              className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="mt-1 w-full focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
+              style={{ borderRadius: 'var(--radius-md)', borderColor: 'var(--border-strong)', boxShadow: 'var(--token-shadow-sm)' }}
               rows={2}
             />
           </div>
@@ -174,14 +180,16 @@ export function AccessReasonModal({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+              style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', color: 'var(--text-secondary)' }}
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleSubmit}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              style={{ borderRadius: 'var(--radius-md)' }}
             >
               Confirmar Acesso
             </button>

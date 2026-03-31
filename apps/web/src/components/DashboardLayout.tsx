@@ -86,9 +86,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (navMode === 'top') {
     return (
-      <div className="flex flex-col h-screen bg-gray-50">
+      <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--surface-secondary)' }}>
         {/* Top Navigation */}
-        <header className="bg-primary text-white shadow-lg">
+        <header className="bg-primary text-white" style={{ boxShadow: 'var(--token-shadow-lg)' }}>
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* User & Toggle */}
               <div className="flex items-center space-x-3">
                 {/* HIPAA Badge */}
-                <div className="hidden lg:flex items-center bg-white/10 border border-white/20 px-3 py-1 rounded-lg">
+                <div className="hidden lg:flex items-center bg-white/10 border border-white/20 px-3 py-1" style={{ borderRadius: 'var(--radius-lg)' }}>
                   <svg className="w-4 h-4 mr-2 text-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -132,8 +132,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
 
                 {/* User Profile */}
-                <div className="flex items-center bg-white/10 px-3 py-1 rounded-lg">
-                  <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-primary font-bold text-sm">
+                <div className="flex items-center bg-white/10 px-3 py-1" style={{ borderRadius: 'var(--radius-lg)' }}>
+                  <div className="w-8 h-8 bg-accent flex items-center justify-center text-primary font-bold text-sm" style={{ borderRadius: 'var(--radius-full)' }}>
                     DR
                   </div>
                   <div className="ml-2 hidden lg:block">
@@ -144,8 +144,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {/* Layout Toggle */}
                 <button
                   onClick={toggleNavMode}
-                  className="p-2 hover:bg-white/10 rounded-lg transition"
+                  className="p-2 hover:bg-white/10 transition"
                   title="Switch to sidebar navigation"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -166,7 +167,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Sidebar mode
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       {/* Sidebar */}
       <aside className="w-64 min-h-screen bg-primary text-white p-4 flex flex-col justify-between">
         <div>
@@ -206,7 +207,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Layout Toggle */}
           <button
             onClick={toggleNavMode}
-            className="mt-6 w-full p-3 bg-white/10 hover:bg-white/20 rounded-lg transition flex items-center justify-center space-x-2"
+            className="mt-6 w-full p-3 bg-white/10 hover:bg-white/20 transition flex items-center justify-center space-x-2"
+            style={{ borderRadius: 'var(--radius-lg)' }}
             title="Switch to top navigation"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,24 +221,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Bottom Section */}
         <div className="mt-auto space-y-4">
           {/* HIPAA Badge */}
-          <div className="bg-white/10 border border-white/20 p-3 rounded-lg text-center">
+          <div className="bg-white/10 border border-white/20 p-3 text-center" style={{ borderRadius: 'var(--radius-lg)' }}>
             <p className="text-sm font-semibold flex items-center justify-center">
               <svg className="w-4 h-4 mr-2 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               HIPAA Compliant
             </p>
-            <p className="text-xs text-gray-300 mt-1">Safe Harbor Method</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Safe Harbor Method</p>
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center p-3 rounded-lg bg-white/10">
-            <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-primary font-bold">
+          <div className="flex items-center p-3 bg-white/10" style={{ borderRadius: 'var(--radius-lg)' }}>
+            <div className="w-10 h-10 bg-accent flex items-center justify-center text-primary font-bold" style={{ borderRadius: 'var(--radius-full)' }}>
               DR
             </div>
             <div className="ml-3">
               <p className="font-semibold text-white text-sm">Dr. Isabella Rossi</p>
-              <p className="text-xs text-gray-300">Cardiologist</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Cardiologist</p>
             </div>
           </div>
         </div>

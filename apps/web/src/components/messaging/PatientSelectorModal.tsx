@@ -2,14 +2,17 @@
 
 /**
  * Patient Selector Modal
- * Select patients to send reminders to
- * Supports single and bulk selection with search and filters
+ * Select patients and delivery channels to send reminders to.
+ * Supports multi-channel selection (SMS + Email + WhatsApp simultaneously)
+ * and bulk patient selection with search and filters.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Patient {
+export type DeliveryChannel = 'SMS' | 'EMAIL' | 'WHATSAPP';
+
+export interface Patient {
   id: string;
   firstName: string;
   lastName: string;
@@ -21,8 +24,14 @@ interface Patient {
 interface PatientSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (selectedPatients: Patient[], channel: 'SMS' | 'EMAIL' | 'WHATSAPP') => void;
+  onConfirm: (selectedPatients: Patient[], channels: DeliveryChannel[]) => void;
 }
+
+const CHANNEL_OPTIONS: { value: DeliveryChannel; label: string }[] = [
+  { value: 'SMS', label: 'SMS' },
+  { value: 'EMAIL', label: 'Email' },
+  { value: 'WHATSAPP', label: 'WhatsApp' },
+];
 
 export default function PatientSelectorModal({
   isOpen,
@@ -33,9 +42,8 @@ export default function PatientSelectorModal({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [channel, setChannel] = useState<'SMS' | 'EMAIL' | 'WHATSAPP'>('SMS');
+  const [channels, setChannels] = useState<Set<DeliveryChannel>>(new Set(['SMS']));
 
-  // Fetch patients from API
   useEffect(() => {
     if (isOpen) {
       fetchPatients();
@@ -58,7 +66,6 @@ export default function PatientSelectorModal({
     }
   };
 
-  // Filter patients by search query
   const filteredPatients = patients.filter((p) => {
     const searchLower = searchQuery.toLowerCase();
     const fullName = `${p.firstName} ${p.lastName}`.toLowerCase();
@@ -73,7 +80,16 @@ export default function PatientSelectorModal({
     );
   });
 
-  // Toggle patient selection
+  const toggleChannel = (ch: DeliveryChannel) => {
+    const next = new Set(channels);
+    if (next.has(ch)) {
+      if (next.size > 1) next.delete(ch); // Prevent deselecting all
+    } else {
+      next.add(ch);
+    }
+    setChannels(next);
+  };
+
   const togglePatient = (patientId: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(patientId)) {
@@ -84,29 +100,48 @@ export default function PatientSelectorModal({
     setSelectedIds(newSelected);
   };
 
-  // Select/deselect all
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredPatients.length) {
+    const selectable = filteredPatients.filter((p) => hasAnyContactInfo(p));
+    if (selectedIds.size === selectable.length && selectable.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredPatients.map((p) => p.id)));
+      setSelectedIds(new Set(selectable.map((p) => p.id)));
     }
   };
 
-  // Handle confirm
+  // Patient is selectable if they have contact info for ANY selected channel
+  const hasAnyContactInfo = (patient: Patient) => {
+    if (channels.has('EMAIL') && patient.email) return true;
+    if ((channels.has('SMS') || channels.has('WHATSAPP')) && patient.phone) return true;
+    return false;
+  };
+
+  // Which selected channels this patient is missing contact info for
+  const getMissingChannels = (patient: Patient): string[] => {
+    const missing: string[] = [];
+    if (channels.has('EMAIL') && !patient.email) missing.push('email');
+    if (channels.has('SMS') && !patient.phone) missing.push('sms');
+    if (channels.has('WHATSAPP') && !patient.phone) missing.push('whatsapp');
+    return missing;
+  };
+
   const handleConfirm = () => {
     const selected = patients.filter((p) => selectedIds.has(p.id));
-    onConfirm(selected, channel);
+    onConfirm(selected, Array.from(channels) as DeliveryChannel[]);
     onClose();
     setSelectedIds(new Set());
   };
 
-  // Check if patient has required contact info for channel
-  const hasContactInfo = (patient: Patient, ch: string) => {
-    if (ch === 'EMAIL') return !!patient.email;
-    if (ch === 'SMS' || ch === 'WHATSAPP') return !!patient.phone;
-    return false;
-  };
+  const channelLabel = useMemo(() => {
+    const active = CHANNEL_OPTIONS.filter((c) => channels.has(c.value));
+    return active.map((c) => c.label).join(', ');
+  }, [channels]);
+
+  const selectableCount = useMemo(
+    () => filteredPatients.filter((p) => hasAnyContactInfo(p)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filteredPatients, channels],
+  );
 
   if (!isOpen) return null;
 
@@ -127,96 +162,83 @@ export default function PatientSelectorModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+          className="relative dark:bg-gray-900 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600">
+          <div className="px-6 py-4 dark:border-gray-700 bg-gradient-to-r from-blue-500 to-purple-600" style={{ borderBottom: '1px solid var(--border-default)' }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white">Select Patients</h2>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Channel Selection */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">
-              Delivery Channel
+          {/* Channel Selection — multi-select toggles */}
+          <div className="px-6 py-4 dark:border-gray-700 dark:bg-gray-800" style={{ borderBottom: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}>
+            <label className="text-sm font-semibold dark:text-gray-300 mb-2 block" style={{ color: 'var(--text-secondary)' }}>
+              Delivery Channels
             </label>
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: 'SMS', label: 'SMS', icon: '' },
-                { value: 'EMAIL', label: 'Email', icon: '' },
-                { value: 'WHATSAPP', label: 'WhatsApp', icon: '' },
-              ].map((ch) => (
-                <button
-                  key={ch.value}
-                  onClick={() => setChannel(ch.value as any)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
-                    channel === ch.value
-                      ? 'bg-blue-600 text-white shadow-lg ring-2 ring-offset-2 ring-blue-500'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  <span className="text-xl">{ch.icon}</span>
-                  <span>{ch.label}</span>
-                </button>
-              ))}
+              {CHANNEL_OPTIONS.map((ch) => {
+                const isActive = channels.has(ch.value);
+                return (
+                  <button
+                    key={ch.value}
+                    onClick={() => toggleChannel(ch.value)}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 font-medium transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800'
+                        : 'dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-600'
+                    }`}
+                    style={{ borderRadius: 'var(--radius-lg)', ...(isActive ? { boxShadow: 'var(--token-shadow-lg)' } : { backgroundColor: 'var(--surface-primary)', color: 'var(--text-secondary)', border: '1px solid var(--border-strong)' }) }}
+                  >
+                    <span>{ch.label}</span>
+                    {isActive && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+            {channels.size > 1 && (
+              <p className="text-xs dark:text-gray-400 mt-2" style={{ color: 'var(--text-tertiary)' }}>
+                Patients will receive the message on all selected channels.
+              </p>
+            )}
           </div>
 
           {/* Search & Controls */}
-          <div className="px-6 py-4 border-b border-gray-200 space-y-3">
-            {/* Search */}
+          <div className="px-6 py-4 dark:border-gray-700 space-y-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
             <div className="relative">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
                 placeholder="Search patients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
               />
             </div>
 
-            {/* Select All */}
             <div className="flex items-center justify-between">
               <button
                 onClick={toggleSelectAll}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                {selectedIds.size === filteredPatients.length ? 'Deselect All' : 'Select All'}
+                {selectedIds.size === selectableCount && selectableCount > 0 ? 'Deselect All' : 'Select All'}
               </button>
-              <span className="text-sm text-gray-600">
-                {selectedIds.size} of {filteredPatients.length} selected
+              <span className="text-sm dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
+                {selectedIds.size} of {selectableCount} selected
               </span>
             </div>
           </div>
@@ -229,14 +251,15 @@ export default function PatientSelectorModal({
               </div>
             ) : filteredPatients.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400 mb-2">No patients found</p>
-                <p className="text-sm text-gray-400">Try adjusting your search</p>
+                <p className="dark:text-gray-400 mb-2" style={{ color: 'var(--text-tertiary)' }}>No patients found</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Try adjusting your search</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {filteredPatients.map((patient) => {
                   const isSelected = selectedIds.has(patient.id);
-                  const hasInfo = hasContactInfo(patient, channel);
+                  const hasInfo = hasAnyContactInfo(patient);
+                  const missing = getMissingChannels(patient);
 
                   return (
                     <button
@@ -245,10 +268,10 @@ export default function PatientSelectorModal({
                       disabled={!hasInfo}
                       className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${
                         !hasInfo
-                          ? 'opacity-50 cursor-not-allowed bg-gray-50'
+                          ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
                           : isSelected
-                            ? 'bg-blue-50 border-2 border-blue-600 shadow-md'
-                            : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100 hover:border-gray-300'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-600 shadow-md'
+                            : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       {/* Checkbox */}
@@ -256,42 +279,47 @@ export default function PatientSelectorModal({
                         className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center ${
                           isSelected
                             ? 'bg-blue-600 border-blue-600'
-                            : 'bg-white border-gray-300'
+                            : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         {isSelected && (
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
 
                       {/* Patient Info */}
                       <div className="flex-1 text-left">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-white">
                           {patient.firstName} {patient.lastName}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {channel === 'EMAIL'
-                            ? patient.email || 'No email'
-                            : patient.phone || 'No phone'}
-                        </p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                          {patient.phone && <span>{patient.phone}</span>}
+                          {patient.phone && patient.email && <span className="text-gray-300 dark:text-gray-600">|</span>}
+                          {patient.email && <span>{patient.email}</span>}
+                          {!patient.phone && !patient.email && <span>No contact info</span>}
+                        </div>
                       </div>
 
-                      {/* Warning if no contact info */}
+                      {/* Missing channel badges */}
+                      {hasInfo && missing.length > 0 && (
+                        <div className="flex-shrink-0 flex gap-1">
+                          {missing.map((ch) => (
+                            <span
+                              key={ch}
+                              className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[10px] font-medium rounded"
+                            >
+                              No {ch}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Fully missing warning */}
                       {!hasInfo && (
-                        <div className="flex-shrink-0 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">
-                          No {channel.toLowerCase()}
+                        <div className="flex-shrink-0 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded">
+                          No contact info
                         </div>
                       )}
                     </button>
@@ -302,23 +330,24 @@ export default function PatientSelectorModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className="px-6 py-4 dark:border-gray-700 dark:bg-gray-800 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}>
             <button
               onClick={onClose}
-              className="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-6 py-2.5 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" style={{ color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)' }}
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={selectedIds.size === 0}
-              className={`px-8 py-2.5 rounded-lg font-semibold transition-all ${
+              className={`px-8 py-2.5 font-semibold transition-all ${
                 selectedIds.size === 0
-                  ? 'bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                  ? 'dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:shadow-xl'
               }`}
+              style={{ borderRadius: 'var(--radius-lg)', ...(selectedIds.size === 0 ? { backgroundColor: 'var(--border-strong)', color: 'var(--text-tertiary)' } : { boxShadow: 'var(--token-shadow-lg)' }) }}
             >
-              Send to {selectedIds.size} patient{selectedIds.size !== 1 ? 's' : ''}
+              Send to {selectedIds.size} patient{selectedIds.size !== 1 ? 's' : ''} via {channelLabel}
             </button>
           </div>
         </motion.div>

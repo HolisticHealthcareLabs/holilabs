@@ -3,112 +3,139 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/navigation';
+import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
 
-function useFadeIn(delay = 0) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setTimeout(() => setVisible(true), delay);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [delay]);
-  const style: React.CSSProperties = visible
-    ? {
-      opacity: 1,
-      transform: 'none',
-      transition:
-        'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)',
-    }
-    : { opacity: 0, transform: 'translateY(28px)' };
-  return { ref, style };
+// ─────────────────────────────────────────────────────────────────────────────
+// Animation primitives
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+function Reveal({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.8, ease: EASE_OUT_EXPO, delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
 }
+
+function CountUp({ target, suffix = '', className }: { target: number; suffix?: string; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const motionVal = useMotionValue(0);
+  const springVal = useSpring(motionVal, { damping: 40, stiffness: 100 });
+
+  useEffect(() => {
+    if (isInView) {
+      animate(motionVal, target, { duration: 1.8, ease: EASE_OUT_EXPO as unknown as [number, number, number, number] });
+    }
+  }, [isInView, motionVal, target]);
+
+  useEffect(() => {
+    const unsubscribe = springVal.on('change', (v) => {
+      if (ref.current) ref.current.textContent = `${Math.round(v)}${suffix}`;
+    });
+    return unsubscribe;
+  }, [springVal, suffix]);
+
+  return <span ref={ref} className={className}>0{suffix}</span>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Locale config
+// ─────────────────────────────────────────────────────────────────────────────
 
 const LOCALE_OPTIONS = [
   { code: 'en', label: 'EN', name: 'English' },
-  { code: 'pt-BR', label: 'PT', name: 'Português' },
+  { code: 'pt', label: 'PT', name: 'Português' },
   { code: 'es', label: 'ES', name: 'Español' },
 ] as const;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Inline SVGs
+// ─────────────────────────────────────────────────────────────────────────────
+
+function HoliLogo({ className = 'h-5 w-auto' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="20 100 555 670" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="244" y1="369" x2="350" y2="369" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+      <line x1="244" y1="454" x2="350" y2="454" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+      <path fill="currentColor" d="M545,412c0-21-9-42-22-54-15-15-24-36-24-57 0-1 0-2 0-3 0-21 14-43 24-57 10-13 23-34 23-55 0-43-35-77-78-76-41 1-74 35-75 76 0 22 13 43 23 55 12 15 24 36 24 57 0 1 0 2 0 2-1 22-15 43-24 57-11 16-22 33-22 54s8 40 22 54c15 15 24 35 24 57 0 0 0 1 0 1 0 22-12 42-24 57-9 12-22 33-22 54 0 41 33 75 75 76 43 1 78-34 78-76 0-21-14-42-23-54-13-17-23-35-24-57 0 0 0 0 0-1 0-22 9-42 24-58 14-14 22-33 22-54z" />
+      <path fill="currentColor" d="M202,412c0-21-9-42-22-54-15-15-24-36-24-57 0-1 0-2 0-3 0-21 14-43 24-57 10-13 23-34 23-55 0-43-35-77-78-76-41 1-74 35-75 76 0 22 13 43 23 55 12 15 24 36 24 57 0 1 0 2 0 2-1 22-15 43-24 57-11 16-22 33-22 54s8 40 22 54c15 15 24 35 24 57 0 0 0 1 0 1 0 22-12 42-24 57-9 12-22 33-22 54 0 41 33 75 75 76 43 1 78-34 78-76 0-21-14-42-23-54-13-17-23-35-24-57 0 0 0 0 0-1 0-22 9-42 24-58 14-14 22-33 22-54z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0110 0v4" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
 function CheckIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5 text-zinc-500">
       <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function ArrowIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function BillingComplianceLanding() {
   const t = useTranslations('landing.hero');
   const tNav = useTranslations('landing.nav');
-  const tRoiIntro = useTranslations('landing.roiIntro');
+  const tRoi = useTranslations('landing.roi');
   const tFin = useTranslations('landing.roiFinance');
   const tTime = useTranslations('landing.roiTime');
   const tHow = useTranslations('landing.howItWorks');
   const tSec = useTranslations('landing.security');
-  const tCountries = useTranslations('landing.countries');
   const tCta = useTranslations('landing.cta');
   const tFoot = useTranslations('landing.footer');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [formMsg, setFormMsg] = useState('');
   const [langOpen, setLangOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'physicians' | 'administrators'>('physicians');
 
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('plan=')) {
-      const match = hash.match(/plan=([^&]+)/);
-      if (match) setSelectedPlan(match[1]);
-    }
-  }, []);
-
-  const navText = scrolled ? 'text-[#1d1d1f]' : 'text-white';
-  const navMuted = scrolled ? 'text-[#6e6e73]' : 'text-white/60';
-  const navBurger = scrolled ? 'bg-[#1d1d1f]' : 'bg-white';
   const currentLabel = LOCALE_OPTIONS.find((o) => o.code === locale)?.label ?? 'EN';
 
-  const heroContentRef = useRef<HTMLDivElement>(null);
-
-  const phase2Intro = useFadeIn(0);
-  const finSection = useFadeIn(0);
-  const timeSection = useFadeIn(0);
-  const howHead = useFadeIn(0);
-  const step1 = useFadeIn(0);
-  const step2 = useFadeIn(130);
-  const step3 = useFadeIn(260);
-  const secContent = useFadeIn(0);
-  const countHead = useFadeIn(0);
-  const c1 = useFadeIn(0);
-  const c2 = useFadeIn(130);
-  const c3 = useFadeIn(260);
-  const ctaFinal = useFadeIn(0);
-
-  const stepRefs = [step1, step2, step3];
-  const countryRefs = [c1, c2, c3];
+  // ── Scroll state ──────────────────────────────────────────────────────────
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroMockupY = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -119,30 +146,13 @@ export function BillingComplianceLanding() {
   }, [menuOpen]);
 
   useEffect(() => {
-    let rafId: number;
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const y = window.scrollY;
-        if (heroContentRef.current) {
-          heroContentRef.current.style.transform = `translateY(${y * 0.13}px)`;
-        }
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(rafId);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!langOpen) return;
     const close = () => setLangOpen(false);
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [langOpen]);
 
+  // ── Waitlist form ─────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || formState === 'loading') return;
@@ -152,13 +162,19 @@ export function BillingComplianceLanding() {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan: selectedPlan }),
+        body: JSON.stringify({
+          email,
+          organization: organization || undefined,
+          plan: selectedRole || undefined,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         setFormState('success');
         setFormMsg(tCta('successMsg'));
         setEmail('');
+        setOrganization('');
+        setSelectedRole('');
       } else {
         setFormState('error');
         setFormMsg(data.error || tCta('errorDefault'));
@@ -169,23 +185,28 @@ export function BillingComplianceLanding() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="bg-white text-[#1d1d1f] font-sans antialiased overflow-x-hidden selection:bg-blue-100 selection:text-blue-900">
+      <div className="bg-[#09090B] text-white font-body antialiased overflow-x-hidden selection:bg-zinc-700/50 selection:text-white noise-overlay">
 
-        {/* ── Mobile full-screen menu overlay ──────────────────────────────── */}
+        {/* ── Mobile full-screen menu ──────────────────────────────────────── */}
         {menuOpen && (
-          <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-[#09090B] flex flex-col items-center justify-center gap-8"
+          >
             {[
+              { label: tNav('results'), href: '#roi' },
               { label: tNav('howItWorks'), href: '#how-it-works' },
-              { label: tNav('forHospitals'), href: '#for-administrators' },
-              { label: tNav('pricing'), href: '/pricing' },
             ].map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
+                className="text-[28px] font-body font-light tracking-[-0.03em] text-white/80 hover:text-white transition-colors"
               >
                 {item.label}
               </a>
@@ -193,16 +214,16 @@ export function BillingComplianceLanding() {
             <a
               href="/auth/login"
               onClick={() => setMenuOpen(false)}
-              className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
+              className="text-[28px] font-body font-light tracking-[-0.03em] text-white/80 hover:text-white transition-colors"
             >
               {tNav('signIn')}
             </a>
-            <div className="flex gap-3 mt-2">
+            <div className="flex gap-3 mt-4">
               {LOCALE_OPTIONS.map((opt) => (
                 <button
                   key={opt.code}
                   onClick={() => { router.replace(pathname, { locale: opt.code }); setMenuOpen(false); }}
-                  className={`text-[15px] font-medium px-3 py-1.5 rounded-full transition-colors ${locale === opt.code ? 'bg-[#0071e3] text-white' : 'text-[#6e6e73] hover:text-[#1d1d1f]'}`}
+                  className={`text-[13px] font-medium px-4 py-2 rounded-full transition-colors ${locale === opt.code ? 'bg-white text-[#09090B]' : 'text-zinc-500 hover:text-white border border-zinc-700'}`}
                 >
                   {opt.label}
                 </button>
@@ -211,63 +232,54 @@ export function BillingComplianceLanding() {
             <a
               href="#access"
               onClick={() => setMenuOpen(false)}
-              className="mt-4 inline-flex rounded-full bg-[#34c759] text-white text-[17px] font-semibold px-9 py-4 hover:bg-[#2fb84e] transition-colors active:scale-[0.98]"
+              className="mt-6 inline-flex rounded-full bg-white text-[#09090B] text-[16px] font-semibold px-9 py-4 hover:bg-zinc-200 transition-colors active:scale-[0.98]"
             >
               {tNav('requestAccess')}
             </a>
-          </div>
+          </motion.div>
         )}
 
         {/* ── Navigation ──────────────────────────────────────────────────── */}
         <header
-          className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled
-            ? 'bg-white/90 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.08)]'
+          className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${scrolled
+            ? 'bg-[#09090B]/80 backdrop-blur-2xl border-b border-white/[0.06]'
             : 'bg-transparent'
           }`}
         >
-          <nav className="relative grid grid-cols-[1fr_auto_1fr] md:grid-cols-[auto_1fr_auto] items-center h-[52px] px-5 md:px-8 lg:px-10 gap-4">
-            <a
-              href="/"
-              className={`absolute left-5 top-1/2 -translate-y-1/2 md:static md:translate-y-0 flex-shrink-0 flex items-center gap-2 text-[17px] font-semibold tracking-[-0.02em] ${navText} transition-colors duration-300`}
-            >
-              <svg className="h-[22px] w-auto" viewBox="20 100 555 670" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <line x1="244.03" y1="369.32" x2="350.47" y2="369.32" stroke="currentColor" strokeLinecap="round" strokeWidth="58"/>
-                <line x1="244.03" y1="453.65" x2="350.47" y2="453.65" stroke="currentColor" strokeLinecap="round" strokeWidth="58"/>
-                <path fill="currentColor" d="m545.36,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z"/>
-                <path fill="currentColor" d="m202.39,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z"/>
-              </svg>
-              Holi Labs
+          <nav className="relative flex items-center justify-between h-14 px-5 md:px-8 lg:px-10 max-w-7xl mx-auto">
+            <a href="/" className="flex items-center gap-2.5 text-white shrink-0">
+              <HoliLogo className="h-[20px] w-auto" />
+              <span className="text-[15px] font-body font-semibold tracking-[-0.02em]">Holi Labs</span>
             </a>
 
-            <div className="hidden md:flex items-center justify-center gap-8 whitespace-nowrap min-w-0">
-              <a href="#how-it-works" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('howItWorks')}</a>
-              <a href="#for-administrators" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('forHospitals')}</a>
-              <a href="/pricing" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('pricing')}</a>
+            <div className="hidden md:flex items-center gap-8">
+              {[
+                { label: tNav('results'), href: '#roi' },
+                { label: tNav('howItWorks'), href: '#how-it-works' },
+              ].map((item) => (
+                <a key={item.label} href={item.href} className="text-[13px] text-zinc-400 hover:text-white transition-colors duration-200">
+                  {item.label}
+                </a>
+              ))}
             </div>
 
-            <div className="hidden md:flex items-center gap-3 justify-self-end whitespace-nowrap">
+            <div className="hidden md:flex items-center gap-3">
               <div className="relative" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => setLangOpen((v) => !v)}
-                  className={`flex items-center gap-1 text-[13px] font-medium ${navMuted} hover:${navText} transition-colors duration-300`}
+                  className="flex items-center gap-1.5 text-[13px] text-zinc-500 hover:text-zinc-300 transition-colors"
                   aria-label={tNav('changeLanguage')}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                  </svg>
+                  <GlobeIcon />
                   {currentLabel}
-                  <svg width="9" height="9" viewBox="0 0 16 16" fill="none" className={`opacity-40 transition-transform ${langOpen ? 'rotate-180' : ''}`}>
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </button>
                 {langOpen && (
-                  <div className="absolute right-0 top-full mt-1.5 bg-white rounded-lg shadow-lg border border-black/[0.08] py-1 min-w-[120px] z-50">
+                  <div className="absolute right-0 top-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl py-1 min-w-[130px] z-50">
                     {LOCALE_OPTIONS.map((opt) => (
                       <button
                         key={opt.code}
                         onClick={() => { router.replace(pathname, { locale: opt.code }); setLangOpen(false); }}
-                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${locale === opt.code ? 'text-[#0071e3] font-semibold bg-blue-50/60' : 'text-[#1d1d1f] hover:bg-black/[0.04]'}`}
+                        className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${locale === opt.code ? 'text-white font-medium' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'}`}
                       >
                         {opt.name}
                       </button>
@@ -275,355 +287,363 @@ export function BillingComplianceLanding() {
                   </div>
                 )}
               </div>
-              <a
-                href="/auth/login"
-                className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300 border ${scrolled ? 'border-black/15 hover:border-[#0071e3]/40' : 'border-white/25 hover:border-white/50'} rounded-full px-4 py-1.5`}
-              >
+
+              <a href="/auth/login" className="text-[13px] text-zinc-400 hover:text-white transition-colors px-3 py-1.5">
                 {tNav('signIn')}
               </a>
               <a
                 href="#access"
-                className="inline-flex items-center rounded-full bg-[#34c759] text-white text-[13px] font-semibold px-5 py-2 hover:bg-[#2fb84e] transition-colors active:scale-[0.98]"
+                className="inline-flex items-center rounded-full bg-white text-[#09090B] text-[13px] font-semibold px-5 py-2 hover:bg-zinc-200 transition-colors active:scale-[0.98]"
               >
                 {tNav('requestAccess')}
               </a>
             </div>
 
+            {/* Mobile hamburger */}
             <button
-              className="md:hidden absolute right-5 top-1/2 -translate-y-1/2 flex flex-col gap-[5px] p-2 z-50"
+              className="md:hidden flex flex-col gap-[5px] p-2 z-50"
               onClick={() => setMenuOpen((v) => !v)}
               aria-label={menuOpen ? tNav('closeMenu') : tNav('openMenu')}
               aria-expanded={menuOpen}
             >
-              <span className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
-              <span className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} transition-all duration-200 ${menuOpen ? 'opacity-0' : ''}`} />
-              <span className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''}`} />
+              <span className={`block h-[1.5px] w-5 bg-white origin-center transition-all duration-200 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
+              <span className={`block h-[1.5px] w-5 bg-white transition-all duration-200 ${menuOpen ? 'opacity-0' : ''}`} />
+              <span className={`block h-[1.5px] w-5 bg-white origin-center transition-all duration-200 ${menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''}`} />
             </button>
           </nav>
         </header>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            PHASE 1 — "O que é, qual o valor"
-            Trigger: Cognitive Ease & Immediate Value
+            § 1 — HERO
         ═══════════════════════════════════════════════════════════════════ */}
-        <section
-          className="relative flex flex-col items-start justify-between text-left w-full min-h-[100dvh] px-8 sm:px-12 md:px-24 pt-[52px] overflow-hidden"
-          style={{
-            backgroundImage: `linear-gradient(90deg, rgba(15,15,20,0.96) 0%, rgba(15,15,20,0.65) 50%, rgba(15,15,20,0.25) 100%), url('/holilabsv2.jpeg')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div ref={heroContentRef} className="relative z-10 max-w-3xl pt-24 pb-8 sm:pt-32 sm:pb-12 lg:pt-40 lg:pb-16">
-            {/* Scarcity pill — green to signal opportunity, not danger */}
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-[#34c759]/30 bg-[#34c759]/10 backdrop-blur-sm px-4 py-[7px] mb-8 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#34c759] animate-pulse flex-shrink-0" aria-hidden="true" />
-              <span className="text-[13px] font-medium text-white/90">{t('offerPill')}</span>
-            </div>
+        <section ref={heroRef} className="relative min-h-[100dvh] flex flex-col items-center pt-36 pb-16 px-5 overflow-hidden">
 
-            <h1 className="text-[clamp(38px,7vw,72px)] font-semibold tracking-[-0.035em] leading-[1.06] text-white mb-6 whitespace-pre-line">
+          <motion.div style={{ opacity: heroOpacity }} className="relative z-10 text-center max-w-4xl mx-auto">
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: EASE_OUT_EXPO }}
+              className="font-display text-[clamp(44px,8.5vw,96px)] tracking-[-0.045em] leading-[0.92] text-white mb-7 whitespace-pre-line"
+            >
               {t('headline')}
-            </h1>
+            </motion.h1>
 
-            <p className="text-[clamp(17px,2.2vw,21px)] text-white/75 tracking-[-0.01em] leading-[1.5] mb-10 max-w-[600px]">
+            {/* Subhead */}
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT_EXPO }}
+              className="font-body text-[clamp(16px,2vw,19px)] text-zinc-400 leading-relaxed max-w-xl mx-auto mb-10"
+            >
               {t('subhead')}
-            </p>
+            </motion.p>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-start gap-4 mb-4">
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.45, ease: EASE_OUT_EXPO }}
+              className="flex items-center justify-center mb-12"
+            >
               <a
                 href="#access"
-                className="inline-flex items-center rounded-full bg-[#34c759] text-white text-[17px] font-semibold px-8 py-[14px] hover:bg-[#2fb84e] transition-colors shadow-[0_4px_24px_rgba(52,199,89,0.3)] active:scale-[0.98]"
+                className="inline-flex items-center rounded-full bg-white text-[#09090B] text-[15px] font-semibold px-8 py-3.5 hover:bg-zinc-200 transition-all active:scale-[0.98]"
               >
                 {t('ctaPrimary')}
               </a>
-              <a
-                href="/demo"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/25 text-[17px] text-white/80 font-medium px-7 py-[12px] hover:bg-white/10 hover:text-white transition-colors active:scale-[0.98]"
-              >
-                {t('ctaSecondary')}
-                <ArrowIcon />
-              </a>
-            </div>
-          </div>
+            </motion.div>
 
-          {/* Trust bar — compliance signals visible without scrolling */}
-          <div className="relative z-10 w-full border-t border-white/[0.08]">
-            <div className="max-w-[980px] mx-auto px-5 py-4">
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                {([
-                  t('trustLgpd'),
-                  t('trustAnvisa'),
-                  t('trustFhir'),
-                  t('trustSpeed'),
-                  t('trustPhi'),
-                ] as string[]).map((item, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <span className="hidden sm:inline text-white/15 select-none">&middot;</span>}
-                    <span className="text-[12px] font-medium text-white/40 tracking-wide uppercase">{item}</span>
-                  </React.Fragment>
+            {/* Trust strip — clean text pills, no icons */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="flex flex-wrap items-center justify-center gap-3"
+            >
+              {[t('trustLgpd'), t('trustAnvisa'), t('trustFhir'), t('trustSpeed'), t('trustPhi')].map((label, i) => (
+                <span
+                  key={i}
+                  className="text-[11px] font-medium tracking-[0.04em] text-zinc-500 uppercase"
+                >
+                  {i > 0 && <span className="mr-3 text-zinc-700" aria-hidden="true">/</span>}
+                  {label}
+                </span>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Product mockup */}
+          <motion.div
+            style={{ y: heroMockupY }}
+            initial={{ opacity: 0, y: 60, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.5, ease: EASE_OUT_EXPO }}
+            className="relative z-10 mt-20 w-full max-w-6xl mx-auto"
+          >
+            <div className="relative rounded-2xl overflow-hidden border border-zinc-800/60">
+              <img
+                src="/holilabsv2.jpeg"
+                alt="Holi Labs Co-Pilot interface"
+                className="w-full h-auto"
+                loading="eager"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#09090B] to-transparent pointer-events-none" />
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            § 2 — ROI
+        ═══════════════════════════════════════════════════════════════════ */}
+        <section id="roi" className="py-40 px-5">
+          <div className="max-w-6xl mx-auto">
+            <Reveal className="text-center mb-16">
+              {/* Tab switcher */}
+              <div className="inline-flex items-center gap-1 rounded-full bg-zinc-900/60 border border-zinc-800/60 p-1">
+                {(['physicians', 'administrators'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative text-[14px] font-medium px-6 py-2.5 rounded-full transition-all duration-300 ${
+                      activeTab === tab
+                        ? 'text-white bg-white/[0.08]'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {tab === 'physicians' ? tRoi('tabPhysicians') : tRoi('tabAdministrators')}
+                  </button>
                 ))}
               </div>
-            </div>
+            </Reveal>
+
+            {/* Tab content: Physicians */}
+            {activeTab === 'physicians' && (
+              <motion.div
+                key="physicians"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+              >
+                <div className="grid md:grid-cols-[1fr_1.4fr] gap-16 items-start mb-16">
+                  <div>
+                    <p className="text-[12px] font-medium text-zinc-500 tracking-[0.1em] uppercase mb-6">{tTime('eyebrow')}</p>
+                    <p className="font-display text-[clamp(72px,14vw,140px)] tracking-[-0.05em] leading-none text-white mb-3">
+                      <CountUp target={90} suffix="s" className="font-display" />
+                    </p>
+                    <p className="text-[16px] text-zinc-500 max-w-[320px]">{tTime('statLabel')}</p>
+                  </div>
+                  <div>
+                    <h2 className="font-display text-[clamp(28px,4vw,44px)] tracking-[-0.035em] leading-[1.05] text-white mb-6">
+                      {tTime('headline')}
+                    </h2>
+                    <p className="text-[16px] text-zinc-400 leading-relaxed mb-8 max-w-lg">
+                      {tTime('description')}
+                    </p>
+                    <ul className="space-y-3.5">
+                      {[tTime('item1'), tTime('item2'), tTime('item3'), tTime('item4')].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-[15px] text-zinc-300">
+                          <CheckIcon />{item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Before / After strip */}
+                <div className="grid md:grid-cols-2 gap-px bg-zinc-800/50 rounded-2xl overflow-hidden">
+                  <div className="bg-[#0C0C0F] p-8">
+                    <p className="text-[11px] font-medium text-zinc-600 tracking-[0.1em] uppercase mb-3">{tRoi('beforeLabel')}</p>
+                    <p className="text-[16px] text-zinc-500 leading-relaxed">{tRoi('physicianBefore')}</p>
+                  </div>
+                  <div className="bg-[#0C0C0F] p-8">
+                    <p className="text-[11px] font-medium text-zinc-400 tracking-[0.1em] uppercase mb-3">{tRoi('afterLabel')}</p>
+                    <p className="text-[16px] text-zinc-300 leading-relaxed">{tRoi('physicianAfter')}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Tab content: Administrators */}
+            {activeTab === 'administrators' && (
+              <motion.div
+                key="administrators"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+              >
+                <div className="grid md:grid-cols-[1.4fr_1fr] gap-16 items-start mb-16">
+                  <div>
+                    <h2 className="font-display text-[clamp(28px,4vw,44px)] tracking-[-0.035em] leading-[1.05] text-white mb-6">
+                      {tFin('headline')}
+                    </h2>
+                    <p className="text-[16px] text-zinc-400 leading-relaxed mb-8 max-w-lg">
+                      {tFin('description')}
+                    </p>
+                    <ul className="space-y-3.5">
+                      {[tFin('item1'), tFin('item2'), tFin('item3'), tFin('item4')].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-[15px] text-zinc-300">
+                          <CheckIcon />{item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-medium text-zinc-500 tracking-[0.1em] uppercase mb-6">{tFin('eyebrow')}</p>
+                    <p className="font-display text-[clamp(72px,14vw,140px)] tracking-[-0.05em] leading-none text-white mb-3">
+                      <CountUp target={30} suffix="%" className="font-display" />
+                    </p>
+                    <p className="text-[16px] text-zinc-500 max-w-[320px]">{tFin('statLabel')}</p>
+                  </div>
+                </div>
+
+                {/* Before / After strip */}
+                <div className="grid md:grid-cols-2 gap-px bg-zinc-800/50 rounded-2xl overflow-hidden">
+                  <div className="bg-[#0C0C0F] p-8">
+                    <p className="text-[11px] font-medium text-zinc-600 tracking-[0.1em] uppercase mb-3">{tRoi('beforeLabel')}</p>
+                    <p className="text-[16px] text-zinc-500 leading-relaxed">{tRoi('adminBefore')}</p>
+                  </div>
+                  <div className="bg-[#0C0C0F] p-8">
+                    <p className="text-[11px] font-medium text-zinc-400 tracking-[0.1em] uppercase mb-3">{tRoi('afterLabel')}</p>
+                    <p className="text-[16px] text-zinc-300 leading-relaxed">{tRoi('adminAfter')}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            PHASE 2 — "O retorno"
-            Trigger: Loss Aversion & Tangible ROI
+            § 3 — HOW IT WORKS
         ═══════════════════════════════════════════════════════════════════ */}
-
-        {/* Bridge intro */}
-        <section className="py-28 px-5">
-          <div ref={phase2Intro.ref} style={phase2Intro.style} className="max-w-[700px] mx-auto text-center">
-            <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-              {tRoiIntro('eyebrow')}
-            </p>
-            <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-              {tRoiIntro('headline')}
-            </h2>
-            <p className="text-[21px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em]">
-              {tRoiIntro('subhead')}
-            </p>
-          </div>
-        </section>
-
-        {/* Pillar A — Financial Return (dark, loss-aversion framing) */}
-        <section
-          id="for-administrators"
-          className="py-28 px-5"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, #2c2c2e 0%, #1d1d1f 60%)' }}
-        >
-          <div ref={finSection.ref} style={finSection.style} className="max-w-[980px] mx-auto">
-            <p className="text-[12px] font-semibold text-[#ff453a] uppercase tracking-[0.1em] mb-10">
-              {tFin('eyebrow')}
-            </p>
-            <div className="grid md:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-start">
-              <div>
-                <p className="text-[clamp(72px,14vw,130px)] font-bold tracking-[-0.04em] leading-none text-white mb-4">
-                  {tFin('stat')}
-                </p>
-                <p className="text-[17px] text-[#a1a1a6] leading-[1.55] max-w-[360px]">
-                  {tFin('statLabel')}
-                </p>
-              </div>
-              <div>
-                <h2 className="text-[clamp(28px,4vw,42px)] font-semibold tracking-[-0.03em] leading-[1.1] text-white mb-6">
-                  {tFin('headline')}
-                </h2>
-                <p className="text-[17px] text-[#a1a1a6] leading-[1.6] mb-8">
-                  {tFin('description')}
-                </p>
-                <ul className="space-y-3.5">
-                  {[tFin('item1'), tFin('item2'), tFin('item3'), tFin('item4'), tFin('item5')].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-[15px] text-white/70">
-                      <CheckIcon />{item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Pillar B — Time Return (light, relief framing) */}
-        <section id="for-physicians" className="py-28 px-5">
-          <div ref={timeSection.ref} style={timeSection.style} className="max-w-[980px] mx-auto">
-            <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-10">
-              {tTime('eyebrow')}
-            </p>
-            <div className="grid md:grid-cols-[1.2fr_1fr] gap-12 lg:gap-20 items-start">
-              <div>
-                <h2 className="text-[clamp(28px,4vw,42px)] font-semibold tracking-[-0.03em] leading-[1.1] text-[#1d1d1f] mb-6">
-                  {tTime('headline')}
-                </h2>
-                <p className="text-[17px] text-[#6e6e73] leading-[1.6] mb-8">
-                  {tTime('description')}
-                </p>
-                <ul className="space-y-3.5">
-                  {[tTime('item1'), tTime('item2'), tTime('item3'), tTime('item4'), tTime('item5')].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-[15px] text-[#1d1d1f]/70">
-                      <CheckIcon />{item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex flex-col items-end text-right">
-                <p className="text-[clamp(72px,14vw,130px)] font-bold tracking-[-0.04em] leading-none text-[#1d1d1f] mb-4">
-                  {tTime('stat')}
-                </p>
-                <p className="text-[17px] text-[#6e6e73] leading-[1.55] max-w-[360px]">
-                  {tTime('statLabel')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            PHASE 3 — "Como funciona — a magia do meio campo"
-            Trigger: Curiosity Gap & Authority Bias
-        ═══════════════════════════════════════════════════════════════════ */}
-
-        {/* How It Works — 3 deterministic steps */}
-        <section id="how-it-works" className="py-28 px-5 bg-[#f5f5f7]">
-          <div className="max-w-[980px] mx-auto">
-            <div ref={howHead.ref} style={howHead.style} className="text-center mb-20">
-              <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                {tHow('eyebrow')}
-              </p>
-              <h2 className="text-[clamp(36px,5.5vw,56px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6 whitespace-pre-line">
+        <section id="how-it-works" className="py-40 px-5">
+          <div className="max-w-5xl mx-auto">
+            <Reveal className="text-center mb-20">
+              <h2 className="font-display text-[clamp(32px,5vw,56px)] tracking-[-0.035em] leading-[1.05] text-white whitespace-pre-line mb-5">
                 {tHow('headline')}
               </h2>
-              <p className="text-[19px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[620px] mx-auto">
+              <p className="text-[17px] text-zinc-400 leading-relaxed max-w-xl mx-auto">
                 {tHow('subhead')}
               </p>
-            </div>
+            </Reveal>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            {/* 3 staggered cards */}
+            <div className="grid md:grid-cols-3 gap-4 mb-16">
               {[
                 { num: '01', title: tHow('step1Title'), desc: tHow('step1Desc') },
                 { num: '02', title: tHow('step2Title'), desc: tHow('step2Desc') },
                 { num: '03', title: tHow('step3Title'), desc: tHow('step3Desc') },
-              ].map((s, i) => (
-                <div key={s.num} ref={stepRefs[i]!.ref} style={stepRefs[i]!.style}>
-                  <div className="rounded-2xl bg-white p-8 ring-1 ring-black/[0.05] h-full hover:ring-black/[0.10] hover:-translate-y-0.5 transition-all duration-300">
-                    <p className="text-[48px] font-bold tracking-[-0.04em] text-[#0071e3]/20 leading-none mb-6">{s.num}</p>
-                    <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f] mb-3">{s.title}</h3>
-                    <p className="text-[15px] text-[#6e6e73] leading-[1.55]">{s.desc}</p>
+              ].map((step, i) => (
+                <Reveal key={step.num} delay={i * 0.12}>
+                  <div className="group relative rounded-2xl bg-zinc-900/40 border border-zinc-800/50 p-8 h-full overflow-hidden hover:border-zinc-700/60 transition-colors duration-300">
+                    <p className="text-[48px] font-body font-extralight tracking-[-0.04em] text-zinc-800 leading-none mb-6">{step.num}</p>
+                    <h3 className="text-[17px] font-body font-semibold tracking-[-0.02em] text-white mb-3">{step.title}</h3>
+                    <p className="text-[14px] text-zinc-400 leading-relaxed">{step.desc}</p>
                   </div>
-                </div>
+                </Reveal>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* Security — Zero PHI architecture */}
-        <section className="py-28 px-5 bg-black">
-          <div ref={secContent.ref} style={secContent.style} className="max-w-[700px] mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/[0.06] ring-1 ring-white/[0.10] mb-8">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0110 0v4" />
-              </svg>
-            </div>
-            <h2 className="text-[clamp(32px,5vw,52px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
-              {tSec('headline')}
-            </h2>
-            <p className="text-[19px] text-[#a1a1a6] leading-[1.6] mb-12">
-              {tSec('description')}
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {[tSec('badge1'), tSec('badge2'), tSec('badge3'), tSec('badge4')].map((badge, i) => (
-                <span key={i} className="text-[13px] font-medium text-white/60 bg-white/[0.06] border border-white/[0.10] rounded-full px-4 py-2">
-                  {badge}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Localized Engines — Country cards */}
-        <section className="py-28 px-5">
-          <div className="max-w-[980px] mx-auto">
-            <div ref={countHead.ref} style={countHead.style} className="text-center mb-16">
-              <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                {tCountries('eyebrow')}
+            {/* Differentiator */}
+            <Reveal delay={0.3} className="text-center">
+              <p className="text-[clamp(17px,2.2vw,22px)] text-zinc-500 tracking-[-0.01em] leading-snug max-w-2xl mx-auto">
+                {tHow('differentiator')}
               </p>
-              <h2 className="text-[clamp(32px,5vw,48px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-                {tCountries('headline')}
-              </h2>
-              <p className="text-[19px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[600px] mx-auto">
-                {tCountries('subhead')}
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              {[
-                { country: tCountries('brazilName'), flag: '\u{1F1E7}\u{1F1F7}', badge: tCountries('brazilBadge'), desc: tCountries('brazilDesc') },
-                { country: tCountries('boliviaName'), flag: '\u{1F1E7}\u{1F1F4}', badge: tCountries('boliviaBadge'), desc: tCountries('boliviaDesc') },
-                { country: tCountries('argentinaName'), flag: '\u{1F1E6}\u{1F1F7}', badge: tCountries('argentinaBadge'), desc: tCountries('argentinaDesc') },
-              ].map((c, i) => (
-                <div key={c.country} ref={countryRefs[i]!.ref} style={countryRefs[i]!.style}>
-                  <div className="rounded-2xl bg-[#f5f5f7] p-8 ring-1 ring-black/[0.05] hover:ring-black/[0.10] hover:-translate-y-0.5 transition-all duration-300 h-full">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-[22px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
-                        <span className="mr-2" aria-hidden="true">{c.flag}</span>{c.country}
-                      </h3>
-                      <span className="text-[11px] font-medium text-[#6e6e73] bg-white rounded-full px-2.5 py-1 ring-1 ring-black/[0.06] whitespace-nowrap ml-3 mt-0.5">
-                        {c.badge}
-                      </span>
-                    </div>
-                    <p className="text-[15px] text-[#6e6e73] leading-[1.55]">{c.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Coming soon countries */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
-              <span className="text-[14px] text-[#6e6e73] font-medium">{tCountries('comingSoonLabel')}</span>
-              {[
-                { name: tCountries('chile'), flag: '\u{1F1E8}\u{1F1F1}' },
-                { name: tCountries('colombia'), flag: '\u{1F1E8}\u{1F1F4}' },
-                { name: tCountries('mexico'), flag: '\u{1F1F2}\u{1F1FD}' },
-                { name: tCountries('salvador'), flag: '\u{1F1F8}\u{1F1FB}' },
-              ].map((c) => (
-                <span
-                  key={c.name}
-                  className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#1d1d1f]/60 bg-[#f5f5f7] rounded-full px-4 py-2 ring-1 ring-black/[0.05]"
-                >
-                  <span aria-hidden="true">{c.flag}</span>{c.name}
-                </span>
-              ))}
-            </div>
+            </Reveal>
           </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            FINAL CTA — Hard close with scarcity reinforcement
+            § 4 — TRUST & SECURITY
         ═══════════════════════════════════════════════════════════════════ */}
-        <section id="access" className="bg-black py-36 px-5">
-          <div ref={ctaFinal.ref} style={ctaFinal.style} className="max-w-[700px] mx-auto text-center">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-[#34c759]/30 bg-[#34c759]/10 px-5 py-2.5 mb-8">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#34c759] animate-pulse flex-shrink-0" />
-              <span className="text-[13px] font-medium text-white/80">
-                {tCta('offerReminder')}
-              </span>
+        <section className="py-32 px-5">
+          <Reveal className="max-w-[700px] mx-auto text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.03] border border-zinc-800/50 mb-8">
+              <LockIcon />
             </div>
+            <h2 className="font-display text-[clamp(32px,5vw,52px)] tracking-[-0.035em] leading-[1.05] text-white mb-6">
+              {tSec('headline')}
+            </h2>
+            <p className="text-[17px] text-zinc-400 leading-relaxed mb-12">
+              {tSec('description')}
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {[tSec('badge1'), tSec('badge2'), tSec('badge3'), tSec('badge4'), tSec('badge5'), tSec('badge6')].map((badge, i) => (
+                <span key={i} className="text-[12px] font-medium text-zinc-500 bg-white/[0.02] border border-zinc-800/50 rounded-full px-4 py-2 hover:text-zinc-300 hover:border-zinc-700/60 transition-colors duration-200">
+                  {badge}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+        </section>
 
-            <h2 className="text-[clamp(32px,5.5vw,56px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
+        {/* ═══════════════════════════════════════════════════════════════════
+            § 5 — FINAL CTA
+        ═══════════════════════════════════════════════════════════════════ */}
+        <section id="access" className="relative py-36 px-5 overflow-hidden">
+          <Reveal className="relative z-10 max-w-[560px] mx-auto text-center">
+            <h2 className="font-display text-[clamp(32px,5.5vw,52px)] tracking-[-0.035em] leading-[1.05] text-white mb-5">
               {tCta('headline')}
             </h2>
-            <p className="text-[21px] text-[#a1a1a6] tracking-[-0.01em] mb-12">
+            <p className="text-[17px] text-zinc-400 mb-12">
               {tCta('subhead')}
             </p>
 
             {formState === 'success' ? (
-              <div className="max-w-[440px] mx-auto mb-6">
-                <div className="flex items-center justify-center gap-2 rounded-full bg-[#34c759]/10 border border-[#34c759]/20 px-6 py-4">
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" className="text-[#34c759] flex-shrink-0">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-[15px] text-[#34c759] font-medium">{formMsg}</span>
-                </div>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col sm:flex-row gap-3 max-w-[440px] mx-auto mb-6"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center justify-center gap-2.5 rounded-full bg-white/[0.04] border border-zinc-700 px-6 py-4 max-w-md mx-auto"
               >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" className="text-white flex-shrink-0">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[15px] text-zinc-300 font-medium">{formMsg}</span>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-6 space-y-3">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (formState === 'error') setFormState('idle'); }}
                   placeholder={tCta('placeholder')}
                   required
-                  className="flex-1 min-w-0 rounded-full px-5 py-4 bg-white/10 text-white placeholder-[#6e6e73] text-[15px] border border-white/20 focus:outline-none focus:border-white/50 transition-colors"
+                  className="w-full rounded-full px-5 py-3.5 bg-white/[0.03] text-white placeholder-zinc-600 text-[15px] font-body border border-zinc-800/60 focus:outline-none focus:border-zinc-600 focus:bg-white/[0.05] transition-all"
                 />
+                <input
+                  type="text"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  placeholder={tCta('orgPlaceholder')}
+                  className="w-full rounded-full px-5 py-3.5 bg-white/[0.03] text-white placeholder-zinc-600 text-[15px] font-body border border-zinc-800/60 focus:outline-none focus:border-zinc-600 focus:bg-white/[0.05] transition-all"
+                />
+
+                {/* Role selector */}
+                <div className="flex items-center justify-center gap-3 py-2">
+                  {[
+                    { value: 'physician', label: tCta('rolePhysician') },
+                    { value: 'administrator', label: tCta('roleAdmin') },
+                    { value: 'other', label: tCta('roleOther') },
+                  ].map((role) => (
+                    <button
+                      key={role.value}
+                      type="button"
+                      onClick={() => setSelectedRole(role.value)}
+                      className={`text-[13px] font-medium px-4 py-2 rounded-full transition-all duration-200 ${
+                        selectedRole === role.value
+                          ? 'text-white bg-white/[0.08] border border-zinc-600'
+                          : 'text-zinc-500 border border-zinc-800/60 hover:text-zinc-300 hover:border-zinc-700'
+                      }`}
+                    >
+                      {role.label}
+                    </button>
+                  ))}
+                </div>
+
                 <button
                   type="submit"
                   disabled={formState === 'loading'}
-                  className="rounded-full bg-[#34c759] text-white text-[15px] font-semibold px-7 py-4 hover:bg-[#2fb84e] transition-colors whitespace-nowrap active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full rounded-full bg-white text-[#09090B] text-[15px] font-semibold px-7 py-3.5 hover:bg-zinc-200 transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formState === 'loading' ? tCta('sending') : tCta('submit')}
                 </button>
@@ -634,32 +654,27 @@ export function BillingComplianceLanding() {
               <p className="text-[13px] text-red-400 mb-3">{formMsg}</p>
             )}
 
-            <p className="text-[12px] text-[#6e6e73] leading-relaxed">
-              {tCta('disclaimer')}
-            </p>
-          </div>
+            <p className="text-[12px] text-zinc-600">{tCta('disclaimer')}</p>
+          </Reveal>
         </section>
 
-        {/* ── Footer ───────────────────────────────────────────────────────── */}
-        <footer className="bg-black border-t border-white/10 px-5 pt-16 pb-10">
-          <div className="max-w-[980px] mx-auto">
+        {/* ── Footer ──────────────────────────────────────────────────────── */}
+        <footer className="border-t border-zinc-800/50 px-5 pt-16 pb-10">
+          <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
               <div className="col-span-2 md:col-span-1">
-                <p className="text-[15px] font-semibold text-white tracking-[-0.02em] mb-3">
-                  {tFoot('brand')}
-                </p>
-                <p className="text-[13px] text-[#6e6e73] leading-[1.55]">
-                  {tFoot('brandSub')}
-                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <HoliLogo className="h-4 w-auto text-zinc-500" />
+                  <span className="text-[14px] font-semibold text-white tracking-[-0.02em]">{tFoot('brand')}</span>
+                </div>
+                <p className="text-[13px] text-zinc-500 leading-relaxed">{tFoot('brandSub')}</p>
               </div>
               {[
                 {
                   heading: tFoot('product'),
                   links: [
                     { label: tNav('howItWorks'), href: '#how-it-works' },
-                    { label: tNav('pricing'), href: '/pricing' },
                     { label: tFoot('liveDemo'), href: '/demo' },
-                    { label: tNav('forHospitals'), href: '#for-administrators' },
                     { label: tNav('signIn'), href: '/auth/login' },
                   ],
                 },
@@ -683,13 +698,11 @@ export function BillingComplianceLanding() {
                 },
               ].map((col) => (
                 <div key={col.heading}>
-                  <p className="text-[13px] font-semibold text-white mb-4 tracking-[-0.01em]">
-                    {col.heading}
-                  </p>
+                  <p className="text-[12px] font-medium text-zinc-500 uppercase tracking-[0.06em] mb-4">{col.heading}</p>
                   <ul className="space-y-3">
                     {col.links.map((link) => (
                       <li key={link.label}>
-                        <a href={link.href} className="text-[13px] text-[#6e6e73] hover:text-white transition-colors">
+                        <a href={link.href} className="text-[13px] text-zinc-500 hover:text-white transition-colors duration-200">
                           {link.label}
                         </a>
                       </li>
@@ -698,9 +711,9 @@ export function BillingComplianceLanding() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <p className="text-[12px] text-[#6e6e73]">{tFoot('copyright')}</p>
-              <p className="text-[12px] text-[#6e6e73]">{tFoot('badges')}</p>
+            <div className="border-t border-zinc-800/50 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <p className="text-[12px] text-zinc-600">{tFoot('copyright')}</p>
+              <p className="text-[12px] text-zinc-600">{tFoot('badges')}</p>
             </div>
           </div>
         </footer>

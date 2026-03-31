@@ -29,17 +29,37 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 }
 
 const baseInputStyles =
-  'w-full border rounded-lg transition-all focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-neutral-900';
+  'w-full border transition-all focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-neutral-900';
 
 const variantStyles: Record<InputVariant, string> = {
   default:
-    'border-neutral-300 bg-white text-neutral-900 placeholder-neutral-400 focus:border-primary-500 focus:ring-primary-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100 dark:placeholder-neutral-600',
+    'placeholder-neutral-400 focus:border-primary-500 focus:ring-primary-500 dark:placeholder-neutral-600',
   error:
-    'border-error-500 bg-white text-neutral-900 placeholder-neutral-400 focus:border-error-600 focus:ring-error-500 dark:bg-neutral-900 dark:text-neutral-100',
+    'border-error-500 placeholder-neutral-400 focus:border-error-600 focus:ring-error-500',
   success:
-    'border-success-500 bg-white text-neutral-900 placeholder-neutral-400 focus:border-success-600 focus:ring-success-500 dark:bg-neutral-900 dark:text-neutral-100',
+    'border-success-500 placeholder-neutral-400 focus:border-success-600 focus:ring-success-500',
   warning:
-    'border-warning-500 bg-white text-neutral-900 placeholder-neutral-400 focus:border-warning-600 focus:ring-warning-500 dark:bg-neutral-900 dark:text-neutral-100',
+    'border-warning-500 placeholder-neutral-400 focus:border-warning-600 focus:ring-warning-500',
+};
+
+const variantInlineStyles: Record<InputVariant, React.CSSProperties> = {
+  default: {
+    backgroundColor: 'var(--surface-primary)',
+    color: 'var(--text-primary)',
+    borderColor: 'var(--border-strong)',
+  },
+  error: {
+    backgroundColor: 'var(--surface-primary)',
+    color: 'var(--text-primary)',
+  },
+  success: {
+    backgroundColor: 'var(--surface-primary)',
+    color: 'var(--text-primary)',
+  },
+  warning: {
+    backgroundColor: 'var(--surface-primary)',
+    color: 'var(--text-primary)',
+  },
 };
 
 const sizeStyles: Record<InputSize, string> = {
@@ -111,7 +131,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: 'var(--text-secondary)' }}
           >
             {label}
             {required && <span className="text-error-500 ml-1" aria-label="required">*</span>}
@@ -138,6 +159,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             disabled={disabled}
             required={required}
             className={inputClasses}
+            style={{ borderRadius: 'var(--radius-lg)', ...variantInlineStyles[variant] }}
             aria-invalid={variant === 'error'}
             aria-describedby={
               error
@@ -175,7 +197,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {!error && helperText && (
           <p
             id={helperTextId}
-            className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400"
+            className="mt-1.5 text-sm"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             {helperText}
           </p>

@@ -1,11 +1,13 @@
 export default function RootLoading() {
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-white dark:bg-gray-950">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-full border-[3px] border-gray-200 border-t-blue-600 animate-spin" />
-        <span className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">
-          Loading...
-        </span>
+    <div className="min-h-screen bg-white dark:bg-gray-950 animate-pulse flex flex-col items-center justify-center">
+      <div className="w-full max-w-sm space-y-4 px-8">
+        <div className="h-7 w-7 rounded-full bg-gray-200 dark:bg-gray-800 mx-auto" />
+        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-800 rounded mx-auto" />
+        <div className="space-y-3 mt-6">
+          <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+          <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded-xl w-3/4 mx-auto" />
+        </div>
       </div>
     </div>
   );

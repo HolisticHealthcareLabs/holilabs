@@ -149,15 +149,19 @@ export default function DashboardTile({
     <div
       className={`
         group relative overflow-hidden
-        bg-white dark:bg-gray-800
+        dark:bg-gray-800
         border-2 ${styles.border}
-        rounded-2xl shadow-lg
         hover:shadow-2xl ${styles.glow}
         transition-all duration-300
         hover:scale-105 hover:-translate-y-1
         cursor-pointer
         p-6
       `}
+      style={{
+        backgroundColor: 'var(--surface-primary)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--token-shadow-lg)',
+      }}
       onClick={onClick}
     >
       {/* Chart Emoji Halo at Top */}
@@ -169,10 +173,10 @@ export default function DashboardTile({
       {badge && (
         <div className={`
           absolute top-4 right-4
-          px-3 py-1 rounded-full text-xs font-bold
+          px-3 py-1 text-xs font-bold
           ${styles.bg} ${styles.text}
           animate-pulse
-        `}>
+        `} style={{ borderRadius: 'var(--radius-full)' }}>
           {badge}
         </div>
       )}
@@ -180,25 +184,24 @@ export default function DashboardTile({
       {/* Icon with Gradient Background */}
       <div className="relative z-10 mb-4">
         <div className={`
-          w-16 h-16 rounded-xl
+          w-16 h-16
           bg-gradient-to-br ${styles.gradient}
           flex items-center justify-center
           text-3xl
-          shadow-lg
           group-hover:scale-110 group-hover:rotate-3
           transition-transform duration-300
-        `}>
+        `} style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-lg)' }}>
           {icon}
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="relative z-10 text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:${styles.gradient} transition-all duration-300">
+      <h3 className="relative z-10 text-xl font-bold dark:text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:${styles.gradient} transition-all duration-300" style={{ color: 'var(--text-primary)' }}>
         {title}
       </h3>
 
       {/* Description */}
-      <p className="relative z-10 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+      <p className="relative z-10 text-sm dark:text-gray-400 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
         {description}
       </p>
 

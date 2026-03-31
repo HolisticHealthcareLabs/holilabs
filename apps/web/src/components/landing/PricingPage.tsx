@@ -35,7 +35,8 @@ function useFadeIn(delay = 0) {
 
 const LOCALE_OPTIONS = [
   { code: 'en', label: 'EN', name: 'English' },
-  { code: 'pt-BR', label: 'PT', name: 'Portugues' },
+  { code: 'pt', label: 'PT', name: 'Português' },
+  { code: 'es', label: 'ES', name: 'Español' },
 ] as const;
 
 // ─── Check icon ───────────────────────────────────────────────────────────────

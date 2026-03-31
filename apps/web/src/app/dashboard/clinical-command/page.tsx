@@ -4,8 +4,9 @@ import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } fro
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Step } from 'react-joyride';
-import { Stethoscope, Star, Send, User, X, Eye, Upload } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Stethoscope, Star, User, X, Eye, Upload, Mail, CheckCircle2, FlaskConical } from 'lucide-react';
+const Send = Mail; // lucide-react v0.309 barrel export issue
+import { m, AnimatePresence } from 'framer-motion';
 import { TranscriptPane, type Segment } from './_components/TranscriptPane';
 import { useMicrophoneSTT, type STTLanguage } from './_components/useMicrophoneSTT';
 import { useClinicalContext } from './_components/useClinicalContext';
@@ -13,15 +14,23 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { SoapNotePane, SOAP_DEMO_CONTENT } from './_components/SoapNotePane';
 import { PatientContextBar, type Patient } from './_components/PatientContextBar';
 import type { CDSCard, ModelId, ModelConfig } from './_components/CdssAlertsPane';
+import { DEFAULT_MODEL_ID } from './_components/CdssAlertsPane';
 import type { ConsentRecord, ClinicalEntity } from '../../../../../../packages/shared-kernel/src/types/clinical-ui';
 import { getFacesheetForPatient, getImagingForPatient } from './_data/demo-facesheet';
+import { isDemoModeEnabled } from '@/lib/demo/demo-data-generator';
 import { HistoryTab } from './_components/HistoryTab';
 import { useVitalsDetector } from './_components/useVitalsDetector';
 import { DrawerImagingPanel } from './_components/DrawerImagingPanel';
 import { DrawerDocumentsPanel } from './_components/DrawerDocumentsPanel';
+import { ThreePanelLayout } from './_components/ThreePanelLayout';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { FeatureFlags } from '@/lib/featureFlags';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useEventStream } from '@/hooks/useEventStream';
+import type { SSEEvent } from '@/lib/events/emit';
+import AlertBanner from '@/components/clinical/AlertBanner';
+import RiskScorePanel from '@/components/clinical/RiskScorePanel';
+import ScreeningsDue from '@/components/clinical/ScreeningsDue';
 
 const CdssAlertsPane = lazy(() => import('./_components/CdssAlertsPane').then(m => ({ default: m.CdssAlertsPane })));
 const PatientHandoutModal = lazy(() => import('./_components/PatientHandoutModal').then(m => ({ default: m.PatientHandoutModal })));
@@ -29,6 +38,8 @@ const SignAndBillModal = lazy(() => import('./_components/SignAndBillModal').the
 const ContextDrawer = lazy(() => import('./_components/ContextDrawer').then(m => ({ default: m.ContextDrawer })));
 const PreAuthSendPopover = lazy(() => import('./_components/PreAuthSendPopover').then(m => ({ default: m.PreAuthSendPopover })));
 const PreSignOffReviewModal = lazy(() => import('./_components/PreSignOffReviewModal').then(m => ({ default: m.PreSignOffReviewModal })));
+const FinalizeConsultationModal = lazy(() => import('./_components/FinalizeConsultationModal').then(m => ({ default: m.FinalizeConsultationModal })));
+const PrescriptionSigningModal = lazy(() => import('./_components/PrescriptionSigningModal').then(m => ({ default: m.PrescriptionSigningModal })));
 
 // Lazy-load react-joyride — browser-only, never rendered until after mount.
 // Using React.lazy + isMounted guard instead of next/dynamic({ssr:false}) to avoid
@@ -40,26 +51,29 @@ function TourTooltip({ continuous, index, step, size, backProps, closeProps, pri
   return (
     <div
       {...tooltipProps}
-      className="bg-gray-950 border border-white/10 rounded-xl shadow-2xl shadow-black/40 px-4 py-3 max-w-[280px]"
+      className="bg-gray-950 border border-white/10 shadow-black/40 px-4 py-3 max-w-[280px]"
+      style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
     >
       {step.title && (
         <div className="text-[11px] font-black uppercase tracking-[0.15em] text-cyan-400 mb-1">
           {step.title}
         </div>
       )}
-      <p className="text-[12px] text-gray-300 leading-relaxed">{step.content}</p>
+      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>{step.content}</p>
       <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.06]">
         <button
           {...skipProps}
-          className="text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
+          className="text-[11px] hover:text-gray-300 transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
         >
           Skip
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-600">{index + 1}/{size}</span>
+          <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{index + 1}/{size}</span>
           <button
             {...primaryProps}
-            className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-gray-950 text-[11px] font-bold rounded-md transition-colors"
+            className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-gray-950 text-[11px] font-bold transition-colors"
+            style={{ borderRadius: 'var(--radius-md)' }}
           >
             {continuous && index < size - 1 ? 'Next' : 'Done'}
           </button>
@@ -203,12 +217,17 @@ export default function ClinicalCommandCenterPage() {
 
   // ── Deep link: auto-select patient from My Day schedule ─────────────────
   const incomingPatientId = searchParams?.get('patientId');
+  const incomingEncounterId = searchParams?.get('encounterId');
 
   useEffect(() => {
     if (!incomingPatientId) return;
+    // Seed the encounter ref from the URL if provided (real encounter from My Day)
+    if (incomingEncounterId) {
+      encounterIdRef.current = incomingEncounterId;
+    }
     // Clean the URL so the query param does not force re-selection on later navigations
-    router.replace('/dashboard/clinical-command', { scroll: false });
-  }, [incomingPatientId, router]);
+    router.replace('/dashboard/co-pilot', { scroll: false });
+  }, [incomingPatientId, incomingEncounterId, router]);
 
   // ── Patient context ───────────────────────────────────────────────────────
   const [selectedPatient,  setSelectedPatient]  = useState<Patient | null>(null);
@@ -244,6 +263,40 @@ export default function ClinicalCommandCenterPage() {
   const [preAuthAcknowledged, setPreAuthAcknowledged] = useState(false);
   const [preAuthPopoverOpen, setPreAuthPopoverOpen] = useState(false);
   const [hasPreAuth, setHasPreAuth] = useState(false);
+
+  // ── Real-time SSE: clinical alerts & encounter updates ───────────────────
+  const [liveAlerts, setLiveAlerts] = useState<Array<{
+    ruleId: string; name: string; severity: 'minimal' | 'mild' | 'moderate' | 'severe' | 'critical';
+    recommendation: string; sourceAuthority: string; citationUrl: string;
+    evidenceGrade: string; requiresAcknowledgment: boolean;
+  }>>([]);
+
+  const handleClinicalSSE = useCallback((event: SSEEvent) => {
+    if (event.type === 'clinical_alert') {
+      const p = event.payload as {
+        patientId: string; severity: string; ruleId: string; title: string;
+        description: string; sourceAuthority: string; citationUrl: string;
+        evidenceGrade: string; requiresAcknowledgment: boolean;
+      };
+      if (selectedPatient && p.patientId !== selectedPatient.id) return;
+      setLiveAlerts((prev) => {
+        if (prev.some((a) => a.ruleId === p.ruleId)) return prev;
+        return [...prev, {
+          ruleId: p.ruleId, name: p.title,
+          severity: p.severity as 'critical' | 'severe' | 'moderate' | 'mild' | 'minimal',
+          recommendation: p.description, sourceAuthority: p.sourceAuthority,
+          citationUrl: p.citationUrl, evidenceGrade: p.evidenceGrade,
+          requiresAcknowledgment: p.requiresAcknowledgment,
+        }];
+      });
+    }
+  }, [selectedPatient]);
+
+  useEventStream({
+    eventTypes: ['clinical_alert', 'encounter_updated'],
+    onEvent: handleClinicalSSE,
+    enabled: !!selectedPatient,
+  });
 
   // ── Ambient Audio Engine: Finite State Machine ───────────────────────────
   const [ambientState,  setAmbientState]  = useState<AmbientState>('idle');
@@ -413,10 +466,32 @@ export default function ClinicalCommandCenterPage() {
   }, [selectedPatient]);
 
   // ── Model + workspace config ──────────────────────────────────────────────
-  const [activeModel,  setActiveModel]  = useState<ModelId>('anthropic');
+  const [activeModel,  setActiveModel]  = useState<ModelId>(DEFAULT_MODEL_ID);
   const [modelConfigs, setModelConfigs] = useState<Partial<Record<ModelId, ModelConfig>>>({
-    anthropic: { isConfigured: true, isActive: true },
+    [DEFAULT_MODEL_ID]: { isConfigured: true, isActive: true },
   });
+
+  // Load persisted model preference on mount
+  useEffect(() => {
+    fetch('/api/user/ai-preference')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.data?.preferredAiModel) {
+          setActiveModel(data.data.preferredAiModel as ModelId);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Persist model preference on change (debounced fire-and-forget)
+  const handleModelChange = useCallback((model: ModelId) => {
+    setActiveModel(model);
+    fetch('/api/user/ai-preference', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => {});
+  }, []);
 
   // ── CDSS state ────────────────────────────────────────────────────────────
   const [cdssAlerts, setCdssAlerts] = useState<CDSCard[]>([]);
@@ -489,6 +564,8 @@ export default function ClinicalCommandCenterPage() {
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isHandoutModalOpen, setIsHandoutModalOpen] = useState(false);
+  const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
+  const [isSigningModalOpen, setIsSigningModalOpen] = useState(false);
 
   // ── Tour state ────────────────────────────────────────────────────────────
   const [isTourRunning, setIsTourRunning] = useState(false);
@@ -568,7 +645,13 @@ export default function ClinicalCommandCenterPage() {
           map[cfg.provider as ModelId] = {
             isConfigured: cfg.isConfigured,
             isActive:     cfg.isActive,
+            source:       'byok',
           };
+        }
+        // When no BYOK keys exist but platform-level keys are available,
+        // inject a platform source so CDSS works out of the box.
+        if (Object.keys(map).length === 0 && cfgData.platformAvailable) {
+          map[DEFAULT_MODEL_ID] = { isConfigured: true, isActive: true, source: 'platform' };
         }
         if (!cancelled) setModelConfigs(map);
       } catch {
@@ -617,6 +700,7 @@ export default function ClinicalCommandCenterPage() {
   const injectedEntityIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (!isDemoModeEnabled()) return;
     const schedule = DEMO_ENTITY_SCHEDULE[segments.length];
     if (!schedule) return;
 
@@ -702,12 +786,31 @@ export default function ClinicalCommandCenterPage() {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data?.sections) {
+            const sections = json.data.sections;
             setPersonaSoapNote({
-              S: json.data.sections.subjective,
-              O: json.data.sections.objective,
-              A: json.data.sections.assessment,
-              P: json.data.sections.plan,
+              S: sections.subjective,
+              O: sections.objective,
+              A: sections.assessment,
+              P: sections.plan,
             });
+
+            // Fire-and-forget: persist SOAP note to clinical-notes API
+            if (selectedPatient?.id) {
+              fetch('/api/clinical-notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  patientId: selectedPatient.id,
+                  noteType: 'PROGRESS',
+                  chiefComplaint: sections.chiefComplaint ?? '',
+                  subjective: sections.subjective ?? '',
+                  objective: sections.objective ?? '',
+                  assessment: sections.assessment ?? '',
+                  plan: sections.plan ?? '',
+                  diagnoses: json.data.diagnoses ?? [],
+                }),
+              }).catch(() => {});
+            }
           }
           track('copilot.soap_generated', { success: true });
           setAmbientState('completed');
@@ -765,7 +868,9 @@ export default function ClinicalCommandCenterPage() {
       hasAutoSyncedRef.current = false;
       setSoapError(null);
       setToastMessage(null);
-      encounterIdRef.current = `enc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      if (!encounterIdRef.current) {
+        encounterIdRef.current = `enc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      }
       
       track('copilot.recording_started', { locale });
       startListening();
@@ -848,15 +953,16 @@ export default function ClinicalCommandCenterPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setCdssAlerts(data.cards?.length ? data.cards : DEMO_CDSS_CARDS);
+        const fallback = isDemoModeEnabled() ? DEMO_CDSS_CARDS : [];
+        setCdssAlerts(data.cards?.length ? data.cards : fallback);
       } else {
-        setCdssAlerts(DEMO_CDSS_CARDS);
+        setCdssAlerts(isDemoModeEnabled() ? DEMO_CDSS_CARDS : []);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setSyncError(t('syncTimedOut'));
       }
-      setCdssAlerts(DEMO_CDSS_CARDS);
+      setCdssAlerts(isDemoModeEnabled() ? DEMO_CDSS_CARDS : []);
     } finally {
       clearTimeout(timeoutId);
       setIsSyncing(false);
@@ -901,6 +1007,7 @@ export default function ClinicalCommandCenterPage() {
     setPatientResetKey((k) => k + 1);
     setIsBillingModalOpen(false);
     setIsReviewModalOpen(false);
+    setIsSigningModalOpen(false);
     setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
     setPreAuthAcknowledged(false);
     setPreAuthPopoverOpen(false);
@@ -912,22 +1019,26 @@ export default function ClinicalCommandCenterPage() {
   // ── Feature flag kill-switch ─────────────────────────────────────────────
   if (!scribeEnabled) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-white dark:bg-gray-950 text-center px-6">
-        <Stethoscope className="w-10 h-10 text-gray-300 dark:text-gray-700 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">Co-Pilot</h2>
-        <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
+      <div className="flex flex-col items-center justify-center h-full dark:bg-gray-950 text-center px-6" style={{ backgroundColor: 'var(--surface-primary)' }}>
+        <Stethoscope className="w-10 h-10 dark:text-gray-700 mb-4" style={{ color: 'var(--text-tertiary)' }} />
+        <h2 className="text-lg font-semibold dark:text-gray-300 mb-1" style={{ color: 'var(--text-secondary)' }}>Co-Pilot</h2>
+        <p className="text-sm dark:text-gray-500 max-w-xs" style={{ color: 'var(--text-muted)' }}>
           This feature is not enabled for your workspace. Contact your administrator.
         </p>
       </div>
     );
   }
 
+  // ── Shared transcript text for props ────────────────────────────────────
+  const transcriptText = segments
+    .filter((s) => s.kind === 'text')
+    .map((s) => (s as { kind: 'text'; text: string }).text)
+    .join('');
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-950">
-      {/* Joyride spotlight tour — rendered only after mount (isMounted guard) so
-          server HTML and first client render are identical (both null).
-          Wrapped in Suspense because React.lazy requires it. */}
+    <>
+      {/* Joyride spotlight tour */}
       {isMounted && (
         <Suspense fallback={null}>
           <JoyrideClient
@@ -943,22 +1054,14 @@ export default function ClinicalCommandCenterPage() {
                 setIsTourRunning(false);
               }
             }}
-            styles={{
-              options: {
-                arrowColor:      '#030712',
-                zIndex:          10000,
-              },
-            }}
+            styles={{ options: { arrowColor: '#030712', zIndex: 10000 } }}
           />
         </Suspense>
       )}
 
-      {/* ── Modals (lazy-loaded, rendered at root to avoid z-index conflicts) */}
+      {/* Modals (lazy-loaded at root to avoid z-index conflicts) */}
       <Suspense fallback={null}>
-        <PatientHandoutModal
-          isOpen={isHandoutModalOpen}
-          onClose={() => setIsHandoutModalOpen(false)}
-        />
+        <PatientHandoutModal isOpen={isHandoutModalOpen} onClose={() => setIsHandoutModalOpen(false)} />
       </Suspense>
       <Suspense fallback={null}>
         <SignAndBillModal
@@ -966,10 +1069,7 @@ export default function ClinicalCommandCenterPage() {
           onClose={() => setIsBillingModalOpen(false)}
           onComplete={handleBillingComplete}
           soapNote=""
-          transcript={segments
-            .filter((s) => s.kind === 'text')
-            .map((s) => (s as { kind: 'text'; text: string }).text)
-            .join(' ')}
+          transcript={transcriptText}
           patientData={selectedPatient ? {
             age: selectedPatient.dob
               ? Math.floor((Date.now() - new Date(selectedPatient.dob).getTime()) / 31557600000)
@@ -983,14 +1083,46 @@ export default function ClinicalCommandCenterPage() {
           onClose={() => setIsReviewModalOpen(false)}
           onProceedToSign={handleReviewComplete}
           onSkip={handleReviewSkip}
-          soapObjective={(personaSoapNote ?? SOAP_DEMO_CONTENT).O}
-          soapSubjective={(personaSoapNote ?? SOAP_DEMO_CONTENT).S}
+          soapObjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).O}
+          soapSubjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).S}
           patientId={selectedPatient?.id ?? ''}
           clinicianSpecialty="Internal Medicine"
         />
       </Suspense>
-
-      {/* ── Context Drawer (Hallucination Shield) ─────────────────────────── */}
+      <Suspense fallback={null}>
+        <FinalizeConsultationModal
+          isOpen={isFinalizeModalOpen}
+          onClose={() => setIsFinalizeModalOpen(false)}
+          onComplete={handleBillingComplete}
+          encounterId={encounterIdRef.current || null}
+          patientName={selectedPatient?.name ?? ''}
+          patientEmail={selectedPatient?.email}
+          soapContent={personaSoapNote ? {
+            subjective: personaSoapNote.S,
+            objective: personaSoapNote.O,
+            assessment: personaSoapNote.A,
+            plan: personaSoapNote.P,
+          } : undefined}
+        />
+      </Suspense>
+      <Suspense fallback={null}>
+        <PrescriptionSigningModal
+          isOpen={isSigningModalOpen}
+          onClose={() => setIsSigningModalOpen(false)}
+          onComplete={() => {
+            setIsSigningModalOpen(false);
+          }}
+          prescription={{
+            id: '',
+            patientName: selectedPatient?.name ?? '',
+            patientId: selectedPatient?.id ?? '',
+            clinicianName: '',
+            clinicianCRM: '',
+            medications: [],
+            createdAt: new Date().toISOString(),
+          }}
+        />
+      </Suspense>
       <Suspense fallback={null}>
         <ContextDrawer
           isOpen={isContextDrawerOpen}
@@ -1001,180 +1133,204 @@ export default function ClinicalCommandCenterPage() {
         />
       </Suspense>
 
-      {/* ── Top header (title + patient selector + tour — single row) ────── */}
-      <header className="
-        flex-shrink-0 px-5 py-2.5 border-b flex items-center gap-5
-        border-gray-200 dark:border-white/[0.06]
-      ">
-        <h1 className="font-semibold text-sm flex items-center gap-2 flex-shrink-0
-                       text-slate-900 dark:text-white">
-          <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-          {t('pageTitle')}
-        </h1>
+      {/* Mobile: below 768px, prompt to use a larger device */}
+      <div className="md:hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 p-8 text-center" style={{ background: 'var(--surface-primary)' }}>
+        <span style={{ fontSize: 56 }} aria-hidden="true">🖥</span>
+        <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{t('mobileUnsupported')}</h2>
+        <p className="max-w-xs text-sm" style={{ color: 'var(--text-secondary)' }}>{t('mobileUnsupportedDesc')}</p>
+      </div>
 
-        {isContextScanning && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20 animate-pulse shrink-0">
-            {t('scanningContext')}
-          </span>
-        )}
-        {clinicalContext && !isContextScanning && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 shrink-0">
-            {t('contextReady')}
-          </span>
-        )}
+      <ThreePanelLayout
+        /* ── HEADER BAR: Patient name, MRN, status, encounter timer ── */
+        header={
+          <header className="flex-shrink-0 px-md py-sm dark:border-white/[0.06] flex items-center gap-md" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <h1 className="font-semibold text-body-dense flex items-center gap-xs flex-shrink-0 dark:text-white" style={{ color: 'var(--text-primary)' }}>
+              <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+              {t('pageTitle')}
+            </h1>
 
-        {/* Patient selector — inline in header */}
-        <PatientContextBar
-          key={patientResetKey}
-          inline
-          onSelectPatient={(p) => {
-            if (p) track('copilot.session_started');
-            setSelectedPatient(p);
-            setPreAuthAcknowledged(false);
-            setPreAuthPopoverOpen(false);
-            if (!p) { setChartOpen(false); setAttachMode(false); }
-            if (p && personaCdssAlerts) setCdssAlerts(personaCdssAlerts);
-          }}
-          initialPatientId={incomingPatientId}
-          patients={personaPatients}
-          chartOpen={chartOpen}
-          onChartOpenChange={setChartOpen}
-          attachMode={attachMode}
-          onAttachModeChange={setAttachMode}
-        />
-
-        <div className="flex items-center shrink-0 ml-auto">
-          <button
-            onClick={() => setIsTourRunning(true)}
-            className="
-              flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium
-              text-slate-500 dark:text-slate-500
-              hover:text-slate-700 dark:hover:text-slate-300
-              hover:bg-slate-100 dark:hover:bg-white/[0.04]
-              transition-all duration-200
-              focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/60
-            "
-            aria-label={t('startTour')}
-          >
-            <Star className="w-3 h-3" />
-            {t('quickTour')}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Pre-Authorization Safety Banner ─────────────────────────────────── */}
-      {selectedPatient && !preAuthAcknowledged && !hasPreAuth && (
-        <div className="mx-3 mb-0 flex items-start gap-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-4 py-3">
-          <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{t('preAuthTitle')}</p>
-            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-              {t('noPreAuthBody', { name: selectedPatient.name })}
-            </p>
-          </div>
-          <div className="relative flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setPreAuthPopoverOpen((o) => !o)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 transition-colors px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20"
-            >
-              <Send className="h-3 w-3" />
-              {t('sendPreAuth')}
-            </button>
-            <button
-              onClick={() => setPreAuthAcknowledged(true)}
-              className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20"
-            >
-              {t('acknowledge')}
-            </button>
-            {preAuthPopoverOpen && (
-              <Suspense fallback={null}>
-                <PreAuthSendPopover
-                  patientName={selectedPatient.name}
-                  patientId={selectedPatient.id}
-                  onClose={() => setPreAuthPopoverOpen(false)}
-                  onSent={() => setHasPreAuth(true)}
-                />
-              </Suspense>
+            {isContextScanning && (
+              <span className="inline-flex items-center gap-xs px-sm py-xs dark:bg-cyan-500/10 text-caption font-semibold text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20 animate-pulse shrink-0" style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-accent)' }}>
+                {t('scanningContext')}
+              </span>
             )}
-          </div>
-        </div>
-      )}
+            {clinicalContext && !isContextScanning && (
+              <span className="inline-flex items-center gap-xs px-sm py-xs dark:bg-emerald-500/10 text-caption font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 shrink-0" style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-success)' }}>
+                {t('contextReady')}
+              </span>
+            )}
 
-      {/* ── 3-Column Layout: Transcript | SOAP (center stage) | Co-Pilot ──── */}
-      <main className="flex-1 flex gap-px p-0 min-h-0">
-        {/* ── Col 1: Live Meeting Notes (narrow — secondary focus) ──────── */}
-        <div
-          id="live-meeting-notes"
-          className={`hidden md:flex min-h-0 shrink-0 transition-[width] duration-150 ease-out border-r border-white/[0.06] ${viewingStudy ? 'w-[22%]' : 'w-[26%]'}`}
-        >
-          <TranscriptPane
-            segments={segments}
-            isRecording={isRecording}
-            isFinalizing={ambientState === 'finalizing_audio'}
-            onToggleRecord={toggleRecord}
-            onRunDemo={handleRunDemo}
-            disabled={!selectedPatient || ambientState === 'generating_soap'}
-            consentRecord={patientConsent}
-            onGrantConsent={grantConsent}
-            onRevokeConsent={revokeConsent}
-            volume={volume}
-          />
-        </div>
+            {/* Patient selector — inline in header */}
+            <PatientContextBar
+              key={patientResetKey}
+              inline
+              onSelectPatient={(p) => {
+                if (p) track('copilot.session_started');
+                setSelectedPatient(p);
+                setPreAuthAcknowledged(false);
+                setPreAuthPopoverOpen(false);
+                if (!p) { setChartOpen(false); setAttachMode(false); }
+                if (p && personaCdssAlerts) setCdssAlerts(personaCdssAlerts);
+              }}
+              initialPatientId={incomingPatientId}
+              patients={personaPatients}
+              chartOpen={chartOpen}
+              onChartOpenChange={setChartOpen}
+              attachMode={attachMode}
+              onAttachModeChange={setAttachMode}
+            />
 
-        {/* ── Col 2: Tabbed Center Panel ─────────────────────────────────── */}
-        <div id="center-panel" className="min-h-0 flex-1 min-w-0 flex flex-col border-r border-white/[0.06]">
-          {/* Tab bar */}
-          <div className="flex items-center gap-1 px-3 pt-2 pb-1.5 shrink-0 border-b border-white/[0.04]">
-            {(['history', 'imaging', 'documents', 'soap'] as const).map((tab) => (
+            {/* Encounter timer + actions */}
+            <div className="flex items-center gap-sm shrink-0 ml-auto">
               <button
-                key={tab}
-                onClick={() => {
-                  setCoPilotTab(tab);
-                  if (tab === 'history' || tab === 'imaging') setIsContextDrawerOpen(false);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
-                  coPilotTab === tab
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-                }`}
+                onClick={() => setIsTourRunning(true)}
+                className="flex items-center gap-xs px-sm py-xs text-caption font-medium hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-all min-h-touch-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
+                aria-label={t('startTour')}
               >
-                {t(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
+                <Star className="w-3 h-3" />
+                {t('quickTour')}
               </button>
-            ))}
-          </div>
+            </div>
+          </header>
+        }
 
-          {/* Tab content */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            {coPilotTab === 'history' && selectedPatient && (
-              <HistoryTab
-                facesheet={getFacesheetForPatient(selectedPatient.id)}
-                pendingBatch={vitalsBatch}
-                onAcceptAll={acceptVitals}
-                onDismiss={dismissVitals}
-                onToggleItem={toggleVitalItem}
-                onUndo={undoVitals}
-                canUndo={canUndoVitals}
+        /* ── BANNER: Pre-Authorization Safety ── */
+        banner={
+          selectedPatient && !preAuthAcknowledged && !hasPreAuth ? (
+            <div className="mx-sm flex items-start gap-sm dark:bg-amber-500/10 border dark:border-amber-500/30 px-md py-sm" style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-warning)', borderColor: 'var(--border-default)' }}>
+              <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-caption font-semibold text-amber-800 dark:text-amber-300">{t('preAuthTitle')}</p>
+                <p className="text-caption text-amber-700 dark:text-amber-400 mt-xs leading-relaxed">
+                  {t('noPreAuthBody', { name: selectedPatient.name })}
+                </p>
+              </div>
+              <div className="relative flex items-center gap-sm shrink-0">
+                <button
+                  onClick={() => setPreAuthPopoverOpen((o) => !o)}
+                  className="flex items-center gap-xs text-caption font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 transition-colors px-sm py-xs hover:bg-amber-100 dark:hover:bg-amber-500/20 min-h-touch-sm"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
+                >
+                  <Send className="h-3 w-3" />
+                  {t('sendPreAuth')}
+                </button>
+                <button
+                  onClick={() => setPreAuthAcknowledged(true)}
+                  className="text-caption font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors px-sm py-xs hover:bg-amber-100 dark:hover:bg-amber-500/20 min-h-touch-sm"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
+                >
+                  {t('acknowledge')}
+                </button>
+                {preAuthPopoverOpen && (
+                  <Suspense fallback={null}>
+                    <PreAuthSendPopover
+                      patientName={selectedPatient.name}
+                      patientId={selectedPatient.id}
+                      onClose={() => setPreAuthPopoverOpen(false)}
+                      onSent={() => setHasPreAuth(true)}
+                    />
+                  </Suspense>
+                )}
+              </div>
+            </div>
+          ) : undefined
+        }
+
+        /* ── LEFT PANEL: Patient Context (demographics, vitals, meds, allergies) ── */
+        left={
+          <div className="flex flex-col h-full">
+            {selectedPatient ? (
+              <div className="flex-1 overflow-y-auto">
+                <HistoryTab
+                  facesheet={getFacesheetForPatient(selectedPatient.id)}
+                  pendingBatch={vitalsBatch}
+                  onAcceptAll={acceptVitals}
+                  onDismiss={dismissVitals}
+                  onToggleItem={toggleVitalItem}
+                  onUndo={undoVitals}
+                  canUndo={canUndoVitals}
+                />
+                {/* Live clinical alerts from SSE */}
+                {liveAlerts.length > 0 && (
+                  <div className="px-[var(--space-md)] py-[var(--space-sm)] border-t border-[var(--border-default)]">
+                    <AlertBanner
+                      alerts={liveAlerts}
+                      patientId={selectedPatient.id}
+                      onAcknowledge={(ruleId) => {
+                        void fetch('/api/audit', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            action: 'CLINICAL_ALERT_ACKNOWLEDGED',
+                            resource: 'ClinicalAlert',
+                            resourceId: ruleId,
+                            details: { patientId: selectedPatient.id, encounterId: encounterIdRef.current },
+                          }),
+                        }).catch(() => {});
+                        setLiveAlerts((prev) => prev.filter((a) => a.ruleId !== ruleId));
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Risk scores + screenings due */}
+                <div className="px-[var(--space-md)] py-[var(--space-sm)] border-t border-[var(--border-default)] space-y-[var(--space-sm)]">
+                  <RiskScorePanel
+                    patientId={selectedPatient.id}
+                    locale={locale}
+                  />
+                  <ScreeningsDue
+                    patientId={selectedPatient.id}
+                    locale={locale}
+                  />
+                </div>
+
+                {/* Imaging section */}
+                {(() => {
+                  const studies = getImagingForPatient(selectedPatient.id);
+                  return studies.length > 0 ? (
+                    <div className="px-md py-sm dark:border-white/[0.06]" style={{ borderTop: '1px solid var(--border-default)' }}>
+                      <DrawerImagingPanel
+                        studies={studies}
+                        onSwitchToDocuments={() => setCoPilotTab('documents')}
+                        onStudySelect={(s) => { setViewingStudy(s); setLastViewedStudy(s); }}
+                      />
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center dark:text-gray-600 text-body-dense px-md text-center" style={{ color: 'var(--text-muted)' }}>
+                {t('selectPatientHistory')}
+              </div>
+            )}
+          </div>
+        }
+
+        /* ── CENTER PANEL: Transcript (top, collapsible) + SOAP (middle) + History tabs ── */
+        center={
+          <div className="flex flex-col h-full min-h-0">
+            {/* Transcript section — collapsible */}
+            <div id="live-meeting-notes" className="shrink-0 max-h-[40%] flex flex-col dark:border-white/[0.06]" style={{ borderBottom: '1px solid var(--border-default)' }}>
+              <TranscriptPane
+                segments={segments}
+                isRecording={isRecording}
+                isFinalizing={ambientState === 'finalizing_audio'}
+                onToggleRecord={toggleRecord}
+                onRunDemo={handleRunDemo}
+                disabled={!selectedPatient || ambientState === 'generating_soap'}
+                consentRecord={patientConsent}
+                onGrantConsent={grantConsent}
+                onRevokeConsent={revokeConsent}
+                volume={volume}
               />
-            )}
-            {coPilotTab === 'history' && !selectedPatient && (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">{t('selectPatientHistory')}</div>
-            )}
-            {coPilotTab === 'imaging' && selectedPatient && (() => {
-              const studies = getImagingForPatient(selectedPatient.id);
-              return <div className="p-3"><DrawerImagingPanel studies={studies} onSwitchToDocuments={() => setCoPilotTab('documents')} onStudySelect={(s) => { setViewingStudy(s); setLastViewedStudy(s); }} /></div>;
-            })()}
-            {coPilotTab === 'imaging' && !selectedPatient && (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">{t('selectPatientImaging')}</div>
-            )}
-            {coPilotTab === 'documents' && selectedPatient && (
-              <div className="p-3"><DrawerDocumentsPanel patientId={selectedPatient.id} /></div>
-            )}
-            {coPilotTab === 'documents' && !selectedPatient && (
-              <div className="flex items-center justify-center h-full text-white/30 text-sm">{t('selectPatientDocuments')}</div>
-            )}
-            {coPilotTab === 'soap' && (
+            </div>
+
+            {/* SOAP Notes — main content area */}
+            <div id="soap-note-pane" className="flex-1 min-h-0 overflow-y-auto">
               <SoapNotePane
                 segmentCount={segments.length}
                 patientSelected={!!selectedPatient}
@@ -1185,189 +1341,126 @@ export default function ClinicalCommandCenterPage() {
                 onRetry={handleRetryGeneration}
                 soapContent={personaSoapNote}
               />
+            </div>
+
+            {/* Documents tab — collapsible bottom section */}
+            {selectedPatient && coPilotTab === 'documents' && (
+              <div className="shrink-0 max-h-[30%] overflow-y-auto dark:border-white/[0.06] p-sm" style={{ borderTop: '1px solid var(--border-default)' }}>
+                <DrawerDocumentsPanel patientId={selectedPatient.id} />
+              </div>
             )}
           </div>
-        </div>
+        }
 
-        {/* ── Col 3: AI Co-Pilot (full height — room to breathe) ───────── */}
-        <div
-          id="cdss-pane"
-          className={`hidden md:flex min-h-0 shrink-0 transition-[width] duration-150 ease-out ${viewingStudy ? 'w-[24%]' : 'w-[32%]'}`}
-        >
-          <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">{t('loadingCoPilot')}</div>}>
-          <CdssAlertsPane
-            activeModel={activeModel}
-            modelConfigs={modelConfigs}
-            onModelChange={setActiveModel}
-            cdssAlerts={cdssAlerts}
-            isSyncing={isSyncing}
-            onSync={handleSync}
-            syncError={syncError}
-            patientSelected={!!selectedPatient}
-            hasTranscript={segments.length > 0}
-            selectedPatient={selectedPatient}
-            transcript={segments
-              .filter((s) => s.kind === 'text')
-              .map((s) => (s as { kind: 'text'; text: string }).text)
-              .join('')}
-            onOpenHandout={() => setIsHandoutModalOpen(true)}
-            resetSignal={resetSignal}
-          />
-          </Suspense>
-        </div>
+        /* ── RIGHT PANEL: AI Co-Pilot (CDSS alerts, chat, model selector) ── */
+        right={
+          <div id="cdss-pane" className="flex flex-col h-full">
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-body-dense" style={{ color: 'var(--text-tertiary)' }}>{t('loadingCoPilot')}</div>}>
+              <CdssAlertsPane
+                activeModel={activeModel}
+                modelConfigs={modelConfigs}
+                onModelChange={handleModelChange}
+                cdssAlerts={cdssAlerts}
+                isSyncing={isSyncing}
+                onSync={handleSync}
+                syncError={syncError}
+                patientSelected={!!selectedPatient}
+                hasTranscript={segments.length > 0}
+                selectedPatient={selectedPatient}
+                transcript={transcriptText}
+                onOpenHandout={() => setIsHandoutModalOpen(true)}
+                resetSignal={resetSignal}
+              />
+            </Suspense>
+          </div>
+        }
 
-        {/* ── Right Sidebar — My Day Summary + PACS Imaging ──────────────── */}
-        <AnimatePresence>
-          {viewingStudy && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-              className="hidden md:flex min-h-0 shrink-0 overflow-hidden"
+        /* ── ACTION BAR: Record | Save Draft | Pre-Sign Review | Finalize ── */
+        actionBar={
+          <footer className="flex-shrink-0 px-md py-sm dark:border-white/[0.06] flex items-center gap-sm dark:bg-gray-950" style={{ borderTop: '1px solid var(--border-default)', backgroundColor: 'var(--surface-primary)' }}>
+            {/* Record toggle */}
+            <button
+              onClick={toggleRecord}
+              disabled={!selectedPatient || ambientState === 'generating_soap'}
+              className={`min-h-touch-sm px-md py-xs text-body-dense font-semibold transition-all ${
+                isRecording
+                  ? 'bg-clinical-critical text-white animate-pulse'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              } disabled:opacity-40`}
+              style={{ borderRadius: 'var(--radius-xl)' }}
             >
-              <div className="w-[300px] h-full flex flex-col bg-gray-50 dark:bg-gray-950 border-l border-gray-200 dark:border-white/[0.06] overflow-y-auto">
+              {isRecording ? t('recordingStop') : t('recording')}
+            </button>
 
-                {/* PACS — Patient Studies */}
-                <div className="px-3 py-3 border-b border-gray-100 dark:border-white/[0.06]">
-                  <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 dark:text-white/35 mb-2">{t('rightPanelPacs')}</h3>
-                  {selectedPatient ? (() => {
-                    const studies = getImagingForPatient(selectedPatient.id);
-                    return studies.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {studies.map((s) => (
-                          <button
-                            key={s.id}
-                            onClick={() => setViewingStudy(s)}
-                            className={`w-full text-left rounded-lg border p-2 transition-all ${
-                              viewingStudy?.id === s.id
-                                ? 'border-cyan-500/30 bg-cyan-500/5'
-                                : 'border-gray-200 dark:border-white/[0.05] hover:border-cyan-500/20 bg-white dark:bg-white/[0.02]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded overflow-hidden shrink-0">
-                                <img src={s.thumbnailUrl || ''} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-medium text-gray-800 dark:text-white/80 truncate">{s.description}</p>
-                                <p className="text-[9px] text-gray-500 dark:text-white/30">{s.bodyPart} · {new Date(s.studyDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-gray-400 dark:text-white/30 italic">{t('rightPanelNoStudies')}</p>
-                    )
-                  })() : (
-                    <p className="text-[11px] text-gray-400 dark:text-white/30 italic">{t('rightPanelSelectPatient')}</p>
-                  )}
-                </div>
+            {/* Save Draft */}
+            <button
+              disabled={!selectedPatient || segments.length === 0}
+              className="min-h-touch-sm px-md py-xs text-body-dense font-medium dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 transition-all"
+              style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)' }}
+            >
+              {t('saveDraft')}
+            </button>
 
-                {/* Selected Study Viewer */}
-                {viewingStudy && viewingStudy.id !== 'SIDEBAR' && (
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <div className="px-3 py-2 border-b border-gray-100 dark:border-white/[0.06]">
-                      <p className="text-[11px] font-semibold text-gray-800 dark:text-white truncate">{viewingStudy.description}</p>
-                      <p className="text-[9px] text-gray-500 dark:text-white/30">
-                        {viewingStudy.bodyPart} · {new Date(viewingStudy.studyDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                        {viewingStudy.radiologist && ` · ${viewingStudy.radiologist}`}
-                      </p>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center p-3 bg-black/20 min-h-[200px]">
-                      <div className="relative w-full aspect-square max-h-[280px] rounded-lg overflow-hidden bg-gray-950 ring-1 ring-white/5">
-                        <img src={viewingStudy.thumbnailUrl || ''} alt={viewingStudy.description} className="w-full h-full object-contain" />
-                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 rounded bg-black/70 text-[8px] font-bold text-white">
-                            {viewingStudy.modality === 'X-Ray' ? 'XR' : viewingStudy.modality === 'Ultrasound' ? 'US' : viewingStudy.modality === 'Mammography' ? 'MG' : viewingStudy.modality.slice(0, 2).toUpperCase()}
-                          </span>
-                          {viewingStudy.isAbnormal && <span className="px-1.5 py-0.5 rounded bg-red-500/80 text-[8px] font-bold text-white">ABN</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+            {/* Lab Orders */}
+            {selectedPatient && (
+              <button
+                onClick={() => router.push(`/dashboard/lab-orders?patientId=${selectedPatient.id}`)}
+                className="min-h-touch-sm px-md py-xs text-body-dense font-medium dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)' }}
+              >
+                <span className="flex items-center gap-xs">
+                  <FlaskConical className="w-4 h-4" />
+                  {t('labOrders')}
+                </span>
+              </button>
+            )}
 
-      {/* ── Mobile: stacked single-column fallback ──────────────────────── */}
-      <div className="md:hidden flex-1 flex flex-col gap-3 p-3 min-h-0 overflow-y-auto">
-        <div id="live-meeting-notes-mobile">
-          <TranscriptPane
-            segments={segments}
-            isRecording={isRecording}
-            isFinalizing={ambientState === 'finalizing_audio'}
-            onToggleRecord={toggleRecord}
-            onRunDemo={handleRunDemo}
-            disabled={!selectedPatient || ambientState === 'generating_soap'}
-            consentRecord={patientConsent}
-            onGrantConsent={grantConsent}
-            onRevokeConsent={revokeConsent}
-            volume={volume}
-          />
-        </div>
-        <div>
-          <SoapNotePane
-            segmentCount={segments.length}
-            patientSelected={!!selectedPatient}
-            onSignAndBill={() => setIsReviewModalOpen(true)}
-            isGeneratingSoap={ambientState === 'generating_soap'}
-            isCompleted={ambientState === 'completed'}
-            soapError={soapError}
-            onRetry={handleRetryGeneration}
-            soapContent={personaSoapNote}
-          />
-        </div>
-        <div>
-          <Suspense fallback={<div className="flex items-center justify-center h-40 text-slate-500 text-sm">{t('loadingCoPilot')}</div>}>
-          <CdssAlertsPane
-            activeModel={activeModel}
-            modelConfigs={modelConfigs}
-            onModelChange={setActiveModel}
-            cdssAlerts={cdssAlerts}
-            isSyncing={isSyncing}
-            onSync={handleSync}
-            syncError={syncError}
-            patientSelected={!!selectedPatient}
-            hasTranscript={segments.length > 0}
-            selectedPatient={selectedPatient}
-            transcript={segments
-              .filter((s) => s.kind === 'text')
-              .map((s) => (s as { kind: 'text'; text: string }).text)
-              .join('')}
-            onOpenHandout={() => setIsHandoutModalOpen(true)}
-            resetSignal={resetSignal}
-          />
-          </Suspense>
-        </div>
-      </div>
+            <div className="flex-1" />
 
-      {/* Toast notification: word-count guardrail feedback */}
+            {/* Pre-Sign Review */}
+            {selectedPatient && (
+              <button
+                onClick={() => setIsReviewModalOpen(true)}
+                className="min-h-touch-sm px-md py-xs text-body-dense font-medium dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)' }}
+              >
+                {t('preSignReview')}
+              </button>
+            )}
+
+            {/* Finalize */}
+            {selectedPatient && (
+              <button
+                onClick={() => setIsFinalizeModalOpen(true)}
+                className="min-h-touch-sm px-lg py-xs text-body-dense font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                style={{ borderRadius: 'var(--radius-xl)' }}
+              >
+                <span className="flex items-center gap-xs">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {t('finalize.button')}
+                </span>
+              </button>
+            )}
+          </footer>
+        }
+      />
+
+      {/* Toast notification */}
       <AnimatePresence>
         {toastMessage && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.25 }}
-            className="
-              fixed bottom-6 left-1/2 -translate-x-1/2 z-50
-              px-5 py-3 rounded-xl shadow-lg
-              bg-amber-50 dark:bg-amber-900/90
-              border border-amber-200 dark:border-amber-600/50
-              text-amber-800 dark:text-amber-200
-              text-sm font-medium
-            "
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-lg py-sm dark:bg-amber-900/90 border dark:border-amber-600/50 text-amber-800 dark:text-amber-200 text-body-dense font-medium"
+            style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-lg)', backgroundColor: 'var(--surface-warning)', borderColor: 'var(--border-default)' }}
             role="alert"
           >
             {toastMessage}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

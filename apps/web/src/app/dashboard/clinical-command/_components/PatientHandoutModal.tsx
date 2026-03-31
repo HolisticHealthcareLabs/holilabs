@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, MessageSquare, Mail, Stethoscope } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             key="handout-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -112,7 +112,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
           />
 
           {/* Modal */}
-          <motion.div
+          <m.div
             key="handout-modal"
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -127,9 +127,10 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
               className="
                 pointer-events-auto w-full max-w-xl
                 bg-slate-900 border border-slate-700
-                rounded-2xl shadow-2xl flex flex-col overflow-hidden
+                flex flex-col overflow-hidden
                 max-h-[90vh]
               "
+              style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
             >
               {/* Header */}
               <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-800">
@@ -146,10 +147,11 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                   onClick={onClose}
                   aria-label="Close handout modal"
                   className="
-                    p-1.5 rounded-lg text-slate-500 hover:text-white
+                    p-1.5 hover:text-white
                     hover:bg-slate-800 transition-colors
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                   "
+                  style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -161,7 +163,8 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                 <div>
                   <label
                     htmlFor="handout-content"
-                    className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block mb-1.5"
+                    className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5"
+                    style={{ color: 'var(--text-tertiary)' }}
                   >
                     {t('messagePreview')}
                   </label>
@@ -174,16 +177,17 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                       w-full text-xs leading-relaxed
                       bg-slate-800 border border-slate-700
                       text-slate-300 placeholder-slate-600
-                      rounded-xl px-4 py-3 resize-none
+                      px-4 py-3 resize-none
                       focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent
                     "
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                     aria-label="Patient handout content"
                   />
                 </div>
 
                 {/* Delivery method */}
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-tertiary)' }}>
                     {t('deliveryMethod')}
                   </p>
                   <div className="flex gap-2">
@@ -193,14 +197,18 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                         onClick={() => setDelivery(value)}
                         aria-pressed={delivery === value}
                         className={`
-                          flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium
+                          flex items-center gap-1.5 px-3 py-2 text-xs font-medium
                           transition-colors flex-1 justify-center
                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                           ${delivery === value
                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                            : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                            : 'bg-slate-800 border border-slate-700 hover:bg-slate-700'
                           }
                         `}
+                        style={{
+                          borderRadius: 'var(--radius-xl)',
+                          ...(delivery !== value ? { color: 'var(--text-muted)' } : {}),
+                        }}
                       >
                         <Icon className="w-3.5 h-3.5" />
                         {t(label)}
@@ -215,22 +223,23 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                 <button
                   onClick={onClose}
                   className="
-                    flex-1 py-2.5 rounded-xl text-sm font-medium
+                    flex-1 py-2.5 text-sm font-medium
                     bg-slate-800 hover:bg-slate-700 text-slate-300
                     transition-colors
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500
                   "
+                  style={{ borderRadius: 'var(--radius-xl)' }}
                 >
                   {t('cancel')}
                 </button>
-                <motion.button
+                <m.button
                   onClick={handleSend}
                   disabled={sent}
                   whileHover={!sent ? { scale: 1.02 } : {}}
                   whileTap={!sent ? { scale: 0.97 } : {}}
                   aria-label="Approve and send to patient"
                   className={`
-                    flex-[2] py-2.5 rounded-xl text-sm font-semibold
+                    flex-[2] py-2.5 text-sm font-semibold
                     flex items-center justify-center gap-2
                     transition-all
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
@@ -239,16 +248,17 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                       : 'bg-cyan-500 hover:bg-cyan-400 text-white'
                     }
                   `}
+                  style={{ borderRadius: 'var(--radius-xl)' }}
                 >
                   {sent ? (
                     <><CheckCircle2 className="w-4 h-4" /> {t('sent')}</>
                   ) : (
                     <>{t('approveAndSend')}</>
                   )}
-                </motion.button>
+                </m.button>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

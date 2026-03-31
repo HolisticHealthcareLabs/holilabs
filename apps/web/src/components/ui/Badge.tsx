@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-full font-bold text-xs px-2 py-0.5 transition-all',
+  'inline-flex items-center justify-center font-bold text-xs px-2 py-0.5 transition-all',
   {
     variants: {
       variant: {
@@ -52,6 +52,7 @@ export function Badge({ children, variant, size, className, animate = false }: B
   return (
     <motion.span
       className={cn(badgeVariants({ variant, size }), className)}
+      style={{ borderRadius: 'var(--radius-full)' }}
       initial={animate ? { scale: 0, opacity: 0 } : undefined}
       animate={animate ? { scale: 1, opacity: 1 } : undefined}
       transition={{ duration: 0.2, ease: 'easeOut' }}

@@ -15,32 +15,32 @@ import { Toaster } from '@/components/ui/toaster';
 const OfflineIndicator = dynamic(() => import('@/components/OfflineIndicator'), { ssr: false });
 const IOSInstallPrompt = dynamic(() => import('@/components/IOSInstallPrompt').then(m => ({ default: m.IOSInstallPrompt })), { ssr: false });
 const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner').then(m => ({ default: m.CookieConsentBanner })), { ssr: false });
-// Validate environment variables at app startup
-import '@/lib/env';
+// Environment validation runs at build time, not per-request
+// import '@/lib/env';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'Holi Labs - Cardiology Verification',
-  description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
+  title: 'Cortex Health',
+  description: 'Clinical intelligence platform for proactive healthcare.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Holi Labs',
+    title: 'Cortex',
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'Holi Labs',
-    title: 'Holi Labs - Cardiology Verification',
-    description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
+    siteName: 'Cortex Health',
+    title: 'Cortex Health',
+    description: 'Clinical intelligence platform for proactive healthcare.',
   },
   twitter: {
     card: 'summary',
-    title: 'Holi Labs - Cardiology Verification',
-    description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
+    title: 'Cortex Health',
+    description: 'Clinical intelligence platform for proactive healthcare.',
   },
 };
 
@@ -82,6 +82,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
 (function() {
+  function esc(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
   function showCrash(label, err) {
     try {
       var msg = (err && (err.message || err.reason && err.reason.message)) || String(err || 'Unknown error');
@@ -118,11 +119,11 @@ export default async function RootLayout({
         '<div style="max-width: 960px; margin: 0 auto;">' +
         '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">' +
         '<div><div style="font-size:18px; font-weight:700;">Holi Labs crash (early)</div>' +
-        '<div style="color:#555; font-size:12px; margin-top:4px;">' + label + '</div></div>' +
+        '<div style="color:#555; font-size:12px; margin-top:4px;">' + esc(label) + '</div></div>' +
         '<button style="background:#111;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;" onclick="location.reload()">Reload</button>' +
         '</div>' +
         '<pre style="margin-top:12px; background:#f7f7f7; border:1px solid #e5e5e5; border-radius:8px; padding:12px; white-space:pre-wrap;">' +
-        msg + (stack ? '\\n\\n' + stack : '') +
+        esc(msg) + (stack ? '\\n\\n' + esc(stack) : '') +
         '</pre>' +
         '</div>';
     } catch {}

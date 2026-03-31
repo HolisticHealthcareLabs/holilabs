@@ -96,12 +96,13 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
       <motion.button
         layout
         onClick={() => setIsOpen(true)}
-        className="h-10 px-4 rounded-lg bg-white/5 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50
-          text-gray-600 dark:text-gray-400
+        className="h-10 px-4 bg-white/5 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50
+          dark:text-gray-400
           hover:bg-white/10 dark:hover:bg-gray-800/70
           transition-all duration-200
           flex items-center gap-2
           text-sm"
+        style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)' }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -114,7 +115,7 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
           />
         </svg>
         <span>Search patients...</span>
-        <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono">
+        <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 dark:border-gray-600 text-[10px] font-mono" style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)' }}>
           ⌘K
         </kbd>
       </motion.button>
@@ -142,8 +143,8 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
               className="fixed top-1/4 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50
                 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl
                 border border-white/20 dark:border-gray-700/50
-                rounded-2xl shadow-2xl
                 overflow-hidden"
+              style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
             >
               {/* Input */}
               <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
@@ -156,16 +157,17 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
                     setQuery(e.target.value);
                     setSelectedIndex(0);
                   }}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg
-                    text-gray-900 dark:text-white text-lg
+                  className="w-full px-4 py-3 dark:bg-gray-800 dark:border-gray-700
+                    dark:text-white text-lg
                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{ backgroundColor: 'var(--surface-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               {/* Results */}
               <div className="max-h-96 overflow-y-auto">
                 {filteredPatients.length === 0 ? (
-                  <div className="p-8 text-center text-gray-600 dark:text-gray-400">
+                  <div className="p-8 text-center dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
                     No patients found
                   </div>
                 ) : (
@@ -183,11 +185,11 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
                     >
-                      <div className="font-semibold text-gray-900 dark:text-white">
+                      <div className="font-semibold dark:text-white" style={{ color: 'var(--text-primary)' }}>
                         {patient.firstName} {patient.lastName}
                       </div>
                       {/* Decorative - low contrast intentional for MRN identifier */}
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm dark:text-gray-400" style={{ color: 'var(--text-tertiary)' }}>
                         MRN: {patient.mrn}
                       </div>
                     </motion.button>
