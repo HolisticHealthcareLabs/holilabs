@@ -1,7 +1,15 @@
 'use client';
 
+/**
+ * [ACTIVATING: PAUL — Onboarding Welcome Page i18n Fix]
+ *
+ * Waitlist-gated onboarding: validates invitation link, creates account.
+ * All strings use useTranslations('onboarding.welcome') for trilingual support.
+ */
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface LeadInfo {
@@ -16,6 +24,7 @@ type PageState = 'loading' | 'form' | 'submitting' | 'success' | 'invalid';
 export default function WaitlistOnboardingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('onboarding.welcome');
   const leadId = searchParams?.get('leadId') ?? null;
 
   const [pageState, setPageState] = useState<PageState>('loading');
@@ -48,11 +57,11 @@ export default function WaitlistOnboardingPage() {
     setError(null);
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('passwordMinLength'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('passwordMismatch'));
       return;
     }
 
@@ -68,7 +77,7 @@ export default function WaitlistOnboardingPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Something went wrong.');
+        setError(data.error || t('somethingWentWrong'));
         setPageState('form');
         return;
       }
@@ -78,7 +87,7 @@ export default function WaitlistOnboardingPage() {
         router.push('/sign-in?onboarded=true');
       }, 2000);
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('networkError'));
       setPageState('form');
     }
   };
@@ -103,10 +112,10 @@ export default function WaitlistOnboardingPage() {
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-white mb-2">
-            Invalid or expired link
+            {t('invalidLink')}
           </h1>
           <p className="text-sm text-[#86868b]">
-            This link is no longer valid. Contact your administrator for a new invitation.
+            {t('invalidLinkDescription')}
           </p>
         </div>
       </div>
@@ -124,10 +133,10 @@ export default function WaitlistOnboardingPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-semibold text-white mb-2">
-            Account created
+            {t('accountCreated')}
           </h1>
           <p className="text-sm text-[#86868b]">
-            Redirecting you to sign in...
+            {t('redirecting')}
           </p>
           <div className="mt-4 w-5 h-5 mx-auto border-2 border-[#424245] border-t-white rounded-full animate-spin" />
         </div>
@@ -136,6 +145,8 @@ export default function WaitlistOnboardingPage() {
   }
 
   // --- Form ---
+  const firstName = lead?.name ? lead.name.split(' ')[0] : null;
+
   return (
     <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -151,10 +162,10 @@ export default function WaitlistOnboardingPage() {
             />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white mb-1.5">
-            Welcome to Cortex{lead?.name ? `, ${lead.name.split(' ')[0]}` : ''}
+            {firstName ? t('titleWithName', { name: firstName }) : t('title')}
           </h1>
           <p className="text-sm text-[#86868b]">
-            Set up your account and workspace.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -165,7 +176,7 @@ export default function WaitlistOnboardingPage() {
             <div className="space-y-3 mb-6">
               <div>
                 <label className="block text-xs font-medium text-[#86868b] uppercase tracking-wider mb-1.5">
-                  Email
+                  {t('email')}
                 </label>
                 <div className="px-4 py-3 rounded-xl bg-[#2c2c2e] border border-[#38383a] text-sm text-[#a1a1a6]">
                   {lead?.email}
@@ -174,7 +185,7 @@ export default function WaitlistOnboardingPage() {
               {lead?.company && (
                 <div>
                   <label className="block text-xs font-medium text-[#86868b] uppercase tracking-wider mb-1.5">
-                    Workspace
+                    {t('workspace')}
                   </label>
                   <div className="px-4 py-3 rounded-xl bg-[#2c2c2e] border border-[#38383a] text-sm text-[#a1a1a6]">
                     {lead.company}
@@ -193,7 +204,7 @@ export default function WaitlistOnboardingPage() {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-xs font-medium text-[#86868b] uppercase tracking-wider mb-1.5">
-                Create password
+                {t('createPassword')}
               </label>
               <input
                 id="password"
@@ -203,14 +214,14 @@ export default function WaitlistOnboardingPage() {
                 required
                 minLength={8}
                 className="w-full px-4 py-3 rounded-xl bg-[#2c2c2e] border border-[#38383a] text-white text-sm placeholder:text-[#48484a] outline-none focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3] transition-colors"
-                placeholder="Minimum 8 characters"
+                placeholder={t('minCharacters')}
               />
             </div>
 
             {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-xs font-medium text-[#86868b] uppercase tracking-wider mb-1.5">
-                Confirm password
+                {t('confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -220,7 +231,7 @@ export default function WaitlistOnboardingPage() {
                 required
                 minLength={8}
                 className="w-full px-4 py-3 rounded-xl bg-[#2c2c2e] border border-[#38383a] text-white text-sm placeholder:text-[#48484a] outline-none focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3] transition-colors"
-                placeholder="Re-enter your password"
+                placeholder={t('reEnterPassword')}
               />
             </div>
 
@@ -233,25 +244,25 @@ export default function WaitlistOnboardingPage() {
               {pageState === 'submitting' ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating account...
+                  {t('creatingAccount')}
                 </>
               ) : (
-                'Create account'
+                t('createAccount')
               )}
             </button>
           </form>
 
           {lead?.plan && (
             <p className="mt-4 text-center text-xs text-[#48484a]">
-              Plan: <span className="text-[#86868b] capitalize">{lead.plan}</span>
+              {t('plan')} <span className="text-[#86868b] capitalize">{lead.plan}</span>
             </p>
           )}
         </div>
 
         <p className="mt-5 text-center text-xs text-[#48484a]">
-          Already have an account?{' '}
+          {t('alreadyHaveAccount')}{' '}
           <a href="/sign-in" className="text-[#0071e3] hover:underline">
-            Sign in
+            {t('signIn')}
           </a>
         </p>
       </div>
