@@ -97,8 +97,25 @@ synthea-output/
 apps/web/public/downloads/*.dmg
 release/
 .claude/worktrees/
-CLAUDE_CODE_PROMPT.md
-HEALTH3_*.md
-INTEGRATION_TESTS_SUMMARY.md
-PROMPT_*.md
-STEP0_INSTRUCTIONS.md
+.scratchpad/
+
+# Agent session notes (root-level) — allowlist keepers
+/*.md
+!README.md
+!CHANGELOG.md
+!CLAUDE.md
+!SECURITY.md
+!CONTRIBUTING.md
+!LICENSE.md
+!MILESTONES.md
+!STATUS.md
+
+# Agent state
+.omc/
+**/.omc/
+
+# Separate repos / former worktrees
+MiroFish/
+p0-bug-fixes/
+p1-ai-validation/
+p1-model-routing/
