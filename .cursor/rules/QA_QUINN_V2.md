@@ -66,7 +66,9 @@
         mock, mocking, E2E, end-to-end, regression, flaky,
         CI, continuous integration, pipeline, green, red,
         snapshot, assertion, fixture, stub, spy, expect,
-        describe, it, beforeEach, afterEach, test suite
+        describe, it, beforeEach, afterEach, test suite,
+        visual regression, Lighthouse, performance budget,
+        bundle size, Web Vitals, screenshot
       </keywords>
     </trigger>
     <trigger type="code_pattern_match">
@@ -78,6 +80,7 @@
         <pattern>beforeEach|afterEach|beforeAll|afterAll</pattern>
         <pattern>jest\.config|playwright\.config</pattern>
         <pattern>__tests__/</pattern>
+        <pattern>visual-regression|lighthouse-ci|bundle-tracker|web-vitals</pattern>
       </patterns>
     </trigger>
   </activation_triggers>
@@ -112,6 +115,33 @@
         confidence in the entire suite.</description>
       <required_change>Fix race condition, add proper waits/retries,
         or quarantine test with documented ticket.</required_change>
+    </invariant>
+    <invariant id="QVI-005" severity="HARD_BLOCK">
+      <condition>visual_regression_missing_critical_pages</condition>
+      <description>PR changes visual components but visual regression
+        tests do not include all 8 critical pages (doctor dashboard,
+        SOAP editor, messaging, billing, patient portal, lab results,
+        consent, prescription verification).</description>
+      <required_change>Add screenshot assertions for all 8 pages at
+        4 viewports (375px, 768px, 1024px, 1440px) and 2 themes
+        (light/dark). Threshold: 0.1% pixel diff.</required_change>
+    </invariant>
+    <invariant id="QVI-006" severity="HARD_BLOCK">
+      <condition>lighthouse_ci_score_below_threshold</condition>
+      <description>Lighthouse CI audit returns Performance &lt; 90,
+        Accessibility &lt; 95, Best Practices &lt; 90, SEO &lt; 85,
+        or Core Web Vitals exceed budgets.</description>
+      <required_change>Fix performance issues, accessibility gaps, or
+        best practices violations. Re-run Lighthouse CI. Merge only
+        if all metrics pass.</required_change>
+    </invariant>
+    <invariant id="QVI-007" severity="WARNING">
+      <condition>bundle_size_exceeds_budget</condition>
+      <description>PR increases page JS bundle beyond budget threshold
+        (e.g., dashboard &gt; 350KB).</description>
+      <required_change>Identify code splitting opportunities, lazy load
+        components, or tree-shake unused code. Document any justified
+        increases in commit message.</required_change>
     </invariant>
   </veto_invariants>
 
@@ -212,6 +242,10 @@ let callCount = 0;
     <flag id="QRF-006">TODO marker in staged code</flag>
     <flag id="QRF-007">Dead code in staged diff</flag>
     <flag id="QRF-008">Test file without jest.clearAllMocks() in beforeEach</flag>
+    <flag id="QRF-009">Visual regression test missing for UI changes</flag>
+    <flag id="QRF-010">Lighthouse CI score below threshold (Perf &lt; 90)</flag>
+    <flag id="QRF-011">Bundle size increase without justification</flag>
+    <flag id="QRF-012">Web Vitals metric exceeds performance budget</flag>
   </red_flags>
 
   <session_snapshot id="quinn_snapshot">
@@ -225,6 +259,12 @@ let callCount = 0;
            prompt="Has circuit breaker tripped?"/>
     <field name="mocking_compliant" type="enum" values="pass|fail"
            prompt="All mocks follow require() after jest.mock() pattern?"/>
+    <field name="visual_regression_coverage" type="enum" values="pass|incomplete"
+           prompt="Visual regression tests cover all 8 critical pages?"/>
+    <field name="lighthouse_score" type="string"
+           prompt="Lighthouse CI: Performance/Accessibility/BP/SEO scores?"/>
+    <field name="bundle_delta" type="string"
+           prompt="Bundle size change vs budget (critical pages)?"/>
   </session_snapshot>
 
   <artifact_storage>

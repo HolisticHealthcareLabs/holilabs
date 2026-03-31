@@ -1,0 +1,446 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "description": "Complete technical specification for the HoliLabs Communications Hub — unified WhatsApp/SMS/Email inbox with LGPD compliance.",
+
+  "twilio": {
+    "whatsapp": {
+      "bspRecommendation": {
+        "primary": "Direct Meta WhatsApp Cloud API via Twilio",
+        "reasoning": "Twilio provides a single SDK for WhatsApp + SMS + Email. Avoids managing a separate BSP. Meta Cloud API is the standard since On-Premises API EOL October 2025.",
+        "alternatives": {
+          "takeBlip": { "pros": "Brazilian market leader, PT-BR support team, LGPD-native", "cons": "Separate SDK from SMS, higher cost at scale", "bestFor": "Clinics wanting a Brazilian-only vendor" },
+          "zenvia": { "pros": "Brazilian, multi-channel (WhatsApp + SMS + RCS), good pricing", "cons": "Smaller developer community, less documentation", "bestFor": "Budget-conscious clinics" },
+          "directMeta": { "pros": "Lowest cost, direct access, no middleman", "cons": "No SMS/Email, must manage webhook infrastructure yourself", "bestFor": "WhatsApp-only at massive scale" }
+        }
+      },
+      "setup": {
+        "steps": [
+          "1. Create Twilio account at twilio.com (or use existing)",
+          "2. Enable Messaging Service in Twilio Console",
+          "3. Register for WhatsApp Business API via Twilio → 'Senders' → 'WhatsApp senders'",
+          "4. Submit business verification to Meta (requires: business name, website, address, phone number)",
+          "5. Provision a WhatsApp-enabled phone number (Brazilian +55 number recommended for LATAM)",
+          "6. Configure webhook URL: POST https://api.holilabs.xyz/api/comms/webhook/twilio",
+          "7. Set status callback URL: POST https://api.holilabs.xyz/api/comms/webhook/status",
+          "8. Submit HSM message templates for pre-approval (from comms-hub-templates.json)",
+          "9. Test in Twilio sandbox before going live"
+        ],
+        "envVars": {
+          "TWILIO_ACCOUNT_SID": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "TWILIO_AUTH_TOKEN": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "TWILIO_WHATSAPP_NUMBER": "whatsapp:+5511XXXXXXXXX",
+          "TWILIO_SMS_NUMBER": "+5511XXXXXXXXX",
+          "TWILIO_WEBHOOK_URL": "https://api.holilabs.xyz/api/comms/webhook/twilio",
+          "TWILIO_STATUS_CALLBACK_URL": "https://api.holilabs.xyz/api/comms/webhook/status"
+        },
+        "phoneNumberProvisioning": {
+          "brazil": "Brazilian +55 numbers available via Twilio. Requires local address verification. ~$1/month for WhatsApp-enabled number.",
+          "colombia": "Colombian +57 numbers available. Same process.",
+          "recommendation": "One number per country. Use the number as the clinic's official WhatsApp."
+        }
+      },
+      "messageTypes": [
+        {
+          "type": "text",
+          "description": "Plain text message up to 4096 characters",
+          "twilioParam": "Body",
+          "useCase": "Free-text replies within 24h service window"
+        },
+        {
+          "type": "template",
+          "description": "Pre-approved HSM template with variable substitution",
+          "twilioParam": "ContentSid + ContentVariables",
+          "useCase": "Initiating conversation outside 24h window (appointment reminders, lab results)",
+          "approval": "Submit via Twilio Console → Content Template Builder. Review takes 24-48h.",
+          "templateSource": "comms-hub-templates.json (16 templates ready)"
+        },
+        {
+          "type": "media",
+          "description": "Image, document, audio, or video attachment",
+          "twilioParam": "MediaUrl",
+          "maxSize": "16MB for WhatsApp, 5MB for SMS (MMS)",
+          "supportedFormats": {
+            "image": ["jpeg", "png"],
+            "document": ["pdf"],
+            "audio": ["mp3", "ogg"],
+            "video": ["mp4"]
+          },
+          "useCase": "Sharing appointment confirmations, medication guides (NEVER share lab results or diagnoses via media)",
+          "ruthInvariant": "Media attachments MUST NOT contain PHI. Use secure portal links instead."
+        },
+        {
+          "type": "interactive_list",
+          "description": "List of options patient can select",
+          "twilioParam": "ContentSid with type=list",
+          "maxOptions": 10,
+          "useCase": "Appointment slot selection, satisfaction survey"
+        },
+        {
+          "type": "interactive_button",
+          "description": "Up to 3 quick-reply buttons",
+          "twilioParam": "ContentSid with type=quick_reply",
+          "maxButtons": 3,
+          "useCase": "Appointment confirmation (Yes/Reschedule/Cancel)"
+        }
+      ],
+      "deliveryStatus": {
+        "webhookEndpoint": "POST /api/comms/webhook/status",
+        "statusFlow": ["queued", "sent", "delivered", "read", "failed", "undelivered"],
+        "statusMapping": {
+          "queued": { "dbStatus": "QUEUED", "uiLabel": { "en": "Queued", "pt-BR": "Na fila", "es": "En cola" }, "icon": "clock" },
+          "sent": { "dbStatus": "SENT", "uiLabel": { "en": "Sent", "pt-BR": "Enviado", "es": "Enviado" }, "icon": "check" },
+          "delivered": { "dbStatus": "DELIVERED", "uiLabel": { "en": "Delivered", "pt-BR": "Entregue", "es": "Entregado" }, "icon": "check-check" },
+          "read": { "dbStatus": "READ", "uiLabel": { "en": "Read", "pt-BR": "Lido", "es": "Leído" }, "icon": "check-check-blue" },
+          "failed": { "dbStatus": "FAILED", "uiLabel": { "en": "Failed", "pt-BR": "Falhou", "es": "Fallido" }, "icon": "x-circle" },
+          "undelivered": { "dbStatus": "FAILED", "uiLabel": { "en": "Undelivered", "pt-BR": "Não entregue", "es": "No entregado" }, "icon": "alert-circle" }
+        },
+        "webhookPayload": {
+          "fields": ["MessageSid", "MessageStatus", "To", "From", "ErrorCode", "ErrorMessage"],
+          "errorCodes": {
+            "30001": "Queue overflow",
+            "30002": "Account suspended",
+            "30003": "Unreachable destination handset",
+            "30004": "Message blocked",
+            "30005": "Unknown destination handset",
+            "30006": "Landline or unreachable carrier",
+            "30007": "Carrier violation",
+            "30008": "Unknown error",
+            "63016": "WhatsApp: outside 24h window, template required"
+          }
+        }
+      },
+      "costModel": {
+        "utility": { "description": "Appointment reminders, lab results, prescription updates", "costPerMsg": 0.001, "currency": "USD" },
+        "marketing": { "description": "Promotional messages (health tips, seasonal campaigns)", "costPerMsg": 0.0625, "currency": "USD" },
+        "authentication": { "description": "OTP, magic links", "costPerMsg": 0.0042, "currency": "USD" },
+        "service": { "description": "Free within 24h after patient initiates contact", "costPerMsg": 0, "currency": "USD" },
+        "monthlyEstimate": {
+          "clinic_500_patients": { "utility_msgs": 1000, "service_msgs": 500, "total_usd": 1.00, "note": "Essentially free — massive competitive advantage vs Agenda Pro" },
+          "clinic_2000_patients": { "utility_msgs": 4000, "service_msgs": 2000, "total_usd": 4.00 },
+          "clinic_10000_patients": { "utility_msgs": 20000, "service_msgs": 10000, "total_usd": 20.00 }
+        }
+      },
+      "rateLimits": {
+        "whatsapp": {
+          "tier1_new": { "messages_per_24h": 1000, "note": "New accounts start here" },
+          "tier2": { "messages_per_24h": 10000, "note": "After 500 unique users in 7 days" },
+          "tier3": { "messages_per_24h": 100000, "note": "After 1000 unique users in 7 days" },
+          "tier4": { "messages_per_24h": "unlimited", "note": "After passing quality rating" },
+          "templates_per_second": 1,
+          "messages_per_second": 80
+        }
+      },
+      "twentyFourHourWindow": {
+        "rule": "After a patient sends a message, you have 24h to respond with free-form text. After 24h, only pre-approved templates can initiate conversation.",
+        "implementation": "Track lastInboundAt per conversation. If now - lastInboundAt > 24h, force template selection in compose bar. Show countdown timer in UI."
+      }
+    },
+
+    "sms": {
+      "provider": "Twilio Programmable Messaging",
+      "setup": "Use the same TWILIO_SMS_NUMBER configured above",
+      "brazilNumbers": {
+        "longCode": { "format": "+55XXXXXXXXXXX", "throughput": "1 msg/sec", "cost": "$1/month + per-msg", "bestFor": "Low volume, conversational" },
+        "shortCode": { "format": "5-6 digits", "throughput": "30 msg/sec", "cost": "$500+/month", "bestFor": "High volume campaigns" },
+        "recommendation": "Start with long code. Migrate to short code only if volume justifies cost."
+      },
+      "characterLimits": {
+        "gsm7": { "single": 160, "multipart": 153, "charset": "Standard Latin, digits, common symbols" },
+        "ucs2": { "single": 70, "multipart": 67, "charset": "Unicode (needed for accents: ã, ç, é, ñ)" },
+        "note": "Portuguese and Spanish texts typically require UCS-2 due to accented characters. Effective limit: 67 chars per segment for multi-part SMS."
+      },
+      "deliveryReceipts": "Same webhook as WhatsApp: /api/comms/webhook/status. StatusCallback parameter on send."
+    },
+
+    "email": {
+      "provider": "Resend (already integrated) or Twilio SendGrid",
+      "recommendation": "Use Resend (already in .env) for transactional emails. Consider SendGrid only if email volume >50K/month.",
+      "transactionalTemplates": {
+        "source": "comms-hub-templates.json — billing_invoice_sent, billing_payment_received, lab_results_ready",
+        "rendering": "React Email templates (already used for Finalize encounter email)",
+        "tracking": "Open tracking via Resend. Click tracking for portal links."
+      },
+      "unsubscribe": {
+        "requirement": "LGPD Art. 7 §3: patient must be able to opt-out of any email category at any time",
+        "implementation": "List-Unsubscribe header on every email. One-click unsubscribe link in footer. Granular preferences in patient portal consent page.",
+        "honorWithin": "24 hours (best practice: immediate)"
+      }
+    }
+  },
+
+  "database": {
+    "models": {
+      "Conversation": {
+        "fields": {
+          "id": { "type": "String", "default": "cuid()" },
+          "patientId": { "type": "String", "relation": "Patient" },
+          "organizationId": { "type": "String", "relation": "Organization" },
+          "channelType": { "type": "ChannelType", "enum": ["WHATSAPP", "SMS", "EMAIL", "IN_APP"] },
+          "status": { "type": "ConversationStatus", "enum": ["ACTIVE", "CLOSED", "ARCHIVED"], "default": "ACTIVE" },
+          "lastMessageAt": { "type": "DateTime", "nullable": true },
+          "lastMessagePreview": { "type": "String", "nullable": true, "maxLength": 100 },
+          "unreadCount": { "type": "Int", "default": 0 },
+          "externalId": { "type": "String", "nullable": true, "description": "WhatsApp conversation ID or Twilio ConversationSid" },
+          "assignedToId": { "type": "String", "nullable": true, "relation": "User", "description": "Staff member assigned to this conversation" },
+          "lastInboundAt": { "type": "DateTime", "nullable": true, "description": "Tracks 24h WhatsApp service window" },
+          "createdAt": { "type": "DateTime", "default": "now()" },
+          "updatedAt": { "type": "DateTime", "updatedAt": true }
+        },
+        "indexes": [
+          { "fields": ["organizationId", "status", "lastMessageAt"], "name": "idx_conv_org_status_last" },
+          { "fields": ["patientId"], "name": "idx_conv_patient" },
+          { "fields": ["externalId"], "name": "idx_conv_external", "unique": true }
+        ]
+      },
+      "Message": {
+        "fields": {
+          "id": { "type": "String", "default": "cuid()" },
+          "conversationId": { "type": "String", "relation": "Conversation" },
+          "direction": { "type": "MessageDirection", "enum": ["INBOUND", "OUTBOUND"] },
+          "channelType": { "type": "ChannelType" },
+          "content": { "type": "String", "description": "Encrypted at rest via encryptPHIWithVersion. CYRUS invariant." },
+          "contentType": { "type": "MessageContentType", "enum": ["TEXT", "IMAGE", "DOCUMENT", "AUDIO", "VIDEO", "TEMPLATE", "INTERACTIVE"], "default": "TEXT" },
+          "mediaUrl": { "type": "String", "nullable": true, "description": "URL for media attachments (stored in secure bucket, not Twilio CDN)" },
+          "templateId": { "type": "String", "nullable": true, "description": "HSM template ID if sent via template" },
+          "templateVariables": { "type": "Json", "nullable": true },
+          "status": { "type": "MessageStatus", "enum": ["QUEUED", "SENT", "DELIVERED", "READ", "FAILED"], "default": "QUEUED" },
+          "twilioSid": { "type": "String", "nullable": true, "description": "Twilio MessageSid for idempotency and status tracking" },
+          "errorCode": { "type": "String", "nullable": true },
+          "errorMessage": { "type": "String", "nullable": true },
+          "sentById": { "type": "String", "nullable": true, "relation": "User", "description": "Staff who sent (null for automated/incoming)" },
+          "deliveredAt": { "type": "DateTime", "nullable": true },
+          "readAt": { "type": "DateTime", "nullable": true },
+          "metadata": { "type": "Json", "nullable": true, "description": "Channel-specific data (WhatsApp profile pic URL, etc.)" },
+          "createdAt": { "type": "DateTime", "default": "now()" }
+        },
+        "indexes": [
+          { "fields": ["conversationId", "createdAt"], "name": "idx_msg_conv_created" },
+          { "fields": ["twilioSid"], "name": "idx_msg_twilio_sid", "unique": true, "sparse": true }
+        ]
+      }
+    },
+    "existingModelsToCheck": {
+      "note": "holilabsv2 already has Conversation, ConversationParticipant, ConversationMessage models. Verify they match this spec or migrate. Key additions needed: channelType, externalId, lastInboundAt, twilioSid, status enum, contentType enum."
+    }
+  },
+
+  "realtime": {
+    "approach": "Server-Sent Events (SSE)",
+    "endpoint": "GET /api/notifications/events",
+    "reasoning": "SSE is simpler than WebSocket, works through proxies, auto-reconnects. Sufficient for message delivery updates (not real-time chat which needs <100ms).",
+    "events": [
+      {
+        "type": "new_message",
+        "payload": { "conversationId": "string", "message": "Message object", "patientName": "string" },
+        "trigger": "Twilio incoming webhook receives a message"
+      },
+      {
+        "type": "delivery_update",
+        "payload": { "messageId": "string", "conversationId": "string", "status": "MessageStatus", "timestamp": "ISO datetime" },
+        "trigger": "Twilio status callback webhook fires"
+      },
+      {
+        "type": "conversation_updated",
+        "payload": { "conversationId": "string", "unreadCount": "number", "lastMessagePreview": "string" },
+        "trigger": "Any change to conversation metadata"
+      }
+    ],
+    "clientImplementation": {
+      "hook": "useSSE('/api/notifications/events')",
+      "reconnect": "Automatic reconnect with exponential backoff (1s, 2s, 4s, 8s, max 30s)",
+      "heartbeat": "Server sends `event: ping` every 30s to keep connection alive"
+    }
+  },
+
+  "offlineHandling": {
+    "approach": "Optimistic updates with local queue",
+    "implementation": {
+      "send": [
+        "1. User clicks Send → message immediately appears in UI with status 'Sending...' (optimistic)",
+        "2. Message added to local IndexedDB queue",
+        "3. If online: POST /api/comms/send → on success, update status to 'Sent' → on failure, show retry button",
+        "4. If offline: keep in queue, show offline indicator",
+        "5. On reconnect: flush queue in order, update statuses"
+      ],
+      "receive": [
+        "1. SSE connection drops → show 'Slow connection' or 'Offline' indicator",
+        "2. On reconnect: SSE resumes, client fetches missed messages via GET /api/comms/conversations/:id?since=lastMessageTimestamp",
+        "3. Merge server messages with local state, deduplicate by twilioSid"
+      ]
+    },
+    "indexedDB": {
+      "dbName": "holilabs_comms",
+      "stores": {
+        "outbound_queue": { "keyPath": "localId", "fields": ["conversationId", "content", "channelType", "templateId", "createdAt", "retryCount"] },
+        "draft_messages": { "keyPath": "conversationId", "fields": ["content", "updatedAt"] }
+      }
+    }
+  },
+
+  "search": {
+    "approach": "PostgreSQL pg_trgm + GIN index for full-text message search",
+    "reasoning": "Meilisearch is already in the stack for patient search. For messages, pg_trgm is simpler (no separate service to manage) and sufficient for clinic-scale message volumes (<100K messages).",
+    "implementation": {
+      "migration": "CREATE INDEX idx_message_content_trgm ON Message USING GIN (content gin_trgm_ops);",
+      "query": "SELECT * FROM Message WHERE content ILIKE '%search_term%' AND conversation_id IN (SELECT id FROM Conversation WHERE organization_id = $orgId) ORDER BY created_at DESC LIMIT 20;",
+      "alternative": "If message volume exceeds 1M, migrate to Meilisearch index (already configured in the app)."
+    }
+  },
+
+  "security": {
+    "cyrusInvariants": [
+      {
+        "rule": "Twilio webhook signature validation",
+        "implementation": "import twilio from 'twilio'; const isValid = twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, req.headers['x-twilio-signature'], fullUrl, req.body); if (!isValid) return res.status(403).json({ error: 'Invalid signature' });",
+        "vetoLevel": "SUPREME — without this, anyone can spoof patient messages",
+        "testCase": "SEC test INT-TWILIO-002 in test-specs.json"
+      },
+      {
+        "rule": "Message content encrypted at rest",
+        "implementation": "Use encryptPHIWithVersion on Message.content field. Decrypt only when rendering in authenticated UI.",
+        "vetoLevel": "SUPREME — patient communications are PHI"
+      },
+      {
+        "rule": "Cross-tenant isolation",
+        "implementation": "Every conversation query includes WHERE organizationId = session.organizationId. Never expose conversation IDs in URLs without re-checking ownership.",
+        "testCase": "SEC test SEC-TENANT-001 in test-specs.json"
+      },
+      {
+        "rule": "Audit trail",
+        "implementation": "Every message send creates AuditLog entry with action=MESSAGE_SENT, entityType=Message, entityId=message.id, accessReason=TREATMENT"
+      },
+      {
+        "rule": "Idempotency on webhooks",
+        "implementation": "Deduplicate incoming messages by twilioSid. If Message with twilioSid already exists, return 200 without processing (replay protection).",
+        "testCase": "INT test INT-TWILIO-003 in test-specs.json"
+      }
+    ],
+    "ruthInvariants": [
+      {
+        "rule": "Consent before sending",
+        "implementation": "Before any WhatsApp send: check patient.whatsappConsentGiven === true AND patient.whatsappConsentWithdrawnAt === null. For SMS: check patient.smsEnabled. For Email: check patient.emailEnabled.",
+        "optIn": "Explicit opt-in required. Never assume consent. Portal consent page: /portal/onboarding/consent",
+        "optOut": "Honor within 24h. Set whatsappConsentWithdrawnAt = now(). Stop all future messages immediately.",
+        "granularity": "Consent is per-channel AND per-category (appointment reminders, medication reminders, lab alerts, marketing). Patient can opt-in to appointment reminders but opt-out of marketing.",
+        "testCase": "INT test INT-COMMS-001 in test-specs.json"
+      },
+      {
+        "rule": "No PHI in message body",
+        "implementation": "Content filter scans outbound message for clinical keywords (diagnóstico, resultado, glicemia, pressão, HbA1c, etc.) and blocks if found. Force use of portal links for PHI access.",
+        "regex": "/(diagnóstic|resultado|glicemia|pressão|colesterol|hemoglobina|troponina|CID|ICD|prescrição|medicament|exame)/i",
+        "testCase": "INT test INT-COMMS-002 in test-specs.json"
+      },
+      {
+        "rule": "Message retention",
+        "implementation": "Configurable per organization: 90 days (default), 180 days, 365 days, permanent. Expired messages: soft-delete content (replace with '[Message expired per retention policy]'), keep metadata + AuditLog.",
+        "lgpdArticle": "LGPD Art. 15 — data must be deleted when purpose is fulfilled or retention period expires"
+      },
+      {
+        "rule": "Right to erasure",
+        "implementation": "Patient requests deletion → soft-delete all Message.content in their conversations → replace with '[Deleted per patient request]' → preserve AuditLog entries (LGPD Art. 37 requires audit retention even after data erasure)",
+        "process": "Patient request → ORG_ADMIN approval → batch soft-delete → audit entry with action=DATA_ERASURE_REQUEST"
+      },
+      {
+        "rule": "Template pre-approval",
+        "implementation": "All HSM templates reviewed for SaMD-safe language before submission to Meta. No templates contain: 'diagnose', 'detect', 'treat', 'cure', 'predict disease'. Templates stored in comms-hub-templates.json — use ONLY approved templates."
+      }
+    ]
+  },
+
+  "uiArchitecture": {
+    "layout": {
+      "description": "Two-panel layout (ConversationList + MessageThread) with optional PatientContextSidebar",
+      "panels": {
+        "conversationList": { "width": "360px", "fixed": true, "scrollable": true },
+        "messageThread": { "width": "flex-1", "scrollable": true, "scrollDirection": "bottom-to-top (newest at bottom)" },
+        "patientContext": { "width": "320px", "trigger": "Click patient name in thread header", "slideIn": "right" }
+      }
+    },
+    "components": [
+      {
+        "name": "ConversationItem",
+        "props": ["conversation: Conversation", "isSelected: boolean", "onClick: () => void"],
+        "rendering": {
+          "avatar": "Patient initials or profile pic",
+          "channelIcon": { "WHATSAPP": "green circle with phone", "SMS": "blue message bubble", "EMAIL": "gray envelope", "IN_APP": "purple bell" },
+          "preview": "Last message truncated to 60 chars",
+          "timestamp": "Relative (1m, 2h, 3d) for <7 days, absolute date for older",
+          "unreadBadge": "Red dot with count if unreadCount > 0"
+        }
+      },
+      {
+        "name": "MessageBubble",
+        "props": ["message: Message", "isOwnMessage: boolean"],
+        "rendering": {
+          "alignment": "Own messages right-aligned (cyan/blue), incoming left-aligned (gray)",
+          "status": "Below outbound messages: single check (sent), double check (delivered), blue double check (read), X (failed + retry button)",
+          "timestamp": "Below bubble, caption size, gray",
+          "media": "Inline image preview (max 300px), document icon + filename for PDFs"
+        }
+      },
+      {
+        "name": "ComposeBar",
+        "props": ["onSend: (content, templateId?) => void", "disabled: boolean", "offlineMode: boolean"],
+        "rendering": {
+          "input": "Multi-line textarea with auto-resize, min-h-touch-md",
+          "buttons": ["Attach (📎)", "Template (📋)", "Send (→)"],
+          "24hWarning": "If lastInboundAt > 22h ago: show amber banner 'Service window closing in Xh. After that, only templates can be sent.'",
+          "offlineBanner": "If offline: show red banner 'You are offline. Messages will be sent when connection is restored.'"
+        }
+      },
+      {
+        "name": "TemplatePickerModal",
+        "props": ["onSelect: (templateId, variables) => void"],
+        "rendering": {
+          "search": "Search by template name or category",
+          "categories": "Tabs: All, Appointment, Lab Results, Billing, Prevention, Medication",
+          "preview": "Selected template shows body with {{placeholders}} highlighted",
+          "autoFill": "Known variables auto-filled from patient context (patient_name, appointment_date, etc.)"
+        }
+      },
+      {
+        "name": "PatientContextSidebar",
+        "props": ["patientId: string"],
+        "rendering": {
+          "sections": [
+            "Patient header: name, age, sex, photo",
+            "Contact: phone, email, WhatsApp consent status",
+            "Next appointment: date, time, doctor",
+            "Allergies: list with severity badges",
+            "Active medications: list with dosages",
+            "Recent labs: last 3 results with values + reference ranges",
+            "Link: 'View Full Record →' → /dashboard/patients/[id]"
+          ]
+        }
+      }
+    ],
+    "sidebarNavigation": {
+      "currentLabel": "Inbox",
+      "newLabel": { "en": "Communications", "pt-BR": "Comunicações", "es": "Comunicaciones" },
+      "route": "/dashboard/comunicacoes",
+      "icon": "MessageSquare (from lucide-react)",
+      "badge": {
+        "query": "SELECT COUNT(*) FROM Message WHERE direction = 'INBOUND' AND status != 'READ' AND conversation_id IN (SELECT id FROM Conversation WHERE organization_id = $orgId)",
+        "display": "Red badge with count. If >99, show '99+'.",
+        "polling": "SSE event 'conversation_updated' triggers re-query. No polling needed."
+      },
+      "dataTour": "comunicacoes"
+    }
+  },
+
+  "migrationChecklist": [
+    "1. Add channelType, externalId, lastInboundAt fields to existing Conversation model (or create new if separate)",
+    "2. Add twilioSid, status enum, contentType, mediaUrl, errorCode fields to Message model",
+    "3. Create ConversationStatus, MessageDirection, ChannelType, MessageContentType, MessageStatus enums if not exist",
+    "4. Add indexes (see database.models above)",
+    "5. Create /api/comms/ route directory with: send, conversations, webhook/twilio, webhook/status, templates",
+    "6. Add Twilio SDK: pnpm add twilio",
+    "7. Configure env vars in .env.local",
+    "8. Submit HSM templates via Twilio Console",
+    "9. Create /dashboard/comunicacoes/page.tsx",
+    "10. Update sidebar nav label and route",
+    "11. Add SSE endpoint for real-time updates",
+    "12. Add pg_trgm extension and index for message search"
+  ]
+}

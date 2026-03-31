@@ -1,0 +1,465 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "sources": [
+    "ANS TUSS Table (January 2025 version)",
+    "CBHPM 5ª edição",
+    "CUPS Colombia Resolution 2275/2023",
+    "ICD-10-CM 2025",
+    "CPT 2025 AMA",
+    "LOINC 2.77",
+    "SNOMED CT International 2025-01"
+  ],
+  "procedures": [
+    {
+      "id": 1,
+      "name": { "pt-BR": "Consulta em consultório (atenção primária)", "es-CO": "Consulta de primera vez por medicina general", "en": "Office visit — primary care (new)" },
+      "tuss": "10101012", "cbhpm": "1.01.01.01-2", "cups": "890201", "cpt": "99213", "loinc": null,
+      "snomed": "185349003", "snomedTerm": "Encounter for check up",
+      "icd10_typical": ["Z00.0", "J06.9", "I10"],
+      "priceRange_brl": { "min": 150, "max": 350 }, "susReimbursement_brl": 10.00,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Most common procedure in primary care. TUSS 10101012 covers first and follow-up consultations."
+    },
+    {
+      "id": 2,
+      "name": { "pt-BR": "Consulta de retorno (seguimento)", "es-CO": "Consulta de control por medicina general", "en": "Office visit — follow-up" },
+      "tuss": "10101012", "cbhpm": "1.01.01.01-2", "cups": "890301", "cpt": "99214", "loinc": null,
+      "snomed": "390906007", "snomedTerm": "Follow-up encounter",
+      "icd10_typical": ["E11.9", "I10", "E78.5"],
+      "priceRange_brl": { "min": 120, "max": 300 }, "susReimbursement_brl": 10.00,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Same TUSS code as initial consultation. Differentiated by clinical context."
+    },
+    {
+      "id": 3,
+      "name": { "pt-BR": "Hemograma completo", "es-CO": "Hemoleucograma IV", "en": "Complete blood count (CBC)" },
+      "tuss": "40302040", "cbhpm": "4.03.02.04-0", "cups": "903841", "cpt": "85025", "loinc": "58410-2",
+      "snomed": "26604007", "snomedTerm": "Complete blood count",
+      "icd10_typical": ["D50.9", "Z00.0", "D64.9"],
+      "priceRange_brl": { "min": 25, "max": 65 }, "susReimbursement_brl": 4.11,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Mandatory in ANS coverage list. Most ordered lab test."
+    },
+    {
+      "id": 4,
+      "name": { "pt-BR": "Perfil lipídico (colesterol total, HDL, LDL, triglicerídeos)", "es-CO": "Perfil lipídico", "en": "Lipid panel" },
+      "tuss": "40301630", "cbhpm": "4.03.01.63-0", "cups": "903818", "cpt": "80061", "loinc": "57698-3",
+      "snomed": "271245006", "snomedTerm": "Serum lipids measurement",
+      "icd10_typical": ["E78.5", "E78.0", "I25.1"],
+      "priceRange_brl": { "min": 40, "max": 120 }, "susReimbursement_brl": 7.86,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Includes total cholesterol, HDL, LDL, triglycerides."
+    },
+    {
+      "id": 5,
+      "name": { "pt-BR": "Glicemia de jejum", "es-CO": "Glucosa en suero u otro fluido diferente a orina", "en": "Fasting glucose" },
+      "tuss": "40301397", "cbhpm": "4.03.01.39-7", "cups": "903841", "cpt": "82947", "loinc": "1558-6",
+      "snomed": "33747003", "snomedTerm": "Blood glucose measurement",
+      "icd10_typical": ["E11.9", "R73.0", "Z13.1"],
+      "priceRange_brl": { "min": 10, "max": 30 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Basic diabetes screening. 8-12h fasting required."
+    },
+    {
+      "id": 6,
+      "name": { "pt-BR": "Hemoglobina glicada (HbA1c)", "es-CO": "Hemoglobina glicosilada", "en": "Glycated hemoglobin (HbA1c)" },
+      "tuss": "40301699", "cbhpm": "4.03.01.69-9", "cups": "903856", "cpt": "83036", "loinc": "4548-4",
+      "snomed": "43396009", "snomedTerm": "Hemoglobin A1c measurement",
+      "icd10_typical": ["E11.9", "E11.6", "E10.9"],
+      "priceRange_brl": { "min": 30, "max": 75 }, "susReimbursement_brl": 7.86,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Gold standard for diabetes monitoring. Quarterly for controlled DM, monthly for uncontrolled."
+    },
+    {
+      "id": 7,
+      "name": { "pt-BR": "TSH (hormônio tireotrófico)", "es-CO": "Hormona estimulante del tiroides (TSH)", "en": "TSH (thyroid-stimulating hormone)" },
+      "tuss": "40316521", "cbhpm": "4.03.16.52-1", "cups": "904918", "cpt": "84443", "loinc": "3016-3",
+      "snomed": "61167004", "snomedTerm": "TSH measurement",
+      "icd10_typical": ["E03.9", "E05.9", "Z13.2"],
+      "priceRange_brl": { "min": 25, "max": 60 }, "susReimbursement_brl": 8.96,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "First-line thyroid screening."
+    },
+    {
+      "id": 8,
+      "name": { "pt-BR": "Creatinina sérica", "es-CO": "Creatinina en suero", "en": "Serum creatinine" },
+      "tuss": "40301370", "cbhpm": "4.03.01.37-0", "cups": "903895", "cpt": "82565", "loinc": "2160-0",
+      "snomed": "70901006", "snomedTerm": "Creatinine measurement",
+      "icd10_typical": ["N18.3", "I10", "E11.2"],
+      "priceRange_brl": { "min": 10, "max": 30 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Essential for eGFR calculation (CKD staging)."
+    },
+    {
+      "id": 9,
+      "name": { "pt-BR": "Urina tipo I (EAS)", "es-CO": "Uroanálisis", "en": "Urinalysis" },
+      "tuss": "40311015", "cbhpm": "4.03.11.01-5", "cups": "907106", "cpt": "81001", "loinc": "24356-8",
+      "snomed": "27171005", "snomedTerm": "Urinalysis",
+      "icd10_typical": ["N39.0", "R30.0", "N10"],
+      "priceRange_brl": { "min": 10, "max": 25 }, "susReimbursement_brl": 3.70,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Basic urine screening. Includes physical, chemical, and microscopic analysis."
+    },
+    {
+      "id": 10,
+      "name": { "pt-BR": "Eletrocardiograma (ECG) de repouso", "es-CO": "Electrocardiograma de reposo", "en": "Resting electrocardiogram (ECG)" },
+      "tuss": "20101155", "cbhpm": "2.01.01.15-5", "cups": "681510", "cpt": "93000", "loinc": "11524-6",
+      "snomed": "29303009", "snomedTerm": "Electrocardiographic procedure",
+      "icd10_typical": ["I10", "I25.1", "R00.0"],
+      "priceRange_brl": { "min": 80, "max": 250 }, "susReimbursement_brl": 5.15,
+      "privateInsuranceCoverage_pct": 90, "billingNotes": "12-lead standard. Requires physician interpretation."
+    },
+    {
+      "id": 11,
+      "name": { "pt-BR": "Ecocardiograma transtorácico", "es-CO": "Ecocardiografía transtorácica", "en": "Transthoracic echocardiogram" },
+      "tuss": "20101015", "cbhpm": "2.01.01.01-5", "cups": "881203", "cpt": "93306", "loinc": "42148-7",
+      "snomed": "40701008", "snomedTerm": "Echocardiography",
+      "icd10_typical": ["I50.9", "I25.1", "I42.0"],
+      "priceRange_brl": { "min": 250, "max": 600 }, "susReimbursement_brl": 39.94,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Requires prior authorization from most insurers."
+    },
+    {
+      "id": 12,
+      "name": { "pt-BR": "Mamografia bilateral", "es-CO": "Mamografía bilateral", "en": "Bilateral mammography" },
+      "tuss": "40901114", "cbhpm": "4.09.01.11-4", "cups": "871121", "cpt": "77067", "loinc": "24606-6",
+      "snomed": "71651007", "snomedTerm": "Mammography",
+      "icd10_typical": ["Z12.3", "N63", "C50.9"],
+      "priceRange_brl": { "min": 120, "max": 350 }, "susReimbursement_brl": 22.65,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "ANS mandatory coverage for women 40-69 (biennial). INCA recommends 50-69."
+    },
+    {
+      "id": 13,
+      "name": { "pt-BR": "Papanicolau (citologia cérvico-vaginal)", "es-CO": "Citología cérvico-vaginal", "en": "Pap smear" },
+      "tuss": "40601137", "cbhpm": "4.06.01.13-7", "cups": "892701", "cpt": "88175", "loinc": "19762-4",
+      "snomed": "440623000", "snomedTerm": "Cervical Papanicolaou smear",
+      "icd10_typical": ["Z12.4", "N87.9", "R87.6"],
+      "priceRange_brl": { "min": 30, "max": 80 }, "susReimbursement_brl": 7.32,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Cervical cancer screening. Triennial 25-64y per INCA. HPV co-testing available."
+    },
+    {
+      "id": 14,
+      "name": { "pt-BR": "PSA total", "es-CO": "Antígeno prostático específico total", "en": "Total PSA" },
+      "tuss": "40316394", "cbhpm": "4.03.16.39-4", "cups": "906249", "cpt": "84153", "loinc": "2857-1",
+      "snomed": "63476009", "snomedTerm": "PSA measurement",
+      "icd10_typical": ["Z12.5", "N40.0", "C61"],
+      "priceRange_brl": { "min": 25, "max": 70 }, "susReimbursement_brl": 16.42,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Prostate cancer screening. Controversial — discuss with patient per INCA guidelines."
+    },
+    {
+      "id": 15,
+      "name": { "pt-BR": "Raio-X de tórax (PA e perfil)", "es-CO": "Radiografía de tórax PA y lateral", "en": "Chest X-ray (PA and lateral)" },
+      "tuss": "40801012", "cbhpm": "4.08.01.01-2", "cups": "871010", "cpt": "71046", "loinc": "36572-6",
+      "snomed": "399208008", "snomedTerm": "Chest X-ray",
+      "icd10_typical": ["J18.9", "J44.1", "R05"],
+      "priceRange_brl": { "min": 60, "max": 180 }, "susReimbursement_brl": 9.50,
+      "privateInsuranceCoverage_pct": 95, "billingNotes": "Standard 2-view chest radiograph."
+    },
+    {
+      "id": 16,
+      "name": { "pt-BR": "Ultrassonografia de abdome total", "es-CO": "Ecografía de abdomen total", "en": "Abdominal ultrasound" },
+      "tuss": "40901122", "cbhpm": "4.09.01.12-2", "cups": "881302", "cpt": "76700", "loinc": "24858-3",
+      "snomed": "45036003", "snomedTerm": "Ultrasonography of abdomen",
+      "icd10_typical": ["K80.2", "K76.0", "R10.4"],
+      "priceRange_brl": { "min": 150, "max": 400 }, "susReimbursement_brl": 24.20,
+      "privateInsuranceCoverage_pct": 90, "billingNotes": "Includes liver, gallbladder, pancreas, spleen, kidneys, aorta."
+    },
+    {
+      "id": 17,
+      "name": { "pt-BR": "Troponina I (cardíaca)", "es-CO": "Troponina I", "en": "Cardiac troponin I" },
+      "tuss": "40304361", "cbhpm": "4.03.04.36-1", "cups": "903868", "cpt": "84484", "loinc": "10839-9",
+      "snomed": "105000003", "snomedTerm": "Troponin I measurement",
+      "icd10_typical": ["I21.9", "I20.0", "R07.9"],
+      "priceRange_brl": { "min": 60, "max": 180 }, "susReimbursement_brl": 18.55,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Emergency cardiac marker. Serial measurements at 0h, 3h, 6h for ACS rule-out."
+    },
+    {
+      "id": 18,
+      "name": { "pt-BR": "BNP (peptídeo natriurético cerebral)", "es-CO": "Péptido natriurético cerebral", "en": "BNP (brain natriuretic peptide)" },
+      "tuss": "40304060", "cbhpm": "4.03.04.06-0", "cups": "903869", "cpt": "83880", "loinc": "30934-4",
+      "snomed": "390975003", "snomedTerm": "BNP measurement",
+      "icd10_typical": ["I50.9", "I50.0", "R06.0"],
+      "priceRange_brl": { "min": 80, "max": 200 }, "susReimbursement_brl": 18.55,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Heart failure marker. BNP >100 pg/mL or NT-proBNP >300 pg/mL suggests HF."
+    },
+    {
+      "id": 19,
+      "name": { "pt-BR": "Densitometria óssea (coluna + fêmur)", "es-CO": "Densitometría ósea", "en": "Bone densitometry (DEXA)" },
+      "tuss": "40901254", "cbhpm": "4.09.01.25-4", "cups": "883201", "cpt": "77080", "loinc": "38265-5",
+      "snomed": "312681000", "snomedTerm": "DEXA scan",
+      "icd10_typical": ["M81.0", "M80.0", "Z87.3"],
+      "priceRange_brl": { "min": 180, "max": 450 }, "susReimbursement_brl": 32.00,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Women 65+, men 70+, or earlier with risk factors. T-score interpretation: >-1 normal, -1 to -2.5 osteopenia, <-2.5 osteoporosis."
+    },
+    {
+      "id": 20,
+      "name": { "pt-BR": "Vitamina D (25-hidroxi)", "es-CO": "Vitamina D (25-OH)", "en": "Vitamin D (25-hydroxy)" },
+      "tuss": "40316521", "cbhpm": "4.03.16.52-1", "cups": "903706", "cpt": "82306", "loinc": "1989-3",
+      "snomed": "14740000", "snomedTerm": "25-hydroxyvitamin D measurement",
+      "icd10_typical": ["E55.9", "M81.0", "Z13.2"],
+      "priceRange_brl": { "min": 40, "max": 100 }, "susReimbursement_brl": 16.42,
+      "privateInsuranceCoverage_pct": 90, "billingNotes": "Deficiency <20 ng/mL, insufficiency 20-29, sufficient ≥30."
+    },
+    {
+      "id": 21,
+      "name": { "pt-BR": "Potássio sérico", "es-CO": "Potasio en suero", "en": "Serum potassium" },
+      "tuss": "40301591", "cbhpm": "4.03.01.59-1", "cups": "903895", "cpt": "84132", "loinc": "2823-3",
+      "snomed": "59573005", "snomedTerm": "Potassium measurement",
+      "icd10_typical": ["E87.6", "I10", "N18.3"],
+      "priceRange_brl": { "min": 8, "max": 25 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Monitor with ACE inhibitors, ARBs, spironolactone. Critical: <3.0 or >6.0 mEq/L."
+    },
+    {
+      "id": 22,
+      "name": { "pt-BR": "Sódio sérico", "es-CO": "Sodio en suero", "en": "Serum sodium" },
+      "tuss": "40301605", "cbhpm": "4.03.01.60-5", "cups": "903895", "cpt": "84295", "loinc": "2951-2",
+      "snomed": "39972003", "snomedTerm": "Sodium measurement",
+      "icd10_typical": ["E87.1", "E87.0", "I50.9"],
+      "priceRange_brl": { "min": 8, "max": 25 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Essential for fluid balance assessment. Critical: <120 or >160 mEq/L."
+    },
+    {
+      "id": 23,
+      "name": { "pt-BR": "TGO/AST (transaminase oxalacética)", "es-CO": "AST (transaminasa glutámico-oxalacética)", "en": "AST (SGOT)" },
+      "tuss": "40301664", "cbhpm": "4.03.01.66-4", "cups": "903801", "cpt": "84450", "loinc": "1920-8",
+      "snomed": "45896001", "snomedTerm": "AST measurement",
+      "icd10_typical": ["K76.0", "K70.0", "B18.2"],
+      "priceRange_brl": { "min": 8, "max": 25 }, "susReimbursement_brl": 2.01,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Liver function. Usually ordered with TGP/ALT."
+    },
+    {
+      "id": 24,
+      "name": { "pt-BR": "TGP/ALT (transaminase pirúvica)", "es-CO": "ALT (transaminasa glutámico-pirúvica)", "en": "ALT (SGPT)" },
+      "tuss": "40301672", "cbhpm": "4.03.01.67-2", "cups": "903801", "cpt": "84460", "loinc": "1742-6",
+      "snomed": "250637003", "snomedTerm": "ALT measurement",
+      "icd10_typical": ["K76.0", "K70.0", "B18.2"],
+      "priceRange_brl": { "min": 8, "max": 25 }, "susReimbursement_brl": 2.01,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "More specific for liver than AST. ALT >3x ULN warrants workup."
+    },
+    {
+      "id": 25,
+      "name": { "pt-BR": "Ácido úrico sérico", "es-CO": "Ácido úrico en suero", "en": "Serum uric acid" },
+      "tuss": "40301010", "cbhpm": "4.03.01.01-0", "cups": "903895", "cpt": "84550", "loinc": "3084-1",
+      "snomed": "86228006", "snomedTerm": "Uric acid measurement",
+      "icd10_typical": ["M10.9", "E79.0", "N20.0"],
+      "priceRange_brl": { "min": 8, "max": 25 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Gout diagnosis and monitoring. >7.0 mg/dL in men, >6.0 in women."
+    },
+    {
+      "id": 26,
+      "name": { "pt-BR": "PCR (proteína C-reativa)", "es-CO": "Proteína C reactiva", "en": "C-reactive protein (CRP)" },
+      "tuss": "40301559", "cbhpm": "4.03.01.55-9", "cups": "903868", "cpt": "86140", "loinc": "1988-5",
+      "snomed": "55235003", "snomedTerm": "CRP measurement",
+      "icd10_typical": ["R50.9", "M06.9", "I25.1"],
+      "priceRange_brl": { "min": 15, "max": 40 }, "susReimbursement_brl": 2.83,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Inflammation marker. hs-CRP used for cardiovascular risk stratification."
+    },
+    {
+      "id": 27,
+      "name": { "pt-BR": "VHS (velocidade de hemossedimentação)", "es-CO": "Velocidad de sedimentación globular", "en": "ESR (erythrocyte sedimentation rate)" },
+      "tuss": "40302113", "cbhpm": "4.03.02.11-3", "cups": "903841", "cpt": "85651", "loinc": "4537-7",
+      "snomed": "416838001", "snomedTerm": "ESR measurement",
+      "icd10_typical": ["M06.9", "M31.5", "D50.9"],
+      "priceRange_brl": { "min": 8, "max": 20 }, "susReimbursement_brl": 2.73,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Non-specific inflammation marker. Useful for PMR, temporal arteritis screening."
+    },
+    {
+      "id": 28,
+      "name": { "pt-BR": "Ferro sérico", "es-CO": "Hierro sérico", "en": "Serum iron" },
+      "tuss": "40301460", "cbhpm": "4.03.01.46-0", "cups": "903895", "cpt": "83540", "loinc": "2498-4",
+      "snomed": "42950004", "snomedTerm": "Iron measurement",
+      "icd10_typical": ["D50.9", "D50.0", "D64.9"],
+      "priceRange_brl": { "min": 10, "max": 30 }, "susReimbursement_brl": 3.51,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Part of iron studies panel. Order with ferritin + TIBC for complete assessment."
+    },
+    {
+      "id": 29,
+      "name": { "pt-BR": "Ferritina", "es-CO": "Ferritina", "en": "Ferritin" },
+      "tuss": "40304370", "cbhpm": "4.03.04.37-0", "cups": "903868", "cpt": "82728", "loinc": "2276-4",
+      "snomed": "269997004", "snomedTerm": "Ferritin measurement",
+      "icd10_typical": ["D50.9", "D50.0", "E61.1"],
+      "priceRange_brl": { "min": 25, "max": 65 }, "susReimbursement_brl": 18.55,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Best single test for iron deficiency. <30 ng/mL = deficiency. Also elevated in inflammation."
+    },
+    {
+      "id": 30,
+      "name": { "pt-BR": "Vitamina B12", "es-CO": "Vitamina B12", "en": "Vitamin B12" },
+      "tuss": "40304230", "cbhpm": "4.03.04.23-0", "cups": "903706", "cpt": "82607", "loinc": "2132-9",
+      "snomed": "166894009", "snomedTerm": "Vitamin B12 measurement",
+      "icd10_typical": ["E53.8", "D51.9", "G62.9"],
+      "priceRange_brl": { "min": 30, "max": 70 }, "susReimbursement_brl": 16.42,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Screen elderly, vegans/vegetarians, metformin users. <200 pg/mL = deficiency."
+    },
+    {
+      "id": 31,
+      "name": { "pt-BR": "Teste rápido de glicemia capilar", "es-CO": "Glucometría capilar", "en": "Point-of-care glucose" },
+      "tuss": "40301397", "cbhpm": "4.03.01.39-7", "cups": "903841", "cpt": "82948", "loinc": "2345-7",
+      "snomed": "36048009", "snomedTerm": "Blood glucose measurement",
+      "icd10_typical": ["E11.9", "E10.9", "R73.0"],
+      "priceRange_brl": { "min": 5, "max": 15 }, "susReimbursement_brl": 1.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Point-of-care. Different TUSS code may apply for glucometer vs lab."
+    },
+    {
+      "id": 32,
+      "name": { "pt-BR": "Eletroencefalograma (EEG)", "es-CO": "Electroencefalograma", "en": "Electroencephalogram (EEG)" },
+      "tuss": "20104014", "cbhpm": "2.01.04.01-4", "cups": "895101", "cpt": "95816", "loinc": "11524-6",
+      "snomed": "54550000", "snomedTerm": "Electroencephalography",
+      "icd10_typical": ["G40.9", "R56.0", "G93.4"],
+      "priceRange_brl": { "min": 200, "max": 500 }, "susReimbursement_brl": 18.00,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Epilepsy workup. Routine + sleep deprivation protocols."
+    },
+    {
+      "id": 33,
+      "name": { "pt-BR": "Espirometria", "es-CO": "Espirometría", "en": "Spirometry" },
+      "tuss": "20501012", "cbhpm": "2.05.01.01-2", "cups": "893801", "cpt": "94010", "loinc": "19926-5",
+      "snomed": "127783003", "snomedTerm": "Spirometry",
+      "icd10_typical": ["J44.1", "J45.9", "R06.0"],
+      "priceRange_brl": { "min": 80, "max": 200 }, "susReimbursement_brl": 7.20,
+      "privateInsuranceCoverage_pct": 90, "billingNotes": "COPD/asthma diagnosis and monitoring. Pre and post-bronchodilator."
+    },
+    {
+      "id": 34,
+      "name": { "pt-BR": "Teste ergométrico (teste de esforço)", "es-CO": "Prueba de esfuerzo", "en": "Exercise stress test" },
+      "tuss": "20101040", "cbhpm": "2.01.01.04-0", "cups": "895601", "cpt": "93015", "loinc": "18752-6",
+      "snomed": "76746007", "snomedTerm": "Cardiovascular stress test",
+      "icd10_typical": ["I25.1", "I20.9", "Z03.5"],
+      "priceRange_brl": { "min": 200, "max": 500 }, "susReimbursement_brl": 18.00,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Ischemia evaluation. Bruce protocol standard. Requires physician supervision."
+    },
+    {
+      "id": 35,
+      "name": { "pt-BR": "MAPA 24h (monitorização ambulatorial da PA)", "es-CO": "Monitoreo ambulatorio de presión arterial", "en": "24h ambulatory blood pressure monitoring (ABPM)" },
+      "tuss": "20101163", "cbhpm": "2.01.01.16-3", "cups": "895801", "cpt": "93784", "loinc": "85354-9",
+      "snomed": "252282001", "snomedTerm": "Ambulatory blood pressure monitoring",
+      "icd10_typical": ["I10", "R03.0", "I13.0"],
+      "priceRange_brl": { "min": 150, "max": 400 }, "susReimbursement_brl": 8.00,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "White coat hypertension rule-out. 24h recording with daytime/nighttime analysis."
+    },
+    {
+      "id": 36,
+      "name": { "pt-BR": "Holter 24h (monitor cardíaco)", "es-CO": "Holter de 24 horas", "en": "24h Holter monitor" },
+      "tuss": "20101171", "cbhpm": "2.01.01.17-1", "cups": "895101", "cpt": "93224", "loinc": "18754-2",
+      "snomed": "68025008", "snomedTerm": "Holter monitoring",
+      "icd10_typical": ["R00.0", "I49.9", "I48.9"],
+      "priceRange_brl": { "min": 200, "max": 500 }, "susReimbursement_brl": 14.00,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Arrhythmia detection. Continuous ECG for 24-48h."
+    },
+    {
+      "id": 37,
+      "name": { "pt-BR": "Ultrassonografia obstétrica (1º trimestre)", "es-CO": "Ecografía obstétrica del primer trimestre", "en": "First trimester obstetric ultrasound" },
+      "tuss": "40901149", "cbhpm": "4.09.01.14-9", "cups": "881305", "cpt": "76801", "loinc": "11525-3",
+      "snomed": "268445003", "snomedTerm": "Obstetric ultrasound",
+      "icd10_typical": ["Z34.0", "O09.9", "Z36.0"],
+      "priceRange_brl": { "min": 120, "max": 350 }, "susReimbursement_brl": 24.20,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Dating + viability. Nuchal translucency 11-14 weeks."
+    },
+    {
+      "id": 38,
+      "name": { "pt-BR": "Colonoscopia diagnóstica", "es-CO": "Colonoscopia diagnóstica", "en": "Diagnostic colonoscopy" },
+      "tuss": "40202062", "cbhpm": "4.02.02.06-2", "cups": "451510", "cpt": "45378", "loinc": null,
+      "snomed": "73761001", "snomedTerm": "Colonoscopy",
+      "icd10_typical": ["Z12.1", "K63.5", "D12.6"],
+      "priceRange_brl": { "min": 600, "max": 1500 }, "susReimbursement_brl": 67.00,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Colorectal cancer screening 50-74y per INCA. FOBT as initial screening, colonoscopy for positive FOBT."
+    },
+    {
+      "id": 39,
+      "name": { "pt-BR": "Endoscopia digestiva alta", "es-CO": "Esofagogastroduodenoscopia", "en": "Upper endoscopy (EGD)" },
+      "tuss": "40202054", "cbhpm": "4.02.02.05-4", "cups": "441510", "cpt": "43235", "loinc": null,
+      "snomed": "6025007", "snomedTerm": "Upper GI endoscopy",
+      "icd10_typical": ["K21.0", "K29.7", "K25.9"],
+      "priceRange_brl": { "min": 500, "max": 1200 }, "susReimbursement_brl": 48.16,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Dyspepsia, GERD, GI bleeding workup. H. pylori testing often added."
+    },
+    {
+      "id": 40,
+      "name": { "pt-BR": "Tomografia computadorizada de crânio", "es-CO": "Tomografía computarizada de cráneo", "en": "CT head without contrast" },
+      "tuss": "40808017", "cbhpm": "4.08.08.01-7", "cups": "879110", "cpt": "70450", "loinc": "30799-1",
+      "snomed": "77477000", "snomedTerm": "CT of head",
+      "icd10_typical": ["R51", "G43.9", "I63.9"],
+      "priceRange_brl": { "min": 250, "max": 600 }, "susReimbursement_brl": 97.72,
+      "privateInsuranceCoverage_pct": 85, "billingNotes": "Emergency stroke evaluation. Door-to-CT time <25 min target."
+    },
+    {
+      "id": 41,
+      "name": { "pt-BR": "Ressonância magnética de coluna lombar", "es-CO": "Resonancia magnética de columna lumbar", "en": "MRI lumbar spine" },
+      "tuss": "40901270", "cbhpm": "4.09.01.27-0", "cups": "883400", "cpt": "72148", "loinc": "24862-5",
+      "snomed": "241580002", "snomedTerm": "MRI of lumbar spine",
+      "icd10_typical": ["M54.5", "M51.1", "M48.0"],
+      "priceRange_brl": { "min": 500, "max": 1200 }, "susReimbursement_brl": 268.75,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Low back pain >6 weeks or red flags. Prior auth required by most insurers."
+    },
+    {
+      "id": 42,
+      "name": { "pt-BR": "Pesquisa de sangue oculto nas fezes (imunoquímico)", "es-CO": "Sangre oculta en heces", "en": "Fecal occult blood test (FIT)" },
+      "tuss": "40311040", "cbhpm": "4.03.11.04-0", "cups": "907004", "cpt": "82274", "loinc": "29771-3",
+      "snomed": "104435004", "snomedTerm": "FOBT",
+      "icd10_typical": ["Z12.1", "K92.1", "D50.0"],
+      "priceRange_brl": { "min": 15, "max": 40 }, "susReimbursement_brl": 2.73,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "First-line colorectal cancer screening per INCA (biennial 50-74y). Positive → colonoscopy."
+    },
+    {
+      "id": 43,
+      "name": { "pt-BR": "Teste de gravidez (beta-hCG quantitativo)", "es-CO": "Beta-hCG cuantitativa", "en": "Quantitative beta-hCG" },
+      "tuss": "40302210", "cbhpm": "4.03.02.21-0", "cups": "904903", "cpt": "84702", "loinc": "21198-7",
+      "snomed": "250423000", "snomedTerm": "hCG measurement",
+      "icd10_typical": ["Z32.0", "O00.9", "O02.1"],
+      "priceRange_brl": { "min": 20, "max": 50 }, "susReimbursement_brl": 7.85,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Pregnancy confirmation and monitoring. Serial levels for ectopic pregnancy evaluation."
+    },
+    {
+      "id": 44,
+      "name": { "pt-BR": "Cultura de urina com antibiograma", "es-CO": "Urocultivo con antibiograma", "en": "Urine culture with sensitivity" },
+      "tuss": "40310060", "cbhpm": "4.03.10.06-0", "cups": "901235", "cpt": "87088", "loinc": "630-4",
+      "snomed": "275711006", "snomedTerm": "Urine culture",
+      "icd10_typical": ["N39.0", "N10", "N30.0"],
+      "priceRange_brl": { "min": 25, "max": 60 }, "susReimbursement_brl": 5.62,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "UTI confirmation. Always order with antibiogram for resistance patterns."
+    },
+    {
+      "id": 45,
+      "name": { "pt-BR": "Anti-HIV (sorologia)", "es-CO": "Prueba de VIH (serología)", "en": "HIV serology" },
+      "tuss": "40307646", "cbhpm": "4.03.07.64-6", "cups": "906249", "cpt": "86701", "loinc": "7917-8",
+      "snomed": "171121004", "snomedTerm": "HIV screening",
+      "icd10_typical": ["Z11.4", "Z20.6", "B20"],
+      "priceRange_brl": { "min": 15, "max": 40 }, "susReimbursement_brl": 10.00,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Routine screening recommended by Brazilian Ministry of Health. Rapid test + confirmatory."
+    },
+    {
+      "id": 46,
+      "name": { "pt-BR": "Hepatite B (HBsAg)", "es-CO": "Antígeno de superficie hepatitis B", "en": "Hepatitis B surface antigen" },
+      "tuss": "40307590", "cbhpm": "4.03.07.59-0", "cups": "906230", "cpt": "87340", "loinc": "5196-1",
+      "snomed": "54067000", "snomedTerm": "HBsAg test",
+      "icd10_typical": ["Z11.1", "B18.1", "B16.9"],
+      "priceRange_brl": { "min": 15, "max": 35 }, "susReimbursement_brl": 18.55,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Prenatal screening, blood donors, healthcare workers."
+    },
+    {
+      "id": 47,
+      "name": { "pt-BR": "Hepatite C (Anti-HCV)", "es-CO": "Anticuerpos contra hepatitis C", "en": "Hepatitis C antibody" },
+      "tuss": "40307603", "cbhpm": "4.03.07.60-3", "cups": "906230", "cpt": "86803", "loinc": "16128-1",
+      "snomed": "32568005", "snomedTerm": "Anti-HCV test",
+      "icd10_typical": ["Z11.1", "B18.2", "B17.1"],
+      "priceRange_brl": { "min": 15, "max": 40 }, "susReimbursement_brl": 18.55,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Screen baby boomers (born 1945-1965 per CDC), injection drug users, and transfusion recipients pre-1993."
+    },
+    {
+      "id": 48,
+      "name": { "pt-BR": "T4 livre", "es-CO": "T4 libre", "en": "Free T4" },
+      "tuss": "40316530", "cbhpm": "4.03.16.53-0", "cups": "904918", "cpt": "84439", "loinc": "3024-7",
+      "snomed": "270983000", "snomedTerm": "Free T4 measurement",
+      "icd10_typical": ["E03.9", "E05.9", "E06.3"],
+      "priceRange_brl": { "min": 25, "max": 60 }, "susReimbursement_brl": 8.96,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Always order with TSH for thyroid evaluation. Confirms hypo/hyperthyroidism."
+    },
+    {
+      "id": 49,
+      "name": { "pt-BR": "Microalbuminúria (razão albumina/creatinina urinária)", "es-CO": "Relación albúmina/creatinina en orina", "en": "Urine albumin-to-creatinine ratio (UACR)" },
+      "tuss": "40301516", "cbhpm": "4.03.01.51-6", "cups": "903895", "cpt": "82044", "loinc": "9318-7",
+      "snomed": "105601003", "snomedTerm": "Microalbumin test",
+      "icd10_typical": ["E11.2", "N18.3", "I10"],
+      "priceRange_brl": { "min": 20, "max": 50 }, "susReimbursement_brl": 7.86,
+      "privateInsuranceCoverage_pct": 100, "billingNotes": "Annual screening for all diabetics and hypertensives. UACR >30 mg/g = microalbuminuria. KDIGO staging."
+    },
+    {
+      "id": 50,
+      "name": { "pt-BR": "Consulta com especialista (cardiologia)", "es-CO": "Consulta por cardiología", "en": "Cardiology consultation" },
+      "tuss": "10101039", "cbhpm": "1.01.01.03-9", "cups": "890263", "cpt": "99245", "loinc": null,
+      "snomed": "185311006", "snomedTerm": "Referral to cardiology",
+      "icd10_typical": ["I25.1", "I10", "I50.9"],
+      "priceRange_brl": { "min": 250, "max": 600 }, "susReimbursement_brl": 10.00,
+      "privateInsuranceCoverage_pct": 80, "billingNotes": "Specialist consultation. Requires referral letter from primary care in most insurance plans."
+    }
+  ]
+}

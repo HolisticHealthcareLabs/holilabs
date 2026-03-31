@@ -1,0 +1,139 @@
+{
+  "version": "1.0.0",
+  "shortcuts": [
+    {
+      "id": "open-command-palette",
+      "keys": ["Meta+k"],
+      "keysWindows": ["Control+k"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Open command palette",
+        "pt-BR": "Abrir paleta de comandos",
+        "es": "Abrir paleta de comandos"
+      }
+    },
+    {
+      "id": "save-draft",
+      "keys": ["Meta+s"],
+      "keysWindows": ["Control+s"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Save current draft",
+        "pt-BR": "Salvar rascunho",
+        "es": "Guardar borrador"
+      }
+    },
+    {
+      "id": "finalize-submit",
+      "keys": ["Meta+Enter"],
+      "keysWindows": ["Control+Enter"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Finalize / Submit current form",
+        "pt-BR": "Finalizar / Enviar formulário",
+        "es": "Finalizar / Enviar formulario"
+      }
+    },
+    {
+      "id": "panel-left",
+      "keys": ["Meta+1"],
+      "keysWindows": ["Control+1"],
+      "scope": "clinical-command",
+      "chord": false,
+      "description": {
+        "en": "Focus left panel (patient context)",
+        "pt-BR": "Focar painel esquerdo (contexto do paciente)",
+        "es": "Enfocar panel izquierdo (contexto del paciente)"
+      }
+    },
+    {
+      "id": "panel-center",
+      "keys": ["Meta+2"],
+      "keysWindows": ["Control+2"],
+      "scope": "clinical-command",
+      "chord": false,
+      "description": {
+        "en": "Focus center panel (SOAP + transcript)",
+        "pt-BR": "Focar painel central (SOAP + transcrição)",
+        "es": "Enfocar panel central (SOAP + transcripción)"
+      }
+    },
+    {
+      "id": "panel-right",
+      "keys": ["Meta+3"],
+      "keysWindows": ["Control+3"],
+      "scope": "clinical-command",
+      "chord": false,
+      "description": {
+        "en": "Focus right panel (AI co-pilot)",
+        "pt-BR": "Focar painel direito (co-piloto IA)",
+        "es": "Enfocar panel derecho (co-piloto IA)"
+      }
+    },
+    {
+      "id": "toggle-recording",
+      "keys": ["r"],
+      "keysWindows": ["r"],
+      "scope": "clinical-command",
+      "chord": false,
+      "requiresNoFocusedInput": true,
+      "description": {
+        "en": "Start / stop recording",
+        "pt-BR": "Iniciar / parar gravação",
+        "es": "Iniciar / detener grabación"
+      }
+    },
+    {
+      "id": "close-modal",
+      "keys": ["Escape"],
+      "keysWindows": ["Escape"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Close modal / dialog",
+        "pt-BR": "Fechar modal / diálogo",
+        "es": "Cerrar modal / diálogo"
+      }
+    },
+    {
+      "id": "patient-search",
+      "keys": ["Meta+p"],
+      "keysWindows": ["Control+p"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Search patients",
+        "pt-BR": "Buscar pacientes",
+        "es": "Buscar pacientes"
+      }
+    },
+    {
+      "id": "show-help",
+      "keys": ["Meta+/"],
+      "keysWindows": ["Control+/"],
+      "scope": "global",
+      "chord": false,
+      "description": {
+        "en": "Show keyboard shortcuts help",
+        "pt-BR": "Mostrar atalhos de teclado",
+        "es": "Mostrar atajos de teclado"
+      }
+    },
+    {
+      "id": "new-note",
+      "keys": ["n"],
+      "keysWindows": ["n"],
+      "scope": "patient-view",
+      "chord": false,
+      "requiresNoFocusedInput": true,
+      "description": {
+        "en": "Create new clinical note",
+        "pt-BR": "Criar nova nota clínica",
+        "es": "Crear nueva nota clínica"
+      }
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "title": "HoliLabs Notification Type Registry & Routing",
+  "description": "Centralized notification type definitions with icons, colors, channels, priorities, and user preference schema.",
+
+  "notificationTypes": {
+    "clinical_alert": {
+      "id": "clinical_alert",
+      "label": "Clinical Alert",
+      "icon": "⚠️",
+      "color": "severity-severe",
+      "description": "Urgent clinical alerts: abnormal lab values, drug interactions, consent changes",
+      "defaultChannels": ["in-app", "push"],
+      "priority": "critical",
+      "isMutable": false,
+      "comment": "RUTH INVARIANT: clinical_alert and consent_change are NON-MUTABLE — patient safety cannot be muted"
+    },
+    "message_received": {
+      "id": "message_received",
+      "label": "Message",
+      "icon": "💬",
+      "color": "severity-mild",
+      "description": "New message from doctor/patient/support",
+      "defaultChannels": ["in-app", "push"],
+      "priority": "high",
+      "isMutable": true
+    },
+    "lab_ready": {
+      "id": "lab_ready",
+      "label": "Lab Results Ready",
+      "icon": "🧪",
+      "color": "severity-minimal",
+      "description": "Lab test results available for review",
+      "defaultChannels": ["in-app", "push"],
+      "priority": "high",
+      "isMutable": true
+    },
+    "appointment_reminder": {
+      "id": "appointment_reminder",
+      "label": "Appointment Reminder",
+      "icon": "📅",
+      "color": "severity-mild",
+      "description": "Reminder: appointment in 24h or 1h",
+      "defaultChannels": ["in-app", "push"],
+      "priority": "medium",
+      "isMutable": true
+    },
+    "system_update": {
+      "id": "system_update",
+      "label": "System Update",
+      "icon": "🔔",
+      "color": "severity-minimal",
+      "description": "System maintenance, feature announcements, feature rollouts",
+      "defaultChannels": ["in-app"],
+      "priority": "low",
+      "isMutable": true
+    },
+    "billing_action": {
+      "id": "billing_action",
+      "label": "Billing",
+      "icon": "💳",
+      "color": "severity-mild",
+      "description": "Invoice generated, payment received, payment failed, refund processed",
+      "defaultChannels": ["in-app"],
+      "priority": "medium",
+      "isMutable": true
+    },
+    "consent_change": {
+      "id": "consent_change",
+      "label": "Consent Update",
+      "icon": "✓",
+      "color": "severity-mild",
+      "description": "Patient withdrew/granted consent for data sharing",
+      "defaultChannels": ["in-app"],
+      "priority": "critical",
+      "isMutable": false,
+      "comment": "RUTH INVARIANT: consent_change is NON-MUTABLE — must always alert user"
+    }
+  },
+
+  "routingRules": {
+    "description": "Rules that determine how notifications are delivered across channels",
+    "rules": [
+      {
+        "type": "clinical_alert",
+        "condition": "priority === 'critical'",
+        "action": "Always in-app + push notification, even if user muted this type",
+        "channels": ["in-app", "push"],
+        "bypassMute": true,
+        "delayTolerance": "0s — immediate delivery"
+      },
+      {
+        "type": "message_received",
+        "condition": "Always",
+        "action": "In-app + push if user has push enabled",
+        "channels": ["in-app", "push"],
+        "bypassMute": false,
+        "delayTolerance": "Up to 5s (batch with other messages)"
+      },
+      {
+        "type": "lab_ready",
+        "condition": "Always",
+        "action": "In-app + push + email if email address on file",
+        "channels": ["in-app", "push", "email"],
+        "bypassMute": false,
+        "delayTolerance": "0s"
+      },
+      {
+        "type": "appointment_reminder",
+        "condition": "Sent 24h and 1h before appointment start",
+        "action": "In-app + push",
+        "channels": ["in-app", "push"],
+        "bypassMute": false,
+        "delayTolerance": "±5 minutes acceptable"
+      },
+      {
+        "type": "system_update",
+        "condition": "Feature rollout or maintenance window",
+        "action": "In-app banner, link to /dashboard/system-notices",
+        "channels": ["in-app"],
+        "bypassMute": false,
+        "delayTolerance": "Up to 1h"
+      },
+      {
+        "type": "billing_action",
+        "condition": "Always",
+        "action": "In-app notification, optionally email receipt",
+        "channels": ["in-app", "email"],
+        "bypassMute": false,
+        "delayTolerance": "0s"
+      },
+      {
+        "type": "consent_change",
+        "condition": "Always",
+        "action": "In-app + push + email, cannot be muted",
+        "channels": ["in-app", "push", "email"],
+        "bypassMute": true,
+        "delayTolerance": "0s — immediate delivery"
+      }
+    ]
+  },
+
+  "userPreferenceSchema": {
+    "description": "User notification preferences stored in DB — allows per-type configuration",
+    "schema": {
+      "userId": "uuid",
+      "organizationId": "uuid",
+      "preferences": {
+        "clinical_alert": {
+          "enabled": "boolean — if false, ignored (RUTH: non-mutable types override)",
+          "channels": ["in-app", "push", "email"],
+          "frequency": "immediate",
+          "note": "RUTH INVARIANT: cannot disable clinical_alert"
+        },
+        "message_received": {
+          "enabled": "boolean",
+          "channels": ["in-app", "push"],
+          "frequency": "immediate"
+        },
+        "lab_ready": {
+          "enabled": "boolean",
+          "channels": ["in-app", "push", "email"],
+          "frequency": "immediate"
+        },
+        "appointment_reminder": {
+          "enabled": "boolean",
+          "channels": ["in-app", "push"],
+          "frequency": "immediate",
+          "reminderTiming": ["24h-before", "1h-before"]
+        },
+        "system_update": {
+          "enabled": "boolean",
+          "channels": ["in-app"],
+          "frequency": "daily or on-demand"
+        },
+        "billing_action": {
+          "enabled": "boolean",
+          "channels": ["in-app", "email"],
+          "frequency": "immediate"
+        },
+        "consent_change": {
+          "enabled": "boolean — if false, ignored (RUTH: non-mutable override)",
+          "channels": ["in-app", "push", "email"],
+          "frequency": "immediate",
+          "note": "RUTH INVARIANT: cannot disable consent_change"
+        }
+      },
+      "globalSettings": {
+        "pushEnabled": "boolean",
+        "emailEnabled": "boolean",
+        "quietHours": {
+          "enabled": "boolean",
+          "startTime": "HH:MM (e.g., 22:00)",
+          "endTime": "HH:MM (e.g., 08:00)",
+          "note": "Non-critical notifications silent during quiet hours; critical still delivered"
+        },
+        "language": "pt-BR | es-MX | en-US"
+      }
+    }
+  },
+
+  "databaseSchema": {
+    "notificationsTable": {
+      "columns": [
+        "id (uuid, primary)",
+        "organizationId (uuid, FK, CYRUS: scoping)",
+        "userId (uuid, FK)",
+        "type (enum: clinical_alert | message_received | ...)",
+        "title (text)",
+        "message (text)",
+        "read (boolean)",
+        "actionUrl (text nullable)",
+        "metadata (jsonb — type-specific data)",
+        "priority (enum: low | medium | high | critical)",
+        "createdAt (timestamptz)",
+        "readAt (timestamptz nullable)",
+        "expiredAt (timestamptz nullable — soft delete)"
+      ],
+      "indexes": [
+        "organizationId, userId, createdAt DESC (main query)",
+        "organizationId, userId, read, createdAt DESC (unread counts)",
+        "organizationId, type, createdAt DESC (filter by type)"
+      ]
+    },
+    "userPreferencesTable": {
+      "columns": [
+        "id (uuid, primary)",
+        "userId (uuid, FK, unique with organizationId)",
+        "organizationId (uuid, FK, CYRUS: scoping)",
+        "preferences (jsonb — see schema above)",
+        "updatedAt (timestamptz)"
+      ]
+    }
+  },
+
+  "apiEndpoints": {
+    "/api/notifications": {
+      "GET": {
+        "description": "List notifications for user",
+        "query": {
+          "organizationId": "uuid (CYRUS: required, validated server-side)",
+          "userId": "uuid (from JWT sub claim)",
+          "limit": "number (default 20, max 100)",
+          "offset": "number (pagination)",
+          "type": "enum (optional filter)"
+        },
+        "response": {
+          "notifications": "[Notification]",
+          "unreadCount": "number",
+          "total": "number"
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "POST": {
+        "description": "Mark single notification as read",
+        "headers": {
+          "X-Organization-Id": "uuid (CYRUS: validation)"
+        },
+        "response": { "success": "boolean" }
+      }
+    },
+    "/api/notifications/read-all": {
+      "POST": {
+        "description": "Mark all notifications as read",
+        "headers": {
+          "X-Organization-Id": "uuid (CYRUS: validation)"
+        },
+        "response": { "success": "boolean", "markedReadCount": "number" }
+      }
+    },
+    "/api/notifications/preferences": {
+      "GET": {
+        "description": "Fetch user notification preferences",
+        "headers": {
+          "X-Organization-Id": "uuid"
+        },
+        "response": "UserPreferences"
+      },
+      "PATCH": {
+        "description": "Update user notification preferences",
+        "body": "Partial<UserPreferences>",
+        "validation": "RUTH: cannot set enabled=false for clinical_alert or consent_change"
+      }
+    }
+  },
+
+  "testing": {
+    "fixtures": {
+      "notificationFactory": "Factory to generate test notifications with realistic data",
+      "preferencesFactory": "Factory to generate user preferences with various mute settings",
+      "testCases": [
+        "Clinical alert overrides mute setting",
+        "Consent change cannot be disabled by user",
+        "Cross-tenant notification leaked = test fails (CYRUS)",
+        "Email batching: multiple notifications in 1 hour = 1 email",
+        "Quiet hours: non-critical muted, critical delivered",
+        "Infinite scroll on /dashboard/notifications loads next 20 on scroll"
+      ]
+    }
+  }
+}
