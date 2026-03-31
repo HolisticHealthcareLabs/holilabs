@@ -1,0 +1,232 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "title": "HoliLabs Telemedicine Video Subsystem — Architecture & Security",
+  "description": "WebRTC provider abstraction, TURN/STUN infrastructure for LATAM, recording pipeline, bandwidth adaptation, and HIPAA compliance.",
+
+  "providerAbstraction": {
+    "pattern": "Strategy pattern with IVideoProvider interface",
+    "description": "Allow switching between Daily.co, Twilio Video, and custom TURN infrastructure without code changes.",
+    "providers": {
+      "daily": {
+        "name": "Daily.co",
+        "pros": ["Managed SFU", "built-in recording", "strong LATAM coverage", "Kubernetes-native"],
+        "cons": ["vendor lock-in", "higher cost at scale", "limited E2E encryption"],
+        "pricing": "~$0.15 per participant-minute",
+        "reqs": {
+          "domain": "holilabs.daily.co (reserved)",
+          "apiToken": "env.DAILY_API_TOKEN",
+          "roomTemplate": "encounters-prod"
+        }
+      },
+      "twilio": {
+        "name": "Twilio Video",
+        "pros": ["SDKs mature", "HIPAA BAA available", "Twilio ecosystem", "strong Brazil coverage"],
+        "cons": ["higher cost", "P2P limited to 2 participants"],
+        "pricing": "~$0.15 per participant-minute",
+        "reqs": {
+          "accountSid": "env.TWILIO_ACCOUNT_SID",
+          "authToken": "env.TWILIO_AUTH_TOKEN",
+          "apiKey": "env.TWILIO_API_KEY"
+        }
+      },
+      "customTurn": {
+        "name": "Custom STUN/TURN via coturn",
+        "pros": ["self-hosted", "full control", "lowest cost at scale", "data residency compliance"],
+        "cons": ["operational overhead", "complex scaling", "requires DevOps", "NAT traversal complexity"],
+        "reqs": {
+          "turnServer": "stun.br.holilabs.com:3478",
+          "turnCredentialService": "/api/internal/turn-credentials"
+        }
+      }
+    }
+  },
+
+  "turnStunConfig": {
+    "description": "LATAM-optimized STUN/TURN server configuration",
+    "regions": {
+      "brasil": {
+        "name": "São Paulo",
+        "stun": ["stun.br.holilabs.com:3478", "stun2.br.holilabs.com:3478"],
+        "turn": [
+          {
+            "urls": ["turn:br-1.holilabs.com:3478?transport=udp", "turn:br-1.holilabs.com:3478?transport=tcp"],
+            "username": "holilabs-user",
+            "credential": "dynamic-via-api",
+            "credentialType": "password"
+          }
+        ],
+        "latency": "< 10ms within SP Metro",
+        "redundancy": 2
+      },
+      "colombia": {
+        "name": "Bogotá",
+        "stun": ["stun.co.holilabs.com:3478"],
+        "turn": [
+          {
+            "urls": ["turn:co-1.holilabs.com:3478?transport=udp"],
+            "username": "holilabs-user",
+            "credential": "dynamic-via-api",
+            "credentialType": "password"
+          }
+        ],
+        "latency": "< 20ms within Colombia",
+        "redundancy": 1
+      }
+    },
+    "fallback": [
+      "stun:stun.l.google.com:19302",
+      "stun:stun1.l.google.com:19302",
+      "turn:relay.metered.ca:80"
+    ],
+    "credentialServiceEndpoint": "/api/internal/turn-credentials",
+    "credentialTTL": 3600
+  },
+
+  "recordingPipeline": {
+    "description": "Server-side recording composition and storage pipeline (opt-in per encounter)",
+    "flow": [
+      "1. WebRTC SFU (Daily/Twilio/custom) records audio+video streams",
+      "2. Server-side compositor combines streams (doctor + patient + screen share if enabled)",
+      "3. Encoded output (H.264 + AAC) → S3 (holilabs-protected region, encrypted at rest)",
+      "4. Post-processing: transcription via AWS Transcribe Medical, speaker diarization",
+      "5. Indexed in DynamoDB for compliance audit, retention = 5 years per LGPD"
+    ],
+    "composition": {
+      "layout": "picture-in-picture: doctor large (1280x960) + patient PiP (320x240)",
+      "codec": "H.264",
+      "bitrate": "2500 kbps adaptive",
+      "fps": 30,
+      "audio": "AAC 128 kbps stereo"
+    },
+    "storage": {
+      "bucket": "holilabs-protected-recordings-br",
+      "region": "us-east-1 (encrypted, HIPAA-compliant)",
+      "encryption": "AES-256 at rest, TLS 1.3 in transit",
+      "keyManagement": "AWS KMS + customer-managed keys per org",
+      "pathFormat": "s3://holilabs-protected-recordings-br/{orgId}/{encounterId}/{timestamp}.mp4"
+    },
+    "retention": {
+      "default": "5 years (LGPD Art. 15 compliance)",
+      "deletion": "automated via S3 Lifecycle after expiry, audit logged"
+    },
+    "transcription": {
+      "service": "AWS Transcribe Medical",
+      "language": "pt-BR, es-MX (configurable)",
+      "output": "VTT + SRT with timestamps + medical term confidence scores",
+      "pii_handling": "automatic redaction of patient names, dates of birth"
+    }
+  },
+
+  "bandwidthAdaptation": {
+    "description": "Graceful degradation based on network conditions",
+    "profiles": {
+      "excellent": {
+        "bandwidth": "> 2.5 Mbps",
+        "resolution": "1280x720",
+        "fps": 30,
+        "bitrate": "2500 kbps",
+        "codec": "H.264"
+      },
+      "good": {
+        "bandwidth": "1.5–2.5 Mbps",
+        "resolution": "960x540",
+        "fps": 24,
+        "bitrate": "1500 kbps",
+        "codec": "H.264"
+      },
+      "fair": {
+        "bandwidth": "800 kbps–1.5 Mbps",
+        "resolution": "640x480",
+        "fps": 15,
+        "bitrate": "800 kbps",
+        "codec": "H.264"
+      },
+      "poor": {
+        "bandwidth": "< 800 kbps",
+        "resolution": "480x360",
+        "fps": 10,
+        "bitrate": "400 kbps",
+        "codec": "H.264"
+      }
+    },
+    "adaptation_algorithm": "REMB (Receiver Estimated Maximum Bitrate) from WebRTC, client-side congestion control",
+    "fallback_media": "Audio-only if video bitrate < 100 kbps for > 30s"
+  },
+
+  "security": {
+    "cyrus_invariants": {
+      "sessionTokenValidation": "All room join attempts require server-validated JWT with orgId, userId, encounterId, TTL 24h",
+      "recordingConsent": "Recording cannot start without encounter.recordingConsent === true AND user JWT contains 'record' claim",
+      "organizationScoping": "All video sessions scoped to organizationId; cross-tenant join attempts rejected",
+      "bypassMechanism": "Internal health checks bypass auth via X-Health-Check-Secret (HMAC-SHA256, rotated daily)"
+    },
+    "e2eEncryption": {
+      "description": "Optional Dtls-SRTP E2E encryption (ZRTP-like) for ultra-sensitive encounters",
+      "note": "Disabled recording while E2E active (server cannot access unencrypted streams)",
+      "use_case": "Psychiatry/mental health encounters where recording is not permitted",
+      "enabledVia": "encounter.encryption === 'e2e' flag in DB"
+    },
+    "hipaaCompliance": {
+      "baas": "Daily.co + Twilio both have HIPAA BAAs signed",
+      "encryption": "TLS 1.3 for all media (UDP via DTLS)",
+      "storage": "Recordings on S3 with KMS encryption + MFA delete enabled",
+      "audit": "All access logged to CloudTrail + custom audit table in RDS",
+      "retention": "5-year legal hold per HIPAA § 164.316 (retention requirements)"
+    },
+    "publicHealthDeclaration": {
+      "note": "Brazilian health data is considered 'sensitive personal data' under LGPD. AI Scribe / transcription processing requires explicit Art. 7 consent.",
+      "sopsCompliance": "All recording metadata included in SOAP note structured data (ICD-10, SNOMED, LOINC codes)"
+    }
+  },
+
+  "elenaiInvariants": {
+    "aiScribeDuringVideo": "If encounter.aiScribeEnabled === true, display SaMD disclaimer in waiting room: 'AI Scribe is enabled. This session may be recorded for transcription.'",
+    "clinicalLogging": "All video session start/stop events logged via /api/clinical/events with userId, encounterId, duration, outcome (ended_normal / ended_early / error)",
+    "copilotContext": "Copilot receives transcript chunks (100ms latency) for real-time suggestion of diagnoses, medication dosage, ICD-10 codes",
+    "disclaimer": "Copilot suggestions tagged with ⚠️ 'Clinical Decision Support — not a diagnosis' in UI"
+  },
+
+  "monitoringAndAlerting": {
+    "slo": {
+      "connectionSuccess": "99.5% (P1 alert if drop below 99%)",
+      "audioVideoLatency": "< 150ms (P2 alert if > 200ms)",
+      "recordingInitLatency": "< 2s (P2 alert if > 5s)"
+    },
+    "metrics": [
+      "offer_latency (ms) — time from join attempt to CONNECTED state",
+      "audio_rms_level (dB) — per-participant audio energy",
+      "video_freeze_count (count) — 100ms+ freezes per minute",
+      "video_bitrate (kbps) — actual vs target",
+      "packet_loss (%) — RTT-based estimate",
+      "dtls_handshake_latency (ms) — security setup time",
+      "recording_lag (sec) — delay of recorded frames vs live"
+    ],
+    "dashboardEndpoint": "/api/internal/telemedicine-metrics (admin only)"
+  },
+
+  "quotas": {
+    "perEncounter": {
+      "maxParticipants": 2,
+      "maxDuration": "4 hours",
+      "maxScreenShares": 1,
+      "recordingStorageQuota": "500 MB per month per org (soft limit, P3 alert at 80%)"
+    },
+    "perOrganization": {
+      "maxConcurrentSessions": 100,
+      "maxRecordingsPerMonth": 1000,
+      "maxTranscriptionMinutes": 10000
+    }
+  },
+
+  "deploymentSteps": [
+    "1. Set DAILY_API_TOKEN or TWILIO_AUTH_TOKEN in .env (provider selection in config.ts)",
+    "2. Reserve custom TURN servers on AWS EC2 (coturn) in br-sp-1, co-bo-1 regions",
+    "3. Deploy /api/internal/turn-credentials endpoint (generates TURN user + password)",
+    "4. Upload recordings bucket policy to S3 (encryption, versioning, MFA delete)",
+    "5. Configure CloudTrail logging for S3 bucket access",
+    "6. Set up Twilio/Daily webhooks for session events (room_finish, participant_left, recording_ready)",
+    "7. Test end-to-end: waiting room → preview → join → peer connection → record → S3 upload",
+    "8. Lighthouse CI check: Core Web Vitals during video call (should remain high quality)"
+  ]
+}

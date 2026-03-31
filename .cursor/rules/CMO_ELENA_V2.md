@@ -73,7 +73,8 @@
         dosing, lab value, evidence, patient safety, biological age,
         screening, CHA2DS2, ASCVD, HbA1c, eGFR, creatinine, CrCl,
         sepsis, qSOFA, DOAC, rivaroxaban, apixaban, ferritin, TSH,
-        vitamin D, hs-CRP, Manchester, nocebo, functional range
+        vitamin D, hs-CRP, Manchester, nocebo, functional range,
+        telemedicine, video call, recording consent, AI Scribe, SaMD disclaimer
       </keywords>
     </trigger>
     <trigger type="code_pattern_match">
@@ -85,6 +86,7 @@
         <pattern>PathologicalRange|FunctionalRange</pattern>
         <pattern>GovernanceEvent.*severity:\s*CRITICAL</pattern>
         <pattern>LOINC|SNOMED|ICD10|RxNorm</pattern>
+        <pattern>video-call|VideoProvider|recordConsent|AI_Scribe|telemedicine</pattern>
       </patterns>
     </trigger>
   </activation_triggers>
@@ -161,6 +163,20 @@
       <description>Patient alert using custom color scheme
         instead of Manchester RED/ORANGE/YELLOW/GREEN.</description>
       <required_change>Map to Manchester Triage colors.</required_change>
+    </invariant>
+    <invariant id="EVI-011" severity="HARD_BLOCK">
+      <condition>telemedicine_recording_consent_missing</condition>
+      <description>Video call component allows recording without explicit
+        recording consent toggle or LGPD Art. 7 legal basis display.</description>
+      <required_change>Add recording consent checkbox with legal basis
+        display before any recording starts.</required_change>
+    </invariant>
+    <invariant id="EVI-012" severity="HARD_BLOCK">
+      <condition>AI_Scribe_without_SaMD_disclaimer</condition>
+      <description>AI Scribe feature enabled during telemedicine call
+        without SaMD disclaimer shown to patient and doctor.</description>
+      <required_change>Display SaMD disclaimer: "This AI-assisted transcript
+        does not replace clinical judgment. Doctor retains responsibility."</required_change>
     </invariant>
   </veto_invariants>
 
@@ -377,6 +393,8 @@
     <flag id="ERF-009">Prediction model missing MVD definition</flag>
     <flag id="ERF-010">Unit mismatch (mg/dL vs mmol/L) without conversion</flag>
     <flag id="ERF-011">Rule claiming to "diagnose" without ANVISA classification</flag>
+    <flag id="ERF-012">Video call recording enabled without consent</flag>
+    <flag id="ERF-013">AI Scribe active without SaMD disclaimer</flag>
   </red_flags>
 
   <session_snapshot id="elena_snapshot">

@@ -1,0 +1,241 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "sources": [
+    "https://rnds-fhir.saude.gov.br/",
+    "https://rnds-guia.saude.gov.br/docs/rnds/tools/api/",
+    "https://simplifier.net/redenacionaldedadosemsaude",
+    "https://sisaps.saude.gov.br/esus/",
+    "https://www.sispro.gov.co/central-financiamiento/Pages/facturacion-electronica.aspx",
+    "https://validadorderips.com/rips-colombia-la-guia-definitiva-para-el-2025/",
+    "https://co.fhir.guide/core/"
+  ],
+
+  "brazil": {
+    "rnds": {
+      "name": "Rede Nacional de Dados em Saúde",
+      "description": "Brazil's national health data network built on FHIR R4. Centralizes health records for 210M+ citizens.",
+      "fhirVersion": "4.0.1",
+      "igVersion": "1.0.0",
+      "endpoints": {
+        "production": "https://ehr-services.saude.gov.br/api/fhir/r4",
+        "homologation": "https://ehr-services-hm.saude.gov.br/api/fhir/r4",
+        "fhirIg": "https://rnds-fhir.saude.gov.br/",
+        "simplifier": "https://simplifier.net/redenacionaldedadosemsaude"
+      },
+      "auth": {
+        "method": "OAuth2 + Digital Certificate (e-CPF or e-CNPJ ICP-Brasil)",
+        "tokenEndpoint": "https://ehr-auth.saude.gov.br/api/token",
+        "certificateType": "A1 or A3 ICP-Brasil certificate (issued by AC accredited by ITI)",
+        "scopes": ["patient/*.read", "patient/*.write"],
+        "tokenTTL": "300 seconds"
+      },
+      "requiredHeaders": {
+        "Authorization": "Bearer {access_token}",
+        "Content-Type": "application/fhir+json",
+        "X-Authorization-Server": "Bearer {access_token}"
+      },
+      "rateLimits": {
+        "perMinute": 60,
+        "perDay": 10000,
+        "note": "Rate limits vary by establishment size and CNES registration"
+      },
+      "supportedResources": [
+        {
+          "resource": "Patient",
+          "operations": ["read", "search"],
+          "searchParams": ["identifier (CNS)"],
+          "brProfile": "BRIndividuo",
+          "note": "Search by CNS (Cartão Nacional de Saúde) — 15-digit identifier"
+        },
+        {
+          "resource": "Organization",
+          "operations": ["read", "search"],
+          "searchParams": ["identifier (CNES)"],
+          "brProfile": "BREstabelecimentoSaude",
+          "note": "CNES (Cadastro Nacional de Estabelecimentos de Saúde) — 7-digit code"
+        },
+        {
+          "resource": "Practitioner",
+          "operations": ["read", "search"],
+          "searchParams": ["identifier (CNS)", "identifier (CPF)"],
+          "brProfile": "BRProfissional"
+        },
+        {
+          "resource": "Bundle",
+          "operations": ["create"],
+          "brProfile": "BRResultadoExameLaboratorial | BRRegistroImunobiologico | BRRegistroAtendimentoClinico",
+          "note": "Primary submission method — POST a Bundle containing encounter + observations"
+        },
+        {
+          "resource": "Immunization",
+          "operations": ["create", "read"],
+          "brProfile": "BRImunobiologicoAdministrado",
+          "note": "Vaccination records — integrates with SI-PNI"
+        },
+        {
+          "resource": "Observation",
+          "operations": ["create"],
+          "brProfile": "BRDiagnosticoLaboratorioClinico",
+          "note": "Lab results with LOINC codes"
+        },
+        {
+          "resource": "Composition",
+          "operations": ["create"],
+          "brProfile": "BRRegistroAtendimentoClinico",
+          "note": "Clinical encounter summary"
+        }
+      ],
+      "exampleRequest": {
+        "description": "Submit a clinical encounter to RNDS",
+        "method": "POST",
+        "url": "https://ehr-services.saude.gov.br/api/fhir/r4/Bundle",
+        "headers": {
+          "Authorization": "Bearer eyJ...",
+          "Content-Type": "application/fhir+json"
+        },
+        "body": {
+          "resourceType": "Bundle",
+          "type": "document",
+          "entry": [
+            { "resource": { "resourceType": "Composition", "note": "BRRegistroAtendimentoClinico profile" } },
+            { "resource": { "resourceType": "Encounter", "note": "Outpatient encounter" } },
+            { "resource": { "resourceType": "Patient", "note": "Reference by CNS" } },
+            { "resource": { "resourceType": "Condition", "note": "ICD-10 coded diagnosis" } }
+          ]
+        }
+      },
+      "errorCodes": {
+        "401": "Invalid or expired certificate/token",
+        "403": "CNES not authorized for this operation",
+        "404": "Patient CNS not found in CADWEB",
+        "422": "FHIR validation error (profile mismatch)",
+        "429": "Rate limit exceeded"
+      },
+      "credentialingProcess": [
+        "1. Register establishment in SCPA (Sistema de Controle de Permissão de Acesso) at servicos-datasus.saude.gov.br",
+        "2. Obtain e-CNPJ digital certificate (ICP-Brasil A1 or A3)",
+        "3. Register software system in RNDS portal",
+        "4. Complete homologation tests against sandbox environment",
+        "5. Request production access after successful homologation"
+      ],
+      "scale": {
+        "vaccinationRecords": "1.4B+",
+        "primaryCareEncounters": "84.4M+",
+        "labResults": "500M+"
+      }
+    },
+    "esus": {
+      "name": "e-SUS Atenção Primária (e-SUS APS)",
+      "description": "Brazil's primary care electronic health system managed by DESF (Department of Family Health). Mandatory for all UBS (basic health units).",
+      "dataExportFormat": "LEDI-AB (Layout e-SUS APS de Dados e Interface)",
+      "reportingSystem": "SISAB (Sistema de Informação em Saúde para a Atenção Básica)",
+      "endpoints": {
+        "documentation": "https://sisaps.saude.gov.br/esus/",
+        "lediSpec": "https://integracao.esusab.ufsc.br/",
+        "thrift": "Apache Thrift protocol (binary, not REST)"
+      },
+      "integration_approach": "e-SUS uses Apache Thrift (not REST/FHIR) for data exchange. For HoliLabs, the recommended approach is to generate LEDI-AB compliant data exports that can be imported into e-SUS PEC (Prontuário Eletrônico do Cidadão).",
+      "requiredFields": {
+        "individualEncounter": ["CNS_profissional", "CBO_profissional", "CNS_cidadao", "dataNascimento", "sexo", "CNES", "INE_equipe", "dataAtendimento", "tipoAtendimento", "CID10_principal", "condutaDesfecho"],
+        "proceduralEncounter": ["all above + SIGTAP_procedimento", "quantidade"],
+        "vaccination": ["CNS_cidadao", "imunobiologico_codigo", "lote", "fabricante", "dataAplicacao", "dose", "via"]
+      },
+      "reportingPeriods": "Monthly. Data must be submitted by the 10th of the following month. Late submissions affect municipal health financing (PAB Fixo/Variável)."
+    },
+    "sigtap": {
+      "name": "SIGTAP — Sistema de Gerenciamento da Tabela de Procedimentos do SUS",
+      "description": "SUS procedure code table (public healthcare). Different from TUSS (private healthcare).",
+      "url": "http://sigtap.datasus.gov.br/",
+      "relationship": "SIGTAP codes are used for SUS billing. TUSS codes are used for private/supplementary insurance. HoliLabs needs both for clinics that serve both populations."
+    },
+    "identifiers": {
+      "cns": { "name": "Cartão Nacional de Saúde", "format": "15 digits (numeric)", "validation": "Luhn-like algorithm", "note": "Every Brazilian citizen has a CNS. Required for RNDS and SUS interactions." },
+      "cpf": { "name": "Cadastro de Pessoas Físicas", "format": "11 digits (XXX.XXX.XXX-XX)", "validation": "Two check digits (mod 11 algorithm)", "note": "Primary tax/civil identifier. Used as secondary health identifier." },
+      "cnes": { "name": "Cadastro Nacional de Estabelecimentos de Saúde", "format": "7 digits", "note": "Every healthcare establishment (clinic, hospital, lab) has a CNES." },
+      "crm": { "name": "Conselho Regional de Medicina", "format": "CRM/UF XXXXX", "note": "Medical license number. State-specific (e.g., CRM/SP 123456)." }
+    }
+  },
+
+  "colombia": {
+    "rips": {
+      "name": "RIPS — Registro Individual de Prestación de Servicios de Salud",
+      "description": "Colombia's individual health service reporting system. As of Resolution 2275/2023, RIPS are submitted in JSON format as mandatory support for FEV (Factura Electrónica de Venta en Salud).",
+      "currentRegulation": "Resolución 2275 de 2023 — Ministerio de Salud y Protección Social",
+      "format": "JSON (replaces legacy .txt flat files as of Dec 2023)",
+      "validationEndpoint": {
+        "production": "https://wssispro.sispro.gov.co/",
+        "sandbox": "https://wssispropre.sispro.gov.co/",
+        "note": "Mecanismo Único de Validación (FEV) — 24/7 availability"
+      },
+      "auth": {
+        "method": "Digital certificate (DIAN-issued) + SOAP web service auth",
+        "note": "Authentication through SISPRO portal credentials + electronic invoicing certificate"
+      },
+      "dataStructure": {
+        "description": "Resolution 2275/2023 replaced the old AC/AF/AP/AT/AU/US flat file structure with JSON datasets",
+        "oldFormat": {
+          "AC": "Consultas (consultations)",
+          "AF": "Transacciones (billing header)",
+          "AP": "Procedimientos (procedures)",
+          "AT": "Otros servicios (other services)",
+          "AU": "Urgencias (emergency services)",
+          "US": "Usuarios (patient data)"
+        },
+        "newFormat": {
+          "transaccion": "Billing entity info, FEV number, note type",
+          "usuarios": "Patient identification, affiliation data, municipality codes",
+          "consulta": "Medical/dental consultation data, CUPS codes, diagnosis (CIE-10), purpose",
+          "procedimientos": "Procedure data, CUPS codes, surgical act, scope",
+          "urgencias": "Emergency services, triage classification, destination",
+          "hospitalizacion": "Inpatient data, admission cause, discharge",
+          "recienNacidos": "Newborn data",
+          "medicamentos": "Medications dispensed, ATC codes, quantity"
+        }
+      },
+      "requiredFields": {
+        "usuario": ["tipoIdentificacion", "numIdentificacion", "tipoUsuario", "fechaNacimiento", "codSexo", "codPaisResidencia", "codMunicipioResidencia", "codZonaTerritorialResidencia"],
+        "consulta": ["codPrestador", "fechaConsulta", "numAutorizacion", "codConsulta (CUPS)", "finalidadTecnologiaSalud", "causaMotivoAtencion", "codDiagnosticoPrincipal (CIE-10)", "tipoEpisodioDiagnostico", "valorConsulta"]
+      },
+      "cupsMapping": {
+        "note": "CUPS (Clasificación Única de Procedimientos en Salud) is Colombia's procedure code system. Similar to TUSS in Brazil.",
+        "commonCodes": [
+          { "cups": "890201", "description": "Consulta de primera vez por medicina general" },
+          { "cups": "890301", "description": "Consulta de control por medicina general" },
+          { "cups": "903841", "description": "Hemograma IV (hemoleucograma)" },
+          { "cups": "903818", "description": "Perfil lipídico" },
+          { "cups": "903856", "description": "Hemoglobina glicosilada" },
+          { "cups": "871121", "description": "Mamografía bilateral" },
+          { "cups": "681510", "description": "Electrocardiograma" }
+        ]
+      },
+      "errorCodes": {
+        "001": "Estructura del archivo no válida",
+        "002": "Campo obligatorio vacío",
+        "003": "Código CUPS no encontrado en tabla de referencia",
+        "004": "Diagnóstico CIE-10 no válido",
+        "005": "Número de identificación no corresponde con BDUA",
+        "006": "Fecha fuera de rango permitido"
+      }
+    },
+    "bdua": {
+      "name": "BDUA — Base de Datos Única de Afiliados",
+      "description": "Colombia's unified affiliation database. Verify patient insurance status before billing.",
+      "endpoint": "https://www.adres.gov.co/consulte-su-eps",
+      "queryFields": ["tipoDocumento", "numeroDocumento"],
+      "returns": ["EPS (insurer)", "régimen (contributivo/subsidiado)", "estado (activo/suspendido)", "municipio"]
+    },
+    "identifiers": {
+      "cc": { "name": "Cédula de Ciudadanía", "format": "10 digits", "note": "Primary adult ID in Colombia" },
+      "ti": { "name": "Tarjeta de Identidad", "format": "10 digits", "note": "Minor ID (under 18)" },
+      "rc": { "name": "Registro Civil", "format": "varies", "note": "Birth certificate number" },
+      "nit": { "name": "NIT (Número de Identificación Tributaria)", "format": "9 digits + check digit", "note": "Tax ID for organizations" }
+    },
+    "fhirIg": {
+      "name": "Colombia Core FHIR IG",
+      "url": "https://co.fhir.guide/core/",
+      "version": "0.1.0",
+      "note": "Early-stage FHIR IG for Colombia. Not yet mandatory but MinSalud is moving toward FHIR adoption."
+    }
+  }
+}

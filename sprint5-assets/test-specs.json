@@ -1,0 +1,374 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "totalTests": 52,
+  "categories": {
+    "unit": 20,
+    "integration": 10,
+    "e2e": 8,
+    "security": 14
+  },
+
+  "tests": [
+    {
+      "id": "UNIT-PHQ9-001", "name": "PHQ-9: All zeros → Minimal", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit PHQ-9 with all 9 responses = 0"],
+      "expected_result": "Score: 0, severity: Minimal, color: clinical-safe",
+      "invariant_coverage": ["ELENA: validated scoring algorithm"]
+    },
+    {
+      "id": "UNIT-PHQ9-002", "name": "PHQ-9: All max (27) → Severe", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit PHQ-9 with all 9 responses = 3"],
+      "expected_result": "Score: 27, severity: Severe, color: clinical-emergency",
+      "invariant_coverage": ["ELENA: validated scoring"]
+    },
+    {
+      "id": "UNIT-PHQ9-003", "name": "PHQ-9: Missing Q5 → INSUFFICIENT_DATA", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit PHQ-9 with 8 of 9 responses (Q5 missing)"],
+      "expected_result": "insufficientData: true, score: null, message: 'All questions required'",
+      "invariant_coverage": ["ELENA: INSUFFICIENT_DATA for missing values, not scored as 0"]
+    },
+    {
+      "id": "UNIT-PHQ9-004", "name": "PHQ-9: Q9 ≥ 1 triggers suicidal ideation alert", "category": "unit",
+      "preconditions": ["Scoring engine + clinical decision rules loaded"],
+      "steps": ["Submit PHQ-9 with Q9 = 1, other questions = 0"],
+      "expected_result": "Score: 1, severity: Minimal, BUT triggeredRules includes MH-002 (suicidal ideation alert)",
+      "invariant_coverage": ["ELENA: clinical safety — Q9 always triggers MH-002 regardless of total score"]
+    },
+    {
+      "id": "UNIT-PHQ9-005", "name": "PHQ-9: Boundary 9→10 (mild→moderate)", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit PHQ-9 totaling 9", "Submit PHQ-9 totaling 10"],
+      "expected_result": "9: severity=Mild, 10: severity=Moderate",
+      "invariant_coverage": ["ELENA: exact boundary compliance"]
+    },
+    {
+      "id": "UNIT-GAD7-001", "name": "GAD-7: All zeros → Minimal", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit GAD-7 with all 7 responses = 0"],
+      "expected_result": "Score: 0, severity: Minimal",
+      "invariant_coverage": ["ELENA: validated scoring"]
+    },
+    {
+      "id": "UNIT-GAD7-002", "name": "GAD-7: All max (21) → Severe", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit GAD-7 with all 7 responses = 3"],
+      "expected_result": "Score: 21, severity: Severe",
+      "invariant_coverage": ["ELENA: validated scoring"]
+    },
+    {
+      "id": "UNIT-GAD7-003", "name": "GAD-7: Missing responses → INSUFFICIENT_DATA", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit GAD-7 with 5 of 7 responses"],
+      "expected_result": "insufficientData: true",
+      "invariant_coverage": ["ELENA: INSUFFICIENT_DATA"]
+    },
+    {
+      "id": "UNIT-FINDRISC-001", "name": "FINDRISC: All lowest → Low risk", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age <45(0), BMI <25(0), waist M<94(0), active(0), veg daily(0), no BP meds(0), no high glucose(0), no family DM(0)"],
+      "expected_result": "Score: 0, severity: Low, riskPercent: ~1%",
+      "invariant_coverage": ["ELENA: weighted scoring"]
+    },
+    {
+      "id": "UNIT-FINDRISC-002", "name": "FINDRISC: Max score → Very high risk", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age >64(4), BMI >30(3), waist max(4), no activity(2), no daily veg(1), BP meds(2), high glucose(5), parent DM(5)"],
+      "expected_result": "Score: 26, severity: Very high, riskPercent: ~50%",
+      "invariant_coverage": ["ELENA: weighted scoring — note different weights per question"]
+    },
+    {
+      "id": "UNIT-FINDRISC-003", "name": "FINDRISC: Score 15 triggers DM-001 screening rule", "category": "unit",
+      "preconditions": ["Scoring engine + clinical decision rules loaded"],
+      "steps": ["Submit FINDRISC totaling 15"],
+      "expected_result": "triggeredRules includes DM-001, recommendation includes 'proceed directly to OGTT'",
+      "invariant_coverage": ["ELENA: cross-reference with clinical-decision-rules.json"]
+    },
+    {
+      "id": "UNIT-SCORE2-001", "name": "SCORE2: Low-risk region, young, all favorable → Low", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age 42, female, non-smoker, SBP 120, TC 5.0, HDL 1.5, region: low (Brazil)"],
+      "expected_result": "Risk < 2.5%, classification: Low risk",
+      "invariant_coverage": ["ELENA: region-specific coefficient tables"]
+    },
+    {
+      "id": "UNIT-SCORE2-002", "name": "SCORE2: High risk triggers CVD-001", "category": "unit",
+      "preconditions": ["Scoring engine + rules loaded"],
+      "steps": ["Submit: age 60, male, smoker, SBP 170, TC 7.0, HDL 0.9, region: low"],
+      "expected_result": "Risk ≥ 7.5%, triggeredRules includes CVD-001, recommendation includes statin",
+      "invariant_coverage": ["ELENA: clinical decision rule integration"]
+    },
+    {
+      "id": "UNIT-FRAMINGHAM-001", "name": "Framingham: Male, low risk profile", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age 45, male, TC 200, HDL 50, SBP 120, not treated, non-smoker, no diabetes"],
+      "expected_result": "10-year risk < 10%, classification: Low/Borderline",
+      "invariant_coverage": ["ELENA: published coefficient verification (D'Agostino 2008)"]
+    },
+    {
+      "id": "UNIT-FRAMINGHAM-002", "name": "Framingham: Female high risk", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age 65, female, TC 280, HDL 35, SBP 160, treated, smoker, diabetes"],
+      "expected_result": "10-year risk > 20%, classification: High risk",
+      "invariant_coverage": ["ELENA: coefficient verification"]
+    },
+    {
+      "id": "UNIT-FRAMINGHAM-003", "name": "Framingham: Age out of range (29) → reject", "category": "unit",
+      "preconditions": ["Scoring engine loaded"],
+      "steps": ["Submit: age 29 (below valid range 30-79)"],
+      "expected_result": "Error: age must be 30-79 for Framingham",
+      "invariant_coverage": ["ELENA: input validation"]
+    },
+    {
+      "id": "UNIT-BILLING-001", "name": "Billing code cross-reference: TUSS → CBHPM → ICD-10", "category": "unit",
+      "preconditions": ["billing-code-mappings.json loaded"],
+      "steps": ["Look up TUSS 10101012 → verify returns CBHPM 1.01.01.01-2 and valid ICD-10 codes"],
+      "expected_result": "Mapping found: 'Consulta em consultório', CPT 99213, SNOMED 185349003",
+      "invariant_coverage": ["RUTH: billing codes must correspond to documented clinical services"]
+    },
+    {
+      "id": "UNIT-BILLING-002", "name": "Billing code: invalid TUSS → graceful error", "category": "unit",
+      "preconditions": ["billing-code-mappings.json loaded"],
+      "steps": ["Look up TUSS 99999999 (non-existent)"],
+      "expected_result": "Null/not found, not a crash",
+      "invariant_coverage": []
+    },
+    {
+      "id": "UNIT-CDS-001", "name": "CDS rule: BP 180/120 triggers HTN-002 (crisis)", "category": "unit",
+      "preconditions": ["clinical-decision-rules.json loaded"],
+      "steps": ["Evaluate rules with systolicBP=180, diastolicBP=120"],
+      "expected_result": "Triggered: HTN-002 (hypertensive crisis), urgency: emergent",
+      "invariant_coverage": ["ELENA: evidence-based rule firing"]
+    },
+    {
+      "id": "UNIT-CDS-002", "name": "CDS rule: HbA1c 8.5 triggers DM-002", "category": "unit",
+      "preconditions": ["clinical-decision-rules.json loaded"],
+      "steps": ["Evaluate rules with hba1c=8.5"],
+      "expected_result": "Triggered: DM-002 (intensify treatment), urgency: urgent",
+      "invariant_coverage": ["ELENA: lab value threshold matching"]
+    },
+
+    {
+      "id": "INT-TWILIO-001", "name": "Twilio webhook: valid signature → processed", "category": "integration",
+      "preconditions": ["Twilio authToken configured", "Webhook endpoint running"],
+      "steps": ["Send POST to /api/comms/webhook/twilio with valid X-Twilio-Signature, Body='Hello', From='whatsapp:+5511987654321'"],
+      "expected_result": "200 OK, message stored in DB, conversation created/updated",
+      "invariant_coverage": ["CYRUS: signature validation"]
+    },
+    {
+      "id": "INT-TWILIO-002", "name": "Twilio webhook: invalid signature → 403", "category": "integration",
+      "preconditions": ["Twilio authToken configured"],
+      "steps": ["Send POST to /api/comms/webhook/twilio with invalid X-Twilio-Signature"],
+      "expected_result": "403 Forbidden, message NOT stored, audit log entry: 'INVALID_WEBHOOK_SIGNATURE'",
+      "invariant_coverage": ["CYRUS: VETO-level — anyone can spoof without this"]
+    },
+    {
+      "id": "INT-TWILIO-003", "name": "Twilio webhook: replay attack (same MessageSid) → rejected", "category": "integration",
+      "preconditions": ["First message already processed"],
+      "steps": ["Resend exact same webhook payload with same MessageSid"],
+      "expected_result": "200 OK but message NOT duplicated (idempotency on MessageSid)",
+      "invariant_coverage": ["CYRUS: replay protection"]
+    },
+    {
+      "id": "INT-COMMS-001", "name": "Send WhatsApp: patient without consent → rejected", "category": "integration",
+      "preconditions": ["Patient exists with whatsappConsentGiven=false"],
+      "steps": ["POST /api/comms/send with channel=WHATSAPP"],
+      "expected_result": "success: false, failureReason: 'Patient has not granted WhatsApp consent'",
+      "invariant_coverage": ["CYRUS: consent evaluation before sending"]
+    },
+    {
+      "id": "INT-COMMS-002", "name": "Send message with PHI in body → rejected", "category": "integration",
+      "preconditions": ["Content filter loaded"],
+      "steps": ["POST /api/comms/send with content containing 'diagnóstico: hipertensão' or 'resultado: glicose 250'"],
+      "expected_result": "400 Bad Request, error: 'Message content must not contain clinical data. Use portal links.'",
+      "invariant_coverage": ["RUTH: message body MUST NOT contain PHI"]
+    },
+    {
+      "id": "INT-BILLING-001", "name": "Create invoice → audit log entry created", "category": "integration",
+      "preconditions": ["Authenticated as BILLING role"],
+      "steps": ["POST /api/billing/invoice with valid line items"],
+      "expected_result": "Invoice created, AuditLog entry with action=INVOICE_CREATED, entityType=Invoice, dataHash computed",
+      "invariant_coverage": ["CYRUS: audit log on creation"]
+    },
+    {
+      "id": "INT-BILLING-002", "name": "Void invoice → refund + audit trail", "category": "integration",
+      "preconditions": ["Invoice exists with status=PAID, Stripe connected"],
+      "steps": ["POST /api/billing/void/:id with reason=BILLING_ERROR"],
+      "expected_result": "Invoice status=VOID, Stripe refund initiated, AuditLog entry with action=INVOICE_VOIDED",
+      "invariant_coverage": ["RUTH: void must retain audit trail", "CYRUS: Stripe refund"]
+    },
+    {
+      "id": "INT-PREVENTION-001", "name": "Submit PHQ-9 → FHIR QuestionnaireResponse created", "category": "integration",
+      "preconditions": ["Patient exists, FHIR store configured"],
+      "steps": ["POST /api/prevention/screen with instrumentId=phq9, all 9 responses"],
+      "expected_result": "Score returned + fhirQuestionnaireResponseId populated, QuestionnaireResponse persisted",
+      "invariant_coverage": ["RUTH: FHIR resource created for every screening"]
+    },
+    {
+      "id": "INT-PREVENTION-002", "name": "Gov submit (RNDS sandbox) → stub OK", "category": "integration",
+      "preconditions": ["sandbox=true"],
+      "steps": ["POST /api/prevention/gov-submit with system=RNDS, Immunization bundle"],
+      "expected_result": "status: STUB_OK, note: 'Stub implementation — production pending'",
+      "invariant_coverage": ["RUTH: valid CNS required", "CYRUS: logged in AuditLog"]
+    },
+    {
+      "id": "INT-AUDIT-001", "name": "Hash chain integrity verification", "category": "integration",
+      "preconditions": ["Multiple audit log entries exist"],
+      "steps": ["POST /api/billing/audit with action=verify_integrity"],
+      "expected_result": "integrityStatus.verified: true, totalLinks matches AuditLog count, brokenAt: null",
+      "invariant_coverage": ["CYRUS: hash chain tamper detection"]
+    },
+
+    {
+      "id": "E2E-COPILOT-001", "name": "3-panel layout: no page scroll at 1080p", "category": "e2e",
+      "preconditions": ["Browser at 1920x1080"],
+      "steps": ["Navigate to /dashboard/clinical-command", "Select a patient", "Verify no vertical scrollbar on <body>"],
+      "expected_result": "document.body.scrollHeight === document.body.clientHeight. Each panel scrolls independently.",
+      "invariant_coverage": []
+    },
+    {
+      "id": "E2E-COPILOT-002", "name": "3-panel layout: responsive collapse at mobile", "category": "e2e",
+      "preconditions": ["Browser at 375x812 (iPhone)"],
+      "steps": ["Navigate to /dashboard/clinical-command"],
+      "expected_result": "Left and right panels hidden. Center panel takes full width. Tab navigation for other panels.",
+      "invariant_coverage": []
+    },
+    {
+      "id": "E2E-COPILOT-003", "name": "Model selector dropdown shows all 13 models", "category": "e2e",
+      "preconditions": ["Clinical Command page loaded"],
+      "steps": ["Click model selector dropdown"],
+      "expected_result": "13 models shown, grouped by Frontier/Economy/Specialized. Current selection highlighted.",
+      "invariant_coverage": []
+    },
+    {
+      "id": "E2E-COPILOT-004", "name": "CDSS quick action fires real API", "category": "e2e",
+      "preconditions": ["Patient selected, transcript has content"],
+      "steps": ["Click 'Rx Timeline Safety' bubble"],
+      "expected_result": "Loading spinner, then real response from /api/cdss/chat (not simulateLLMResponse mock). Response includes sourceAuthority.",
+      "invariant_coverage": ["ELENA: real API, not mock"]
+    },
+    {
+      "id": "E2E-COMMS-001", "name": "Full WhatsApp conversation flow", "category": "e2e",
+      "preconditions": ["Comunicações page loaded, demo conversations exist"],
+      "steps": ["Click conversation", "Type reply", "Click send", "Verify delivery status update"],
+      "expected_result": "Message appears with 'Sending...' → 'Sent' → 'Delivered' status progression.",
+      "invariant_coverage": []
+    },
+    {
+      "id": "E2E-BILLING-001", "name": "Analytics dashboard shows real data", "category": "e2e",
+      "preconditions": ["At least 5 invoices in DB"],
+      "steps": ["Navigate to /dashboard/faturamento/analitica"],
+      "expected_result": "Revenue KPIs populated, trend chart renders, payer mix shows distribution",
+      "invariant_coverage": []
+    },
+    {
+      "id": "E2E-PREV-001", "name": "Complete PHQ-9 screening end-to-end", "category": "e2e",
+      "preconditions": ["Prevention screening page loaded"],
+      "steps": ["Select PHQ-9", "Answer all 9 questions", "Submit"],
+      "expected_result": "Score displayed with severity badge (color + icon + text). Recommendation shown. If Q9 ≥ 1, suicidal ideation alert is prominent.",
+      "invariant_coverage": ["ELENA: validated scoring", "RUTH: SaMD-safe wording"]
+    },
+    {
+      "id": "E2E-ONBOARD-001", "name": "First-run onboarding flow completes", "category": "e2e",
+      "preconditions": ["New user with firstRunCompleted=false"],
+      "steps": ["Login", "Welcome modal appears", "Click through sidebar tour (5 steps)", "Arrive at Clinical Command", "Complete confetti step"],
+      "expected_result": "Tour completes, firstRunCompleted set to true, subsequent logins skip onboarding",
+      "invariant_coverage": []
+    },
+
+    {
+      "id": "SEC-AUTH-001", "name": "settings/route.ts requires auth", "category": "security",
+      "preconditions": ["No auth cookie/token"],
+      "steps": ["GET /api/settings without Authorization header"],
+      "expected_result": "401 Unauthorized",
+      "invariant_coverage": ["CYRUS: createProtectedRoute"]
+    },
+    {
+      "id": "SEC-AUTH-002", "name": "pre-auth/send requires auth", "category": "security",
+      "preconditions": ["No auth cookie/token"],
+      "steps": ["POST /api/pre-auth/send without Authorization header"],
+      "expected_result": "401 Unauthorized",
+      "invariant_coverage": ["CYRUS: createProtectedRoute"]
+    },
+    {
+      "id": "SEC-AUTH-003", "name": "billing/invoice requires BILLING role", "category": "security",
+      "preconditions": ["Authenticated as CLINICIAN (not BILLING)"],
+      "steps": ["POST /api/billing/invoice"],
+      "expected_result": "403 Forbidden (wrong role)",
+      "invariant_coverage": ["CYRUS: RBAC enforcement"]
+    },
+    {
+      "id": "SEC-AUTH-004", "name": "billing/void requires ORG_ADMIN for amounts > R$500", "category": "security",
+      "preconditions": ["Invoice amount R$800, authenticated as BILLING (not ORG_ADMIN)"],
+      "steps": ["POST /api/billing/void/:id"],
+      "expected_result": "403 Forbidden, message: 'ORG_ADMIN approval required for voids > R$500'",
+      "invariant_coverage": ["CYRUS: approval threshold"]
+    },
+    {
+      "id": "SEC-TENANT-001", "name": "Cross-tenant conversation access denied", "category": "security",
+      "preconditions": ["User in org A, conversation belongs to org B"],
+      "steps": ["GET /api/comms/conversations/:id (org B conversation)"],
+      "expected_result": "404 Not Found (not 403, to avoid information leakage)",
+      "invariant_coverage": ["CYRUS: cross-tenant isolation"]
+    },
+    {
+      "id": "SEC-TENANT-002", "name": "Cross-tenant patient access denied", "category": "security",
+      "preconditions": ["User in org A, patient belongs to org B"],
+      "steps": ["GET /api/copilot/context/:encounterId (org B encounter)"],
+      "expected_result": "404 Not Found",
+      "invariant_coverage": ["CYRUS: verifyPatientAccess()"]
+    },
+    {
+      "id": "SEC-PHI-001", "name": "PHI endpoint without X-Access-Reason → 403", "category": "security",
+      "preconditions": ["Authenticated, LGPD enforcement enabled"],
+      "steps": ["GET /api/copilot/context/:id WITHOUT X-Access-Reason header"],
+      "expected_result": "403 Forbidden, message: 'X-Access-Reason header required for PHI access'",
+      "invariant_coverage": ["CYRUS: LGPD Art. 7 / HIPAA §164.508"]
+    },
+    {
+      "id": "SEC-PHI-002", "name": "PHI endpoint with invalid X-Access-Reason → 403", "category": "security",
+      "preconditions": ["Authenticated"],
+      "steps": ["GET /api/copilot/context/:id with X-Access-Reason: MARKETING"],
+      "expected_result": "403 Forbidden, only TREATMENT/OPERATIONS/PAYMENT/LEGAL/PUBLIC_HEALTH accepted",
+      "invariant_coverage": ["CYRUS: valid access reasons only"]
+    },
+    {
+      "id": "SEC-PII-001", "name": "CPF encrypted in database", "category": "security",
+      "preconditions": ["Patient created with CPF"],
+      "steps": ["Query raw DB: SELECT cpf FROM Patient WHERE id = :id"],
+      "expected_result": "CPF field is encrypted (not plaintext). Decrypted only through encryptPHIWithVersion.",
+      "invariant_coverage": ["CYRUS: PII fields encrypted with encryptPHIWithVersion"]
+    },
+    {
+      "id": "SEC-PII-002", "name": "Conversation message content encrypted at rest", "category": "security",
+      "preconditions": ["Message sent via Comunicações"],
+      "steps": ["Query raw DB: SELECT content FROM Message WHERE id = :id"],
+      "expected_result": "Content is encrypted. Readable only through application layer.",
+      "invariant_coverage": ["CYRUS: patient communications encrypted at rest"]
+    },
+    {
+      "id": "SEC-AUDIT-001", "name": "Audit log deletion attempt → blocked", "category": "security",
+      "preconditions": ["AuditLog entries exist"],
+      "steps": ["Attempt DELETE /api/billing/audit or direct DB delete on AuditLog"],
+      "expected_result": "Operation blocked. AuditLog records are immutable per LGPD Art. 37.",
+      "invariant_coverage": ["CYRUS: VETO — deletion of AuditLog is prohibited"]
+    },
+    {
+      "id": "SEC-AUDIT-002", "name": "Audit log hash chain tamper detection", "category": "security",
+      "preconditions": ["Multiple audit entries with hash chain"],
+      "steps": ["Manually modify one AuditLog.dataHash in DB", "Run verify_integrity"],
+      "expected_result": "integrityStatus.verified: false, brokenAt: [modified entry ID]",
+      "invariant_coverage": ["CYRUS: AuditLogHashChain tamper detection"]
+    },
+    {
+      "id": "SEC-COPILOT-001", "name": "Transcript de-identified before LLM call", "category": "security",
+      "preconditions": ["CDSS suggestion request with patient name 'João Carlos da Silva' in transcript"],
+      "steps": ["POST /api/copilot/suggest", "Intercept outbound LLM API call"],
+      "expected_result": "Patient name replaced with [PATIENT] or removed. CPF, CNS never sent to external LLM.",
+      "invariant_coverage": ["CYRUS: de-identification before external LLM"]
+    }
+  ]
+}

@@ -68,7 +68,9 @@
         JWT, session, CORS, CSP, rate limit, vulnerability,
         CVE, dependency, Snyk, SOC2, penetration test,
         incident response, hash chain, key rotation, TLS,
-        zero trust, access control, permission, role
+        zero trust, access control, permission, role,
+        video session, telemedicine auth, notification scoping,
+        rate limiter bypass, health check secret
       </keywords>
     </trigger>
     <trigger type="code_pattern_match">
@@ -81,6 +83,7 @@
         <pattern>\.env|process\.env\.</pattern>
         <pattern>jwt\.sign|jwt\.verify|bcrypt|argon2</pattern>
         <pattern>patient\.(cpf|cns|rg)</pattern>
+        <pattern>VideoProvider|sessionToken|notification.*organizationId|rateLimitMiddleware</pattern>
       </patterns>
     </trigger>
     <trigger type="route_change">
@@ -145,6 +148,29 @@
         severity CVE.</description>
       <required_change>Update dependency or document accepted risk
         with mitigation plan.</required_change>
+    </invariant>
+    <invariant id="CVI-008" severity="HARD_BLOCK">
+      <condition>video_session_without_token_validation</condition>
+      <description>Telemedicine video call endpoint accepting
+        room join without JWT token validation.</description>
+      <required_change>Validate JWT session token before issuing
+        VideoProvider credentials. Store token in secure,
+        httpOnly cookie.</required_change>
+    </invariant>
+    <invariant id="CVI-009" severity="HARD_BLOCK">
+      <condition>notification_without_tenant_scoping</condition>
+      <description>Notification center returning notifications without
+        organizationId filter. Cross-tenant leak possible.</description>
+      <required_change>Add organizationId to all notification queries.
+        Verify req.user.organizationId == notification.organizationId
+        before returning.</required_change>
+    </invariant>
+    <invariant id="CVI-010" severity="HARD_BLOCK">
+      <condition>rate_limiter_missing_bypass</condition>
+      <description>Rate limiter applies to health check endpoint
+        (/api/health, /api/health/ready), blocking Kubernetes probes.</description>
+      <required_change>Add X-Health-Check-Secret header check in
+        rate limiter. Bypass allowed if HEALTH_CHECK_SECRET matches.</required_change>
     </invariant>
   </veto_invariants>
 
@@ -217,6 +243,9 @@
     <flag id="CSRF-008">.env file committed to git</flag>
     <flag id="CSRF-009">JWT token without expiration</flag>
     <flag id="CSRF-010">Missing rate limiting on auth endpoints</flag>
+    <flag id="CSRF-011">Video session joined without token validation</flag>
+    <flag id="CSRF-012">Notification query missing organizationId filter</flag>
+    <flag id="CSRF-013">Rate limiter blocking health check endpoint</flag>
   </red_flags>
 
   <session_snapshot id="cyrus_snapshot">

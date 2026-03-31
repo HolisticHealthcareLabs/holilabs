@@ -1,0 +1,134 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "panels": [
+    {
+      "id": "cbc",
+      "name": { "en": "Complete Blood Count (CBC)", "pt-BR": "Hemograma Completo", "es": "Hemograma Completo" },
+      "abbreviation": "CBC",
+      "tests": [
+        { "loincCode": "6690-2", "name": { "en": "White Blood Cell Count", "pt-BR": "Leucócitos", "es": "Leucocitos" }, "unit": "/uL", "refMin": 4500, "refMax": 11000 },
+        { "loincCode": "789-8", "name": { "en": "Red Blood Cell Count", "pt-BR": "Hemácias", "es": "Eritrocitos" }, "unit": "M/uL", "refMin": 4.5, "refMax": 5.5 },
+        { "loincCode": "718-7", "name": { "en": "Hemoglobin", "pt-BR": "Hemoglobina", "es": "Hemoglobina" }, "unit": "g/dL", "refMin": 12.0, "refMax": 17.5 },
+        { "loincCode": "4544-3", "name": { "en": "Hematocrit", "pt-BR": "Hematócrito", "es": "Hematocrito" }, "unit": "%", "refMin": 36, "refMax": 52 },
+        { "loincCode": "777-3", "name": { "en": "Platelets", "pt-BR": "Plaquetas", "es": "Plaquetas" }, "unit": "K/uL", "refMin": 150, "refMax": 400 },
+        { "loincCode": "787-2", "name": { "en": "MCV", "pt-BR": "VCM", "es": "VCM" }, "unit": "fL", "refMin": 80, "refMax": 100 },
+        { "loincCode": "785-6", "name": { "en": "MCH", "pt-BR": "HCM", "es": "HCM" }, "unit": "pg", "refMin": 27, "refMax": 33 },
+        { "loincCode": "786-4", "name": { "en": "MCHC", "pt-BR": "CHCM", "es": "CHCM" }, "unit": "g/dL", "refMin": 32, "refMax": 36 }
+      ],
+      "patientPrep": { "en": "No special preparation required.", "pt-BR": "Não é necessário preparo especial.", "es": "No requiere preparación especial." },
+      "clinicalIndications": ["D50.9", "D64.9", "Z00.0", "R50.9"],
+      "tussCode": "40302040"
+    },
+    {
+      "id": "bmp",
+      "name": { "en": "Basic Metabolic Panel (BMP)", "pt-BR": "Painel Metabólico Básico", "es": "Panel Metabólico Básico" },
+      "abbreviation": "BMP",
+      "tests": [
+        { "loincCode": "2345-7", "name": { "en": "Glucose", "pt-BR": "Glicemia", "es": "Glucosa" }, "unit": "mg/dL", "refMin": 70, "refMax": 100 },
+        { "loincCode": "17861-6", "name": { "en": "Calcium", "pt-BR": "Cálcio", "es": "Calcio" }, "unit": "mg/dL", "refMin": 8.5, "refMax": 10.5 },
+        { "loincCode": "2951-2", "name": { "en": "Sodium", "pt-BR": "Sódio", "es": "Sodio" }, "unit": "mEq/L", "refMin": 136, "refMax": 145 },
+        { "loincCode": "2823-3", "name": { "en": "Potassium", "pt-BR": "Potássio", "es": "Potasio" }, "unit": "mEq/L", "refMin": 3.5, "refMax": 5.0 },
+        { "loincCode": "2028-9", "name": { "en": "CO2 (Bicarbonate)", "pt-BR": "CO2 (Bicarbonato)", "es": "CO2 (Bicarbonato)" }, "unit": "mEq/L", "refMin": 22, "refMax": 29 },
+        { "loincCode": "2075-0", "name": { "en": "Chloride", "pt-BR": "Cloreto", "es": "Cloruro" }, "unit": "mEq/L", "refMin": 98, "refMax": 106 },
+        { "loincCode": "3094-0", "name": { "en": "BUN", "pt-BR": "Uréia", "es": "Urea" }, "unit": "mg/dL", "refMin": 7, "refMax": 20 },
+        { "loincCode": "2160-0", "name": { "en": "Creatinine", "pt-BR": "Creatinina", "es": "Creatinina" }, "unit": "mg/dL", "refMin": 0.7, "refMax": 1.3 }
+      ],
+      "patientPrep": { "en": "Fasting 8-12 hours for glucose.", "pt-BR": "Jejum de 8-12 horas para glicemia.", "es": "Ayuno de 8-12 horas para glucosa." },
+      "clinicalIndications": ["E11.9", "N18.3", "I10", "E87.6"],
+      "tussCode": "40301397"
+    },
+    {
+      "id": "lipid",
+      "name": { "en": "Lipid Panel", "pt-BR": "Perfil Lipídico", "es": "Perfil Lipídico" },
+      "abbreviation": "LIPID",
+      "tests": [
+        { "loincCode": "2093-3", "name": { "en": "Total Cholesterol", "pt-BR": "Colesterol Total", "es": "Colesterol Total" }, "unit": "mg/dL", "refMin": 0, "refMax": 200 },
+        { "loincCode": "2089-1", "name": { "en": "LDL Cholesterol", "pt-BR": "Colesterol LDL", "es": "Colesterol LDL" }, "unit": "mg/dL", "refMin": 0, "refMax": 100 },
+        { "loincCode": "2085-9", "name": { "en": "HDL Cholesterol", "pt-BR": "Colesterol HDL", "es": "Colesterol HDL" }, "unit": "mg/dL", "refMin": 40, "refMax": 999 },
+        { "loincCode": "2571-8", "name": { "en": "Triglycerides", "pt-BR": "Triglicerídeos", "es": "Triglicéridos" }, "unit": "mg/dL", "refMin": 0, "refMax": 150 }
+      ],
+      "patientPrep": { "en": "Fasting 12 hours.", "pt-BR": "Jejum de 12 horas.", "es": "Ayuno de 12 horas." },
+      "clinicalIndications": ["E78.5", "E78.0", "I25.1", "Z13.6"],
+      "tussCode": "40301630"
+    },
+    {
+      "id": "thyroid",
+      "name": { "en": "Thyroid Panel", "pt-BR": "Painel Tireoidiano", "es": "Panel Tiroideo" },
+      "abbreviation": "THYROID",
+      "tests": [
+        { "loincCode": "3016-3", "name": { "en": "TSH", "pt-BR": "TSH", "es": "TSH" }, "unit": "mIU/L", "refMin": 0.4, "refMax": 4.0 },
+        { "loincCode": "3024-7", "name": { "en": "Free T4", "pt-BR": "T4 Livre", "es": "T4 Libre" }, "unit": "ng/dL", "refMin": 0.8, "refMax": 1.8 },
+        { "loincCode": "3053-6", "name": { "en": "Free T3", "pt-BR": "T3 Livre", "es": "T3 Libre" }, "unit": "pg/mL", "refMin": 2.3, "refMax": 4.2 }
+      ],
+      "patientPrep": { "en": "No fasting required. Morning collection preferred.", "pt-BR": "Não é necessário jejum. Coleta matinal preferencial.", "es": "No requiere ayuno. Recolección matinal preferida." },
+      "clinicalIndications": ["E03.9", "E05.9", "Z13.2"],
+      "tussCode": "40316521"
+    },
+    {
+      "id": "hba1c",
+      "name": { "en": "Glycated Hemoglobin", "pt-BR": "Hemoglobina Glicada", "es": "Hemoglobina Glicosilada" },
+      "abbreviation": "HbA1c",
+      "tests": [
+        { "loincCode": "4548-4", "name": { "en": "HbA1c", "pt-BR": "HbA1c", "es": "HbA1c" }, "unit": "%", "refMin": 4.0, "refMax": 5.6 }
+      ],
+      "patientPrep": { "en": "No fasting required.", "pt-BR": "Não é necessário jejum.", "es": "No requiere ayuno." },
+      "clinicalIndications": ["E11.9", "E11.6", "E10.9", "Z13.1"],
+      "tussCode": "40301699"
+    },
+    {
+      "id": "hepatic",
+      "name": { "en": "Hepatic Function Panel", "pt-BR": "Função Hepática", "es": "Función Hepática" },
+      "abbreviation": "HEPATIC",
+      "tests": [
+        { "loincCode": "1742-6", "name": { "en": "ALT (SGPT)", "pt-BR": "TGP/ALT", "es": "ALT (TGP)" }, "unit": "U/L", "refMin": 7, "refMax": 56 },
+        { "loincCode": "1920-8", "name": { "en": "AST (SGOT)", "pt-BR": "TGO/AST", "es": "AST (TGO)" }, "unit": "U/L", "refMin": 10, "refMax": 40 },
+        { "loincCode": "2324-2", "name": { "en": "GGT", "pt-BR": "GGT", "es": "GGT" }, "unit": "U/L", "refMin": 9, "refMax": 48 },
+        { "loincCode": "6768-6", "name": { "en": "ALP", "pt-BR": "Fosfatase Alcalina", "es": "Fosfatasa Alcalina" }, "unit": "U/L", "refMin": 44, "refMax": 147 },
+        { "loincCode": "1751-7", "name": { "en": "Albumin", "pt-BR": "Albumina", "es": "Albúmina" }, "unit": "g/dL", "refMin": 3.5, "refMax": 5.5 },
+        { "loincCode": "1975-2", "name": { "en": "Total Bilirubin", "pt-BR": "Bilirrubina Total", "es": "Bilirrubina Total" }, "unit": "mg/dL", "refMin": 0.1, "refMax": 1.2 }
+      ],
+      "patientPrep": { "en": "No fasting required.", "pt-BR": "Não é necessário jejum.", "es": "No requiere ayuno." },
+      "clinicalIndications": ["K76.0", "K70.0", "B18.2", "K80.2"],
+      "tussCode": "40301672"
+    },
+    {
+      "id": "renal",
+      "name": { "en": "Renal Function Panel", "pt-BR": "Função Renal", "es": "Función Renal" },
+      "abbreviation": "RENAL",
+      "tests": [
+        { "loincCode": "2160-0", "name": { "en": "Creatinine", "pt-BR": "Creatinina", "es": "Creatinina" }, "unit": "mg/dL", "refMin": 0.7, "refMax": 1.3 },
+        { "loincCode": "3094-0", "name": { "en": "BUN", "pt-BR": "Uréia", "es": "Urea" }, "unit": "mg/dL", "refMin": 7, "refMax": 20 },
+        { "loincCode": "33914-3", "name": { "en": "eGFR", "pt-BR": "TFGe", "es": "TFGe" }, "unit": "mL/min/1.73m²", "refMin": 90, "refMax": 999 },
+        { "loincCode": "3084-1", "name": { "en": "Uric Acid", "pt-BR": "Ácido Úrico", "es": "Ácido Úrico" }, "unit": "mg/dL", "refMin": 3.5, "refMax": 7.2 }
+      ],
+      "patientPrep": { "en": "No fasting required.", "pt-BR": "Não é necessário jejum.", "es": "No requiere ayuno." },
+      "clinicalIndications": ["N18.3", "N18.5", "I10", "E11.2"],
+      "tussCode": "40301370"
+    },
+    {
+      "id": "cmp",
+      "name": { "en": "Comprehensive Metabolic Panel (CMP)", "pt-BR": "Painel Metabólico Completo", "es": "Panel Metabólico Completo" },
+      "abbreviation": "CMP",
+      "tests": [
+        { "loincCode": "2345-7", "name": { "en": "Glucose", "pt-BR": "Glicemia", "es": "Glucosa" }, "unit": "mg/dL", "refMin": 70, "refMax": 100 },
+        { "loincCode": "17861-6", "name": { "en": "Calcium", "pt-BR": "Cálcio", "es": "Calcio" }, "unit": "mg/dL", "refMin": 8.5, "refMax": 10.5 },
+        { "loincCode": "2951-2", "name": { "en": "Sodium", "pt-BR": "Sódio", "es": "Sodio" }, "unit": "mEq/L", "refMin": 136, "refMax": 145 },
+        { "loincCode": "2823-3", "name": { "en": "Potassium", "pt-BR": "Potássio", "es": "Potasio" }, "unit": "mEq/L", "refMin": 3.5, "refMax": 5.0 },
+        { "loincCode": "2028-9", "name": { "en": "CO2", "pt-BR": "CO2", "es": "CO2" }, "unit": "mEq/L", "refMin": 22, "refMax": 29 },
+        { "loincCode": "2075-0", "name": { "en": "Chloride", "pt-BR": "Cloreto", "es": "Cloruro" }, "unit": "mEq/L", "refMin": 98, "refMax": 106 },
+        { "loincCode": "3094-0", "name": { "en": "BUN", "pt-BR": "Uréia", "es": "Urea" }, "unit": "mg/dL", "refMin": 7, "refMax": 20 },
+        { "loincCode": "2160-0", "name": { "en": "Creatinine", "pt-BR": "Creatinina", "es": "Creatinina" }, "unit": "mg/dL", "refMin": 0.7, "refMax": 1.3 },
+        { "loincCode": "1751-7", "name": { "en": "Albumin", "pt-BR": "Albumina", "es": "Albúmina" }, "unit": "g/dL", "refMin": 3.5, "refMax": 5.5 },
+        { "loincCode": "2885-2", "name": { "en": "Total Protein", "pt-BR": "Proteínas Totais", "es": "Proteínas Totales" }, "unit": "g/dL", "refMin": 6.0, "refMax": 8.3 },
+        { "loincCode": "6768-6", "name": { "en": "ALP", "pt-BR": "Fosfatase Alcalina", "es": "Fosfatasa Alcalina" }, "unit": "U/L", "refMin": 44, "refMax": 147 },
+        { "loincCode": "1742-6", "name": { "en": "ALT", "pt-BR": "TGP", "es": "ALT" }, "unit": "U/L", "refMin": 7, "refMax": 56 },
+        { "loincCode": "1920-8", "name": { "en": "AST", "pt-BR": "TGO", "es": "AST" }, "unit": "U/L", "refMin": 10, "refMax": 40 },
+        { "loincCode": "1975-2", "name": { "en": "Total Bilirubin", "pt-BR": "Bilirrubina Total", "es": "Bilirrubina Total" }, "unit": "mg/dL", "refMin": 0.1, "refMax": 1.2 }
+      ],
+      "patientPrep": { "en": "Fasting 8-12 hours.", "pt-BR": "Jejum de 8-12 horas.", "es": "Ayuno de 8-12 horas." },
+      "clinicalIndications": ["Z00.0", "E11.9", "K76.0", "N18.3"],
+      "tussCode": "40301397"
+    }
+  ]
+}

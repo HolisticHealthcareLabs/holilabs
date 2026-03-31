@@ -1,0 +1,101 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "fhirVersion": "4.0.1",
+  "source": "https://rnds-fhir.saude.gov.br/",
+
+  "mappings": [
+    {
+      "canonical": "Patient",
+      "rndsProfile": "BRIndividuo",
+      "profileUrl": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0",
+      "fields": [
+        { "source": "patient.cns", "target": "Patient.identifier[0].value", "system": "http://rnds-fhir.saude.gov.br/fhir/r4/NamingSystem/cns", "required": true, "note": "15-digit CNS — primary RNDS identifier" },
+        { "source": "patient.cpf", "target": "Patient.identifier[1].value", "system": "http://rnds-fhir.saude.gov.br/fhir/r4/NamingSystem/cpf", "required": false, "transformation": "Decrypt from encryptPHIWithVersion before sending" },
+        { "source": "patient.firstName + patient.lastName", "target": "Patient.name[0].given + Patient.name[0].family", "required": true },
+        { "source": "patient.dateOfBirth", "target": "Patient.birthDate", "format": "YYYY-MM-DD", "required": true },
+        { "source": "patient.sex", "target": "Patient.gender", "transformation": "M → male, F → female", "required": true },
+        { "source": "patient.phone", "target": "Patient.telecom[0].value", "system": "phone", "required": false }
+      ]
+    },
+    {
+      "canonical": "LabResult",
+      "rndsProfile": "BRResultadoExameLaboratorial",
+      "profileUrl": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRDiagnosticoLaboratorioClinico-1.0",
+      "bundleType": "document",
+      "requiredResources": ["Composition", "Observation", "Patient", "Practitioner"],
+      "fields": [
+        { "source": "labResult.loincCode", "target": "Observation.code.coding[0].code", "system": "http://loinc.org", "required": true },
+        { "source": "labResult.value", "target": "Observation.valueQuantity.value", "required": true },
+        { "source": "labResult.unit", "target": "Observation.valueQuantity.unit", "required": true },
+        { "source": "labResult.referenceMin", "target": "Observation.referenceRange[0].low.value", "required": false },
+        { "source": "labResult.referenceMax", "target": "Observation.referenceRange[0].high.value", "required": false },
+        { "source": "labResult.collectedAt", "target": "Observation.effectiveDateTime", "format": "ISO 8601", "required": true },
+        { "source": "labResult.status", "target": "Observation.status", "transformation": "normal→final, pending→preliminary", "required": true },
+        { "source": "labResult.interpretation", "target": "Observation.interpretation[0].coding[0].code", "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", "transformation": "normal→N, high→H, low→L, critical→HH/LL" }
+      ],
+      "deduplication": "Match by LOINC code + effectiveDateTime (same day = same result)"
+    },
+    {
+      "canonical": "Immunization",
+      "rndsProfile": "BRImunobiologicoAdministrado",
+      "profileUrl": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRImunobiologicoAdministrado-1.0",
+      "fields": [
+        { "source": "vaccination.vaccineCode", "target": "Immunization.vaccineCode.coding[0].code", "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRImunobiologico", "required": true, "note": "RNDS immunobiologic code — map from CVX" },
+        { "source": "vaccination.date", "target": "Immunization.occurrenceDateTime", "required": true },
+        { "source": "vaccination.lotNumber", "target": "Immunization.lotNumber", "required": true },
+        { "source": "vaccination.manufacturer", "target": "Immunization.manufacturer.display", "required": false },
+        { "source": "vaccination.doseNumber", "target": "Immunization.protocolApplied[0].doseNumberPositiveInt", "required": true },
+        { "source": "vaccination.site", "target": "Immunization.site.coding[0].code", "system": "http://terminology.hl7.org/CodeSystem/v3-ActSite" },
+        { "source": "vaccination.route", "target": "Immunization.route.coding[0].code", "transformation": "IM→IM, SC→SC, PO→PO" }
+      ],
+      "deduplication": "Match by vaccine code + occurrenceDateTime (same day = same vaccination)"
+    },
+    {
+      "canonical": "Encounter",
+      "rndsProfile": "BRRegistroAtendimentoClinico",
+      "profileUrl": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRRegistroAtendimentoClinico-1.0",
+      "bundleType": "document",
+      "requiredResources": ["Composition", "Encounter", "Patient", "Practitioner", "Condition"],
+      "fields": [
+        { "source": "encounter.status", "target": "Encounter.status", "transformation": "COMPLETED→finished, IN_PROGRESS→in-progress", "required": true },
+        { "source": "encounter.startTime", "target": "Encounter.period.start", "required": true },
+        { "source": "encounter.endTime", "target": "Encounter.period.end", "required": false },
+        { "source": "encounter.reasonCode", "target": "Encounter.reasonCode[0].coding[0].code", "system": "http://hl7.org/fhir/sid/icd-10", "required": true },
+        { "source": "encounter.type", "target": "Encounter.type[0].coding[0].code", "system": "http://www.saude.gov.br/fhir/r4/CodeSystem/BRTipoAtendimento", "transformation": "CONSULTATION→04, EMERGENCY→05" }
+      ]
+    },
+    {
+      "canonical": "AllergyIntolerance",
+      "rndsProfile": "BRAlergiaIntoleranciaMedicamentosa",
+      "profileUrl": "http://www.saude.gov.br/fhir/r4/StructureDefinition/BRAlergiaIntoleranciaMedicamentosa-1.0",
+      "fields": [
+        { "source": "allergy.substance", "target": "AllergyIntolerance.code.coding[0].display", "required": true },
+        { "source": "allergy.reaction", "target": "AllergyIntolerance.reaction[0].manifestation[0].coding[0].display", "required": true },
+        { "source": "allergy.severity", "target": "AllergyIntolerance.reaction[0].severity", "transformation": "mild→mild, moderate→moderate, severe→severe", "required": true },
+        { "source": "allergy.status", "target": "AllergyIntolerance.clinicalStatus.coding[0].code", "transformation": "active→active, resolved→resolved" }
+      ]
+    }
+  ],
+
+  "cvxToRndsMapping": {
+    "description": "Map CVX vaccine codes to RNDS BRImunobiologico codes",
+    "examples": [
+      { "cvx": "207", "rnds": "85", "name": "COVID-19 Moderna" },
+      { "cvx": "208", "rnds": "86", "name": "COVID-19 Pfizer" },
+      { "cvx": "210", "rnds": "87", "name": "COVID-19 AstraZeneca" },
+      { "cvx": "213", "rnds": "88", "name": "COVID-19 Janssen" },
+      { "cvx": "212", "rnds": "89", "name": "COVID-19 Sinovac/CoronaVac" },
+      { "cvx": "20", "rnds": "17", "name": "DTP (Tríplice Bacteriana)" },
+      { "cvx": "03", "rnds": "09", "name": "MMR (Tríplice Viral)" },
+      { "cvx": "10", "rnds": "21", "name": "IPV (Poliomielite Inativada)" },
+      { "cvx": "08", "rnds": "22", "name": "Hepatite B" },
+      { "cvx": "83", "rnds": "23", "name": "Hepatite A" },
+      { "cvx": "88", "rnds": "25", "name": "Influenza" },
+      { "cvx": "21", "rnds": "13", "name": "Varicela" },
+      { "cvx": "33", "rnds": "15", "name": "Pneumocócica 23-valente" },
+      { "cvx": "133", "rnds": "39", "name": "Pneumocócica 13-valente" }
+    ],
+    "note": "Full mapping available at: https://rnds-fhir.saude.gov.br/ValueSet/BRImunobiologico"
+  }
+}

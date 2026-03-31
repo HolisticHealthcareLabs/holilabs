@@ -1,0 +1,139 @@
+{
+  "version": "1.0.0",
+  "emptyStates": {
+    "comunicacoes": {
+      "icon": "MessageSquare",
+      "headline": {
+        "en": "No conversations yet",
+        "pt-BR": "Nenhuma conversa ainda",
+        "es": "Sin conversaciones aún"
+      },
+      "description": {
+        "en": "Send your first message to a patient via WhatsApp, SMS, or email. All communications appear here.",
+        "pt-BR": "Envie sua primeira mensagem para um paciente via WhatsApp, SMS ou e-mail. Todas as comunicações aparecem aqui.",
+        "es": "Envía tu primer mensaje a un paciente por WhatsApp, SMS o email. Todas las comunicaciones aparecen aquí."
+      },
+      "primaryAction": {
+        "label": { "en": "Send Message", "pt-BR": "Enviar Mensagem", "es": "Enviar Mensaje" },
+        "route": "/dashboard/comunicacoes?action=new"
+      },
+      "secondaryAction": {
+        "label": { "en": "Import contacts", "pt-BR": "Importar contatos", "es": "Importar contactos" },
+        "route": "/dashboard/patients"
+      }
+    },
+    "faturamento-analitica": {
+      "icon": "BarChart3",
+      "headline": {
+        "en": "No invoices yet",
+        "pt-BR": "Nenhuma fatura ainda",
+        "es": "Sin facturas aún"
+      },
+      "description": {
+        "en": "Revenue analytics will appear after your first billing cycle. Create an invoice to get started.",
+        "pt-BR": "A analítica de receita aparecerá após seu primeiro ciclo de faturamento. Crie uma fatura para começar.",
+        "es": "Los análisis de ingresos aparecerán después de tu primer ciclo de facturación. Crea una factura para empezar."
+      },
+      "primaryAction": {
+        "label": { "en": "Create Invoice", "pt-BR": "Criar Fatura", "es": "Crear Factura" },
+        "route": "/dashboard/faturamento?action=new"
+      }
+    },
+    "faturamento-auditoria": {
+      "icon": "ShieldCheck",
+      "positive": true,
+      "headline": {
+        "en": "Clean audit trail",
+        "pt-BR": "Trilha de auditoria limpa",
+        "es": "Registro de auditoría limpio"
+      },
+      "description": {
+        "en": "All actions are being logged and verified. The hash chain is intact. Your compliance posture is healthy.",
+        "pt-BR": "Todas as ações estão sendo registradas e verificadas. A cadeia de hash está intacta. Sua postura de conformidade está saudável.",
+        "es": "Todas las acciones están siendo registradas y verificadas. La cadena de hash está intacta. Tu postura de cumplimiento es saludable."
+      }
+    },
+    "faturamento-anulacoes": {
+      "icon": "CheckCircle2",
+      "positive": true,
+      "headline": {
+        "en": "No cancellations",
+        "pt-BR": "Nenhuma anulação",
+        "es": "Sin anulaciones"
+      },
+      "description": {
+        "en": "That's a good thing. Cancellation requests and refund workflows will appear here when needed.",
+        "pt-BR": "Isso é bom. Solicitações de anulação e fluxos de reembolso aparecerão aqui quando necessário.",
+        "es": "Eso es bueno. Las solicitudes de anulación y flujos de reembolso aparecerán aquí cuando sea necesario."
+      }
+    },
+    "prevencao-protocolos": {
+      "icon": "HeartPulse",
+      "headline": {
+        "en": "Set up your first screening protocol",
+        "pt-BR": "Configure seu primeiro protocolo de rastreamento",
+        "es": "Configura tu primer protocolo de tamizaje"
+      },
+      "description": {
+        "en": "Prevention protocols help you track screenings, vaccinations, and risk assessments for your patient population.",
+        "pt-BR": "Protocolos de prevenção ajudam a acompanhar rastreamentos, vacinações e avaliações de risco da sua população de pacientes.",
+        "es": "Los protocolos de prevención ayudan a rastrear tamizajes, vacunaciones y evaluaciones de riesgo de tu población de pacientes."
+      },
+      "primaryAction": {
+        "label": { "en": "Browse Protocols", "pt-BR": "Explorar Protocolos", "es": "Explorar Protocolos" },
+        "route": "/dashboard/prevencao/protocolos"
+      }
+    },
+    "prevencao-rastreamento": {
+      "icon": "ClipboardList",
+      "headline": {
+        "en": "No screenings completed",
+        "pt-BR": "Nenhum rastreamento concluído",
+        "es": "Sin tamizajes completados"
+      },
+      "description": {
+        "en": "Start a patient screening using evidence-based tools like PHQ-9, GAD-7, FINDRISC, or SCORE2.",
+        "pt-BR": "Inicie um rastreamento com ferramentas baseadas em evidências como PHQ-9, GAD-7, FINDRISC ou SCORE2.",
+        "es": "Inicia un tamizaje con herramientas basadas en evidencia como PHQ-9, GAD-7, FINDRISC o SCORE2."
+      },
+      "primaryAction": {
+        "label": { "en": "Start Screening", "pt-BR": "Iniciar Rastreamento", "es": "Iniciar Tamizaje" },
+        "route": "/dashboard/prevencao/rastreamento?action=new"
+      }
+    },
+    "prevencao-imunizacao": {
+      "icon": "Syringe",
+      "headline": {
+        "en": "No vaccination records",
+        "pt-BR": "Nenhum registro de vacinação",
+        "es": "Sin registros de vacunación"
+      },
+      "description": {
+        "en": "Track patient vaccinations against national schedules (PNI Brazil, PAI Colombia). Import records or add manually.",
+        "pt-BR": "Acompanhe vacinações dos pacientes conforme calendários nacionais (PNI Brasil, PAI Colômbia). Importe registros ou adicione manualmente.",
+        "es": "Rastrea vacunaciones de pacientes según calendarios nacionales (PAI Colombia, PNI Brasil). Importa registros o agrega manualmente."
+      },
+      "primaryAction": {
+        "label": { "en": "Add Vaccination", "pt-BR": "Adicionar Vacinação", "es": "Agregar Vacunación" },
+        "route": "/dashboard/prevencao/imunizacao?action=new"
+      }
+    },
+    "prevencao-meus-planos": {
+      "icon": "FileHeart",
+      "headline": {
+        "en": "No custom prevention plans",
+        "pt-BR": "Nenhum plano de prevenção personalizado",
+        "es": "Sin planes de prevención personalizados"
+      },
+      "description": {
+        "en": "Create custom prevention plans tailored to your clinic's patient population and local health priorities.",
+        "pt-BR": "Crie planos de prevenção personalizados para a população de pacientes da sua clínica e prioridades de saúde locais.",
+        "es": "Crea planes de prevención personalizados para la población de pacientes de tu clínica y prioridades de salud locales."
+      },
+      "primaryAction": {
+        "label": { "en": "Create Plan", "pt-BR": "Criar Plano", "es": "Crear Plan" },
+        "route": "/dashboard/prevencao/meus-planos?action=new"
+      }
+    }
+  }
+}

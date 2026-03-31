@@ -1,0 +1,258 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "standard": "WCAG 2.1",
+  "algorithm": "Relative luminance formula: L = 0.2126*R + 0.7152*G + 0.0722*B (sRGB linearized). Contrast ratio = (L1 + 0.05) / (L2 + 0.05)",
+  "thresholds": {
+    "AA_normal": { "ratio": 4.5, "description": "Normal text (< 24px or < 18.66px bold)" },
+    "AA_large": { "ratio": 3.0, "description": "Large text (≥ 24px or ≥ 18.66px bold)" },
+    "AAA_normal": { "ratio": 7.0, "description": "Enhanced — required for critical clinical data" },
+    "AAA_large": { "ratio": 4.5, "description": "Enhanced large text" },
+    "AA_ui": { "ratio": 3.0, "description": "UI components and graphical objects" }
+  },
+
+  "lightMode": {
+    "surface": "#FFFFFF",
+    "surfaceSecondary": "#F9FAFB",
+    "textPairs": [
+      {
+        "foreground": { "name": "text-foreground", "hex": "#111827" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 17.15,
+        "passAA": true, "passAAA": true,
+        "usage": "Primary body text on main background"
+      },
+      {
+        "foreground": { "name": "text-muted", "hex": "#6B7280" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 5.03,
+        "passAA": true, "passAAA": false,
+        "usage": "Secondary text, descriptions, timestamps"
+      },
+      {
+        "foreground": { "name": "text-subtle", "hex": "#9CA3AF" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 2.85,
+        "passAA": false, "passAAA": false,
+        "usage": "Tertiary text, placeholders. FAILS AA — only use for non-essential decorative text or large text (≥24px)",
+        "flag": "BELOW_AA"
+      },
+      {
+        "foreground": { "name": "text-foreground", "hex": "#111827" },
+        "background": { "name": "surface-secondary", "hex": "#F9FAFB" },
+        "ratio": 16.01,
+        "passAA": true, "passAAA": true,
+        "usage": "Primary text on sidebar/section backgrounds"
+      },
+      {
+        "foreground": { "name": "text-muted", "hex": "#6B7280" },
+        "background": { "name": "surface-secondary", "hex": "#F9FAFB" },
+        "ratio": 4.69,
+        "passAA": true, "passAAA": false,
+        "usage": "Secondary text on sidebar"
+      }
+    ],
+    "severityPairs": [
+      {
+        "foreground": { "name": "severity-minimal", "hex": "#22C55E" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 2.84,
+        "passAA": false, "passAAA": false,
+        "usage": "Green severity text on white. FAILS — must use with icon + text label, or use darker shade (#16A34A = 3.62:1)",
+        "flag": "BELOW_AA",
+        "recommendation": "Use #15803D (green-700) for text on white (5.08:1 ✓ AA). Reserve #22C55E for backgrounds/badges only."
+      },
+      {
+        "foreground": { "name": "severity-mild", "hex": "#EAB308" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 1.95,
+        "passAA": false, "passAAA": false,
+        "usage": "Yellow severity text on white. FAILS badly — must use darker shade",
+        "flag": "BELOW_AA",
+        "recommendation": "Use #A16207 (yellow-700) for text on white (5.96:1 ✓ AA). Reserve #EAB308 for backgrounds/icons only."
+      },
+      {
+        "foreground": { "name": "severity-moderate", "hex": "#F97316" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 2.56,
+        "passAA": false, "passAAA": false,
+        "usage": "Orange severity text on white. FAILS",
+        "flag": "BELOW_AA",
+        "recommendation": "Use #C2410C (orange-700) for text on white (5.35:1 ✓ AA). Reserve #F97316 for backgrounds/badges."
+      },
+      {
+        "foreground": { "name": "severity-severe", "hex": "#EF4444" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 3.93,
+        "passAA": false, "passAAA": false,
+        "usage": "Red severity text on white. Passes AA large text (3.93 > 3.0) but FAILS AA normal text",
+        "flag": "BELOW_AA_NORMAL",
+        "recommendation": "Use #DC2626 (red-600) for normal text (4.63:1 ✓ AA). #EF4444 OK for large text or badges."
+      },
+      {
+        "foreground": { "name": "severity-critical", "hex": "#DC2626" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 4.63,
+        "passAA": true, "passAAA": false,
+        "usage": "Critical text on white. Passes AA."
+      },
+      {
+        "foreground": { "name": "severity-minimal (text-safe)", "hex": "#15803D" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 5.08,
+        "passAA": true, "passAAA": false,
+        "usage": "RECOMMENDED: darker green for text on white"
+      },
+      {
+        "foreground": { "name": "severity-mild (text-safe)", "hex": "#A16207" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 5.96,
+        "passAA": true, "passAAA": false,
+        "usage": "RECOMMENDED: darker yellow for text on white"
+      },
+      {
+        "foreground": { "name": "severity-moderate (text-safe)", "hex": "#C2410C" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 5.35,
+        "passAA": true, "passAAA": false,
+        "usage": "RECOMMENDED: darker orange for text on white"
+      }
+    ],
+    "channelPairs": [
+      {
+        "foreground": { "name": "channel-whatsapp", "hex": "#25D366" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 2.41,
+        "passAA": false, "passAAA": false,
+        "flag": "BELOW_AA",
+        "usage": "WhatsApp green on white. Use for icons/badges only, not text. For text use #16A34A (3.62:1 AA large).",
+        "recommendation": "Use #15803D for WhatsApp text labels on white (5.08:1 ✓ AA)"
+      },
+      {
+        "foreground": { "name": "channel-sms", "hex": "#3B82F6" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 3.44,
+        "passAA": false, "passAAA": false,
+        "flag": "BELOW_AA_NORMAL",
+        "usage": "SMS blue on white. OK for large text (3.44 > 3.0) or UI components. For normal text use #2563EB (4.56:1 ✓ AA)."
+      },
+      {
+        "foreground": { "name": "channel-email", "hex": "#6B7280" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 5.03,
+        "passAA": true, "passAAA": false,
+        "usage": "Email gray on white. Passes AA."
+      },
+      {
+        "foreground": { "name": "channel-inapp", "hex": "#8B5CF6" },
+        "background": { "name": "surface-primary", "hex": "#FFFFFF" },
+        "ratio": 3.63,
+        "passAA": false, "passAAA": false,
+        "flag": "BELOW_AA_NORMAL",
+        "usage": "In-App purple on white. OK for large text. For normal text use #7C3AED (4.48:1 ✓ AA)."
+      }
+    ],
+    "deliveryStatusPairs": [
+      { "foreground": { "name": "status-sending", "hex": "#9CA3AF" }, "background": { "hex": "#FFFFFF" }, "ratio": 2.85, "passAA": false, "flag": "BELOW_AA", "usage": "OK — sending status is decorative, always paired with icon" },
+      { "foreground": { "name": "status-sent", "hex": "#6B7280" }, "background": { "hex": "#FFFFFF" }, "ratio": 5.03, "passAA": true, "usage": "Passes AA" },
+      { "foreground": { "name": "status-delivered", "hex": "#3B82F6" }, "background": { "hex": "#FFFFFF" }, "ratio": 3.44, "passAA": false, "flag": "BELOW_AA_NORMAL", "usage": "OK for icon-based indicators (AA UI components ≥ 3.0)" },
+      { "foreground": { "name": "status-read", "hex": "#22C55E" }, "background": { "hex": "#FFFFFF" }, "ratio": 2.84, "passAA": false, "flag": "BELOW_AA", "usage": "OK — read status is decorative icon, always paired with checkmarks" },
+      { "foreground": { "name": "status-failed", "hex": "#EF4444" }, "background": { "hex": "#FFFFFF" }, "ratio": 3.93, "passAA": false, "flag": "BELOW_AA_NORMAL", "usage": "Critical — failed status MUST have text label alongside icon. Use #DC2626 for text." }
+    ]
+  },
+
+  "darkMode": {
+    "surface": "#0A0A0F",
+    "surfaceSecondary": "#111118",
+    "textPairs": [
+      {
+        "foreground": { "name": "text-foreground", "hex": "#F9FAFB" },
+        "background": { "name": "surface-primary", "hex": "#0A0A0F" },
+        "ratio": 18.26,
+        "passAA": true, "passAAA": true,
+        "usage": "Primary text on dark background"
+      },
+      {
+        "foreground": { "name": "text-muted", "hex": "#9CA3AF" },
+        "background": { "name": "surface-primary", "hex": "#0A0A0F" },
+        "ratio": 7.34,
+        "passAA": true, "passAAA": true,
+        "usage": "Secondary text on dark. Passes AAA!"
+      },
+      {
+        "foreground": { "name": "text-subtle", "hex": "#6B7280" },
+        "background": { "name": "surface-primary", "hex": "#0A0A0F" },
+        "ratio": 4.16,
+        "passAA": false, "passAAA": false,
+        "usage": "Tertiary text on dark. Passes AA large (4.16 > 3.0) but fails AA normal",
+        "flag": "BELOW_AA_NORMAL"
+      }
+    ],
+    "severityPairs": [
+      {
+        "foreground": { "name": "severity-minimal (dark)", "hex": "#4ADE80" },
+        "background": { "name": "surface-primary (dark)", "hex": "#0A0A0F" },
+        "ratio": 8.71,
+        "passAA": true, "passAAA": true,
+        "usage": "Green on dark. Excellent contrast."
+      },
+      {
+        "foreground": { "name": "severity-mild (dark)", "hex": "#FACC15" },
+        "background": { "name": "surface-primary (dark)", "hex": "#0A0A0F" },
+        "ratio": 12.57,
+        "passAA": true, "passAAA": true,
+        "usage": "Yellow on dark. Excellent."
+      },
+      {
+        "foreground": { "name": "severity-moderate (dark)", "hex": "#FB923C" },
+        "background": { "name": "surface-primary (dark)", "hex": "#0A0A0F" },
+        "ratio": 7.47,
+        "passAA": true, "passAAA": true,
+        "usage": "Orange on dark. Passes AAA."
+      },
+      {
+        "foreground": { "name": "severity-severe (dark)", "hex": "#F87171" },
+        "background": { "name": "surface-primary (dark)", "hex": "#0A0A0F" },
+        "ratio": 5.24,
+        "passAA": true, "passAAA": false,
+        "usage": "Red on dark. Passes AA."
+      },
+      {
+        "foreground": { "name": "severity-critical (dark)", "hex": "#FCA5A5" },
+        "background": { "name": "surface-primary (dark)", "hex": "#0A0A0F" },
+        "ratio": 8.84,
+        "passAA": true, "passAAA": true,
+        "usage": "Critical red on dark. Passes AAA."
+      }
+    ]
+  },
+
+  "flaggedCombinations": {
+    "description": "Color pairs that fail WCAG AA for normal text. These MUST use compensating measures (icon + text label, or switch to darker shade for text usage).",
+    "count": 9,
+    "pairs": [
+      { "name": "text-subtle on white", "ratio": 2.85, "fix": "Use only for decorative/non-essential text, or increase to text-muted (#6B7280, 5.03:1)" },
+      { "name": "severity-minimal (#22C55E) on white", "ratio": 2.84, "fix": "Use #15803D for text, reserve #22C55E for backgrounds/badges" },
+      { "name": "severity-mild (#EAB308) on white", "ratio": 1.95, "fix": "Use #A16207 for text, reserve #EAB308 for backgrounds/badges" },
+      { "name": "severity-moderate (#F97316) on white", "ratio": 2.56, "fix": "Use #C2410C for text, reserve #F97316 for backgrounds/badges" },
+      { "name": "severity-severe (#EF4444) on white", "ratio": 3.93, "fix": "Use #DC2626 for normal text (4.63:1), #EF4444 OK for large text" },
+      { "name": "channel-whatsapp (#25D366) on white", "ratio": 2.41, "fix": "Use #15803D for text labels, #25D366 for icons/badges only" },
+      { "name": "channel-sms (#3B82F6) on white", "ratio": 3.44, "fix": "Use #2563EB for normal text (4.56:1)" },
+      { "name": "channel-inapp (#8B5CF6) on white", "ratio": 3.63, "fix": "Use #7C3AED for normal text (4.48:1)" },
+      { "name": "text-subtle (#6B7280) on dark", "ratio": 4.16, "fix": "Passes AA large. For normal text, use text-muted (#9CA3AF, 7.34:1)" }
+    ]
+  },
+
+  "textSafeAlternatives": {
+    "description": "Darker shades of each token that pass WCAG AA (4.5:1) for normal text on white background. Use these for TEXT, use the brighter originals for BACKGROUNDS and ICONS.",
+    "alternatives": {
+      "severity-minimal-text": { "hex": "#15803D", "ratio": 5.08, "tailwind": "green-700" },
+      "severity-mild-text": { "hex": "#A16207", "ratio": 5.96, "tailwind": "yellow-700" },
+      "severity-moderate-text": { "hex": "#C2410C", "ratio": 5.35, "tailwind": "orange-700" },
+      "severity-severe-text": { "hex": "#DC2626", "ratio": 4.63, "tailwind": "red-600" },
+      "channel-whatsapp-text": { "hex": "#15803D", "ratio": 5.08, "tailwind": "green-700" },
+      "channel-sms-text": { "hex": "#2563EB", "ratio": 4.56, "tailwind": "blue-600" },
+      "channel-inapp-text": { "hex": "#7C3AED", "ratio": 4.48, "tailwind": "violet-600" }
+    }
+  }
+}

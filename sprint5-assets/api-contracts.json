@@ -1,0 +1,526 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "fhirVersion": "4.0.1",
+  "authNote": "All endpoints use createProtectedRoute wrapper unless marked public. RBAC roles: CLINICIAN, BILLING, ORG_ADMIN, PATIENT. PHI endpoints require X-Access-Reason header (LGPD Art. 7/HIPAA §164.508).",
+
+  "endpoints": {
+    "copilot": [
+      {
+        "method": "POST",
+        "path": "/api/copilot/suggest",
+        "description": "Generate AI-powered clinical suggestions from encounter context (CDSS quick actions)",
+        "auth": { "required": true, "roles": ["CLINICIAN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT"] },
+        "rateLimit": { "perMinute": 30, "perHour": 300 },
+        "invariants": {
+          "ruth": "Response MUST NOT contain diagnostic language (diagnose, detect, predict disease). Use 'clinical suggestion' or 'consider'. SaMD annotation required if output influences treatment.",
+          "elena": "Every suggestion MUST include sourceAuthority and citationUrl. evidenceGrade (A/B/C) required. No Tier-3 (bro-science) sources.",
+          "cyrus": "Patient transcript MUST be de-identified before sending to external LLM. Audit log entry required for every call."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["encounterId", "actionType"],
+          "properties": {
+            "encounterId": { "type": "string", "description": "Active encounter ID" },
+            "actionType": { "type": "string", "enum": ["RX_TIMELINE_SAFETY", "LIFESTYLE_PREVENTION", "DIFFERENTIAL_DIAGNOSIS", "LAB_INTERPRETATION", "PATIENT_HANDOUT", "SOAP_GENERATION", "CODING_SUGGESTION"] },
+            "model": { "type": "string", "description": "AI model ID from MODEL_CATALOG. Falls back to user's preferredAiModel.", "default": "claude-sonnet-4-20250514" },
+            "transcript": { "type": "string", "description": "Current encounter transcript (will be de-identified before LLM call)" },
+            "patientContext": {
+              "type": "object",
+              "properties": {
+                "age": { "type": "integer" },
+                "sex": { "type": "string", "enum": ["M", "F"] },
+                "activeMedications": { "type": "array", "items": { "type": "string" } },
+                "allergies": { "type": "array", "items": { "type": "string" } },
+                "activeConditions": { "type": "array", "items": { "type": "string" }, "description": "ICD-10 codes" }
+              }
+            },
+            "conversationHistory": { "type": "array", "items": { "type": "object", "properties": { "role": { "type": "string" }, "content": { "type": "string" } } } }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "suggestion": { "type": "string", "description": "AI-generated clinical suggestion text" },
+            "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+            "sourceAuthority": { "type": "string", "description": "ELENA invariant: guideline source" },
+            "citationUrl": { "type": "string", "format": "uri" },
+            "evidenceGrade": { "type": "string", "enum": ["A", "B", "C"] },
+            "model": { "type": "string", "description": "Model that generated this suggestion" },
+            "samdDisclaimer": { "type": "string", "default": "AI-generated suggestion for clinical consideration. Not a diagnosis." },
+            "extractedEntities": { "type": "array", "items": { "type": "object", "properties": { "type": { "type": "string" }, "value": { "type": "string" }, "code": { "type": "string" }, "codeSystem": { "type": "string" } } } }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/copilot/transcribe",
+        "description": "Process audio chunk for real-time transcription (Deepgram proxy)",
+        "auth": { "required": true, "roles": ["CLINICIAN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT"] },
+        "rateLimit": { "perMinute": 120, "perHour": 3600 },
+        "invariants": {
+          "ruth": "Raw audio MUST NOT be persisted beyond the active session. Transcript text may be persisted with encounter.",
+          "cyrus": "Audio transmitted over TLS only. Deepgram token must be scoped (not raw API key). Audio buffer cleared after transcription."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["encounterId", "audioChunk"],
+          "properties": {
+            "encounterId": { "type": "string" },
+            "audioChunk": { "type": "string", "format": "base64", "description": "PCM audio chunk, base64 encoded" },
+            "language": { "type": "string", "enum": ["en", "es", "pt"], "default": "pt" },
+            "speakerId": { "type": "integer", "description": "0 = doctor, 1 = patient (from diarization)" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "transcript": { "type": "string" },
+            "isFinal": { "type": "boolean" },
+            "confidence": { "type": "number" },
+            "speakerId": { "type": "integer" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "detectedVitals": { "type": "array", "items": { "type": "object", "properties": { "type": { "type": "string" }, "value": { "type": "number" }, "unit": { "type": "string" } } } }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/copilot/context/:encounterId",
+        "description": "Retrieve full clinical context for an active encounter (patient summary, meds, allergies, recent labs, SOAP progress)",
+        "auth": { "required": true, "roles": ["CLINICIAN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT"] },
+        "rateLimit": { "perMinute": 60 },
+        "invariants": {
+          "cyrus": "Response filtered by verifyPatientAccess(). Cross-tenant access denied. PII fields encrypted with encryptPHIWithVersion."
+        },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "encounterId": { "type": "string", "description": "Path parameter" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "encounter": { "type": "object", "properties": { "id": { "type": "string" }, "status": { "type": "string" }, "startTime": { "type": "string" }, "reasonCode": { "type": "string" } } },
+            "patient": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "age": { "type": "integer" }, "sex": { "type": "string" }, "mrn": { "type": "string" } } },
+            "activeMedications": { "type": "array", "items": { "type": "object" } },
+            "allergies": { "type": "array", "items": { "type": "object" } },
+            "activeConditions": { "type": "array", "items": { "type": "object" } },
+            "recentVitals": { "type": "object" },
+            "recentLabs": { "type": "array", "items": { "type": "object" } },
+            "soapProgress": { "type": "object", "properties": { "S": { "type": "string" }, "O": { "type": "string" }, "A": { "type": "string" }, "P": { "type": "string" } } },
+            "preventionAlerts": { "type": "array", "items": { "type": "object" } }
+          }
+        }
+      }
+    ],
+
+    "comunicacoes": [
+      {
+        "method": "POST",
+        "path": "/api/comms/send",
+        "description": "Send a message to a patient via any channel (WhatsApp, SMS, Email). Evaluates consent before sending.",
+        "auth": { "required": true, "roles": ["CLINICIAN", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": false, "note": "Message content MUST NOT contain PHI (diagnoses, lab values). Use portal links instead." },
+        "rateLimit": { "perMinute": 30, "perHour": 500 },
+        "invariants": {
+          "ruth": "Message body MUST NOT contain clinical data, diagnoses, or lab values. Only portal links allowed for PHI access. SaMD-safe wording only.",
+          "cyrus": "Verify patient consent (whatsappConsentGiven/smsEnabled/emailEnabled) before sending. Audit log every message. Content encrypted at rest."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["patientId", "channel", "content"],
+          "properties": {
+            "patientId": { "type": "string" },
+            "channel": { "type": "string", "enum": ["WHATSAPP", "SMS", "EMAIL", "IN_APP"] },
+            "content": { "type": "string", "maxLength": 1024, "description": "Message text. NO PHI." },
+            "templateId": { "type": "string", "description": "Optional: use a pre-approved HSM template from comms-hub-templates.json" },
+            "templateVariables": { "type": "object", "description": "Key-value pairs for {{placeholder}} replacement" },
+            "scheduledFor": { "type": "string", "format": "date-time", "description": "Optional: schedule for future delivery" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "messageId": { "type": "string" },
+            "channel": { "type": "string" },
+            "status": { "type": "string", "enum": ["QUEUED", "SENT", "FAILED"] },
+            "failureReason": { "type": "string", "description": "Only present if status=FAILED" },
+            "consentVerified": { "type": "boolean" }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/comms/conversations",
+        "description": "List patient conversations with pagination and channel filtering",
+        "auth": { "required": true, "roles": ["CLINICIAN", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT", "OPERATIONS"] },
+        "rateLimit": { "perMinute": 60 },
+        "invariants": {
+          "cyrus": "Scoped to organizationId from session. Cross-tenant access denied."
+        },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "channel": { "type": "string", "enum": ["ALL", "WHATSAPP", "SMS", "EMAIL", "IN_APP"], "default": "ALL" },
+            "status": { "type": "string", "enum": ["ALL", "ACTIVE", "CLOSED", "ARCHIVED"], "default": "ACTIVE" },
+            "page": { "type": "integer", "default": 1 },
+            "limit": { "type": "integer", "default": 20, "maximum": 50 },
+            "search": { "type": "string", "description": "Search patient name or message content" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "conversations": { "type": "array", "items": { "type": "object", "properties": {
+              "id": { "type": "string" },
+              "patientId": { "type": "string" },
+              "patientName": { "type": "string" },
+              "channelType": { "type": "string" },
+              "lastMessageAt": { "type": "string", "format": "date-time" },
+              "lastMessagePreview": { "type": "string", "maxLength": 100 },
+              "unreadCount": { "type": "integer" },
+              "status": { "type": "string" }
+            } } },
+            "total": { "type": "integer" },
+            "page": { "type": "integer" },
+            "totalPages": { "type": "integer" }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/comms/webhook/twilio",
+        "description": "Twilio incoming message webhook. Receives WhatsApp/SMS inbound messages.",
+        "auth": { "required": false, "public": true, "twilioSignatureValidation": true },
+        "phi": { "required": false },
+        "rateLimit": { "perMinute": 200 },
+        "invariants": {
+          "cyrus": "MUST validate X-Twilio-Signature header using twilio.validateRequest(authToken, signature, url, body) BEFORE processing ANY data. Reject 403 on invalid signature. This is a CYRUS VETO requirement — without this, anyone can spoof patient messages."
+        },
+        "requestSchema": {
+          "type": "object",
+          "description": "Twilio webhook payload — multipart/form-data",
+          "properties": {
+            "MessageSid": { "type": "string" },
+            "AccountSid": { "type": "string" },
+            "From": { "type": "string", "description": "whatsapp:+5511987654321" },
+            "To": { "type": "string" },
+            "Body": { "type": "string" },
+            "NumMedia": { "type": "string" },
+            "MediaUrl0": { "type": "string", "format": "uri" },
+            "MediaContentType0": { "type": "string" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "description": "TwiML response or 200 empty",
+          "properties": { "status": { "type": "string", "enum": ["received", "rejected"] } }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/comms/templates",
+        "description": "List approved message templates for the organization",
+        "auth": { "required": true, "roles": ["CLINICIAN", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": false },
+        "rateLimit": { "perMinute": 30 },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "category": { "type": "string", "enum": ["ALL", "utility", "marketing", "authentication"], "default": "ALL" },
+            "locale": { "type": "string", "enum": ["pt-BR", "es-CO", "en"], "default": "pt-BR" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "templates": { "type": "array", "items": { "type": "object", "description": "Structure matches comms-hub-templates.json format" } }
+          }
+        }
+      }
+    ],
+
+    "faturamento": [
+      {
+        "method": "POST",
+        "path": "/api/billing/invoice",
+        "description": "Create a new invoice with line items, billing codes, and insurance info",
+        "auth": { "required": true, "roles": ["BILLING", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["PAYMENT", "OPERATIONS"] },
+        "rateLimit": { "perMinute": 20 },
+        "invariants": {
+          "ruth": "Billing codes MUST correspond to documented clinical services. No upcoding. ICD-10 must match encounter diagnosis.",
+          "cyrus": "Tax identifiers (CPF, CNPJ, RFC) encrypted with encryptPHIWithVersion. Audit log on creation."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["patientId", "encounterId", "lineItems"],
+          "properties": {
+            "patientId": { "type": "string" },
+            "encounterId": { "type": "string" },
+            "payerType": { "type": "string", "enum": ["INSURANCE", "PRIVATE", "GOVERNMENT", "PAYMENT_PLAN"] },
+            "insuranceAuthorizationId": { "type": "string" },
+            "lineItems": { "type": "array", "minItems": 1, "items": {
+              "type": "object",
+              "required": ["description", "amount"],
+              "properties": {
+                "description": { "type": "string" },
+                "tussCode": { "type": "string" },
+                "cbhpmCode": { "type": "string" },
+                "cupsCode": { "type": "string" },
+                "cptCode": { "type": "string" },
+                "icd10Code": { "type": "string" },
+                "quantity": { "type": "integer", "default": 1 },
+                "unitAmount": { "type": "number" },
+                "amount": { "type": "number" }
+              }
+            } },
+            "dueDate": { "type": "string", "format": "date" },
+            "notes": { "type": "string" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "invoice": { "type": "object", "properties": {
+              "id": { "type": "string" },
+              "invoiceNumber": { "type": "string" },
+              "status": { "type": "string", "enum": ["DRAFT", "PENDING"] },
+              "totalAmount": { "type": "number" },
+              "stripeInvoiceId": { "type": "string" }
+            } }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/billing/analytics",
+        "description": "Aggregate billing analytics: revenue, payer mix, aging, denial rates",
+        "auth": { "required": true, "roles": ["BILLING", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": false, "note": "Aggregated data only, no patient-level PHI" },
+        "rateLimit": { "perMinute": 10 },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "dateFrom": { "type": "string", "format": "date" },
+            "dateTo": { "type": "string", "format": "date" },
+            "groupBy": { "type": "string", "enum": ["month", "week", "day"], "default": "month" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "revenue": { "type": "object", "properties": { "total": { "type": "number" }, "outstanding": { "type": "number" }, "overdue": { "type": "number" }, "collectionRate": { "type": "number" } } },
+            "trend": { "type": "array", "items": { "type": "object", "properties": { "period": { "type": "string" }, "revenue": { "type": "number" }, "invoiceCount": { "type": "integer" } } } },
+            "payerMix": { "type": "array", "items": { "type": "object", "properties": { "payerType": { "type": "string" }, "amount": { "type": "number" }, "percentage": { "type": "number" } } } },
+            "aging": { "type": "object", "properties": { "current": { "type": "number" }, "days30": { "type": "number" }, "days60": { "type": "number" }, "days90": { "type": "number" }, "days120plus": { "type": "number" } } },
+            "denialRate": { "type": "number" },
+            "topProcedures": { "type": "array", "items": { "type": "object", "properties": { "code": { "type": "string" }, "description": { "type": "string" }, "count": { "type": "integer" }, "revenue": { "type": "number" } } } }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/audit",
+        "description": "Query audit trail with filters. Verify hash chain integrity.",
+        "auth": { "required": true, "roles": ["ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["OPERATIONS", "LEGAL"] },
+        "rateLimit": { "perMinute": 10 },
+        "invariants": {
+          "cyrus": "Audit logs are IMMUTABLE. This endpoint is read-only. Hash chain verification runs on-demand. Deletion of AuditLog records is a CYRUS VETO violation (LGPD Art. 37 requires retention)."
+        },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "enum": ["query", "verify_integrity"] },
+            "filters": { "type": "object", "properties": {
+              "actionType": { "type": "string" },
+              "userId": { "type": "string" },
+              "patientId": { "type": "string" },
+              "dateFrom": { "type": "string", "format": "date-time" },
+              "dateTo": { "type": "string", "format": "date-time" },
+              "entityType": { "type": "string", "enum": ["Invoice", "Encounter", "ClinicalNote", "Prescription", "Patient"] }
+            } },
+            "page": { "type": "integer", "default": 1 },
+            "limit": { "type": "integer", "default": 50 }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "entries": { "type": "array", "items": { "type": "object", "properties": {
+              "id": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "actionType": { "type": "string" },
+              "userId": { "type": "string" },
+              "userName": { "type": "string" },
+              "entityType": { "type": "string" },
+              "entityId": { "type": "string" },
+              "accessReason": { "type": "string" },
+              "dataHash": { "type": "string" },
+              "isPhiAccess": { "type": "boolean" }
+            } } },
+            "total": { "type": "integer" },
+            "integrityStatus": { "type": "object", "description": "Only present when action=verify_integrity", "properties": {
+              "verified": { "type": "boolean" },
+              "totalLinks": { "type": "integer" },
+              "brokenAt": { "type": "string", "description": "ID of first broken chain link, null if intact" },
+              "lastVerified": { "type": "string", "format": "date-time" }
+            } }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/billing/void/:invoiceId",
+        "description": "Void/cancel an invoice with required reason. Triggers refund if paid.",
+        "auth": { "required": true, "roles": ["BILLING", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["PAYMENT"] },
+        "rateLimit": { "perMinute": 5 },
+        "invariants": {
+          "ruth": "Voided invoices MUST retain full audit trail. The void action itself must be audited. Original invoice data preserved (not deleted).",
+          "cyrus": "Requires ORG_ADMIN approval if amount > R$500. Stripe refund initiated automatically for paid invoices. Void reason is mandatory and audited."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["reason"],
+          "properties": {
+            "invoiceId": { "type": "string", "description": "Path parameter" },
+            "reason": { "type": "string", "enum": ["DUPLICATE", "PATIENT_REQUEST", "BILLING_ERROR", "INSURANCE_DENIAL", "OTHER"] },
+            "reasonDetail": { "type": "string", "description": "Free-text explanation (required if reason=OTHER)" },
+            "initiateRefund": { "type": "boolean", "default": true, "description": "If invoice was PAID, trigger Stripe refund" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "invoice": { "type": "object", "properties": {
+              "id": { "type": "string" },
+              "status": { "type": "string", "enum": ["VOID", "CANCELLED"] },
+              "voidedAt": { "type": "string", "format": "date-time" },
+              "voidedBy": { "type": "string" },
+              "voidReason": { "type": "string" }
+            } },
+            "refund": { "type": "object", "description": "Present only if refund initiated", "properties": {
+              "stripeRefundId": { "type": "string" },
+              "amount": { "type": "number" },
+              "status": { "type": "string", "enum": ["PENDING", "SUCCEEDED", "FAILED"] }
+            } }
+          }
+        }
+      }
+    ],
+
+    "prevention": [
+      {
+        "method": "POST",
+        "path": "/api/prevention/screen",
+        "description": "Submit a completed screening instrument (PHQ-9, GAD-7, FINDRISC, SCORE2, Framingham) and get scored result",
+        "auth": { "required": true, "roles": ["CLINICIAN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT"] },
+        "rateLimit": { "perMinute": 30 },
+        "invariants": {
+          "elena": "Scoring algorithm MUST match published instrument specification. No custom modifications to validated instruments. sourceAuthority and citationUrl required on every result. INSUFFICIENT_DATA returned if any required question is missing (not scored as 0).",
+          "ruth": "Result interpretation text MUST NOT use diagnostic language. Say 'indicates possible' not 'diagnoses'. FHIR QuestionnaireResponse created for every submission."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["patientId", "instrumentId", "responses"],
+          "properties": {
+            "patientId": { "type": "string" },
+            "encounterId": { "type": "string", "description": "Optional: link to active encounter" },
+            "instrumentId": { "type": "string", "enum": ["phq9", "gad7", "findrisc", "score2", "framingham"] },
+            "responses": { "type": "array", "items": { "type": "object", "required": ["questionId", "value"], "properties": {
+              "questionId": { "type": "string" },
+              "value": { "type": "number" }
+            } } }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "score": { "type": "number" },
+            "maxScore": { "type": "number" },
+            "severity": { "type": "object", "properties": {
+              "level": { "type": "string" },
+              "label": { "type": "object", "description": "Trilingual label from screening-instruments.json" },
+              "color": { "type": "string", "description": "Clinical severity color token" }
+            } },
+            "interpretation": { "type": "string", "description": "RUTH-safe text: 'indicates possible X' not 'diagnoses X'" },
+            "recommendation": { "type": "string", "description": "Clinical recommendation from clinical-decision-rules.json" },
+            "sourceAuthority": { "type": "string" },
+            "citationUrl": { "type": "string", "format": "uri" },
+            "evidenceGrade": { "type": "string" },
+            "fhirQuestionnaireResponseId": { "type": "string", "description": "Created FHIR resource ID" },
+            "triggeredRules": { "type": "array", "items": { "type": "string" }, "description": "IDs from clinical-decision-rules.json that fired" },
+            "insufficientData": { "type": "boolean", "description": "True if any required question was missing" }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/prevention/instruments",
+        "description": "List available screening instruments with metadata",
+        "auth": { "required": true, "roles": ["CLINICIAN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": false },
+        "rateLimit": { "perMinute": 30 },
+        "requestSchema": {
+          "type": "object",
+          "properties": {
+            "locale": { "type": "string", "enum": ["pt-BR", "es-CO", "en"], "default": "pt-BR" },
+            "domain": { "type": "string", "enum": ["ALL", "depression", "anxiety", "diabetes", "cardiovascular"], "default": "ALL" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "instruments": { "type": "array", "description": "Structure matches screening-instruments.json format", "items": { "type": "object" } }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/prevention/gov-submit",
+        "description": "Submit prevention/immunization data to government system (RNDS stub). Returns success in sandbox, logs in production.",
+        "auth": { "required": true, "roles": ["CLINICIAN", "ORG_ADMIN"], "rbac": "createProtectedRoute" },
+        "phi": { "required": true, "header": "X-Access-Reason", "validReasons": ["TREATMENT", "PUBLIC_HEALTH"] },
+        "rateLimit": { "perMinute": 10 },
+        "invariants": {
+          "ruth": "Government submissions must include valid CNS (15-digit) for patient. Data format must comply with RNDS BRImunobiologicoAdministrado or BRRegistroAtendimentoClinico profile.",
+          "cyrus": "Requires e-CNPJ digital certificate for production RNDS. Sandbox uses test credentials. All submissions logged in AuditLog with action=GOV_SUBMIT."
+        },
+        "requestSchema": {
+          "type": "object",
+          "required": ["system", "resourceType", "fhirBundle"],
+          "properties": {
+            "system": { "type": "string", "enum": ["RNDS", "ESUS", "RIPS"], "description": "Target government system" },
+            "resourceType": { "type": "string", "enum": ["Immunization", "Encounter", "Observation"], "description": "FHIR resource type being submitted" },
+            "fhirBundle": { "type": "object", "description": "FHIR R4 Bundle matching government-integration-specs.json and fhir-resource-templates.json" },
+            "sandbox": { "type": "boolean", "default": true, "description": "Use homologation/sandbox environment" }
+          }
+        },
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "system": { "type": "string" },
+            "submissionId": { "type": "string" },
+            "status": { "type": "string", "enum": ["SUBMITTED", "VALIDATED", "REJECTED", "STUB_OK"] },
+            "errors": { "type": "array", "items": { "type": "object", "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "field": { "type": "string" } } } },
+            "note": { "type": "string", "default": "Stub implementation — production RNDS integration pending e-CNPJ certificate setup" }
+          }
+        }
+      }
+    ]
+  }
+}
