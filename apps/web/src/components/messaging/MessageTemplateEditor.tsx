@@ -18,7 +18,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'isomorphic-dompurify';
-import PatientSelectorModal from './PatientSelectorModal';
+import PatientSelectorModal, { type DeliveryChannel } from './PatientSelectorModal';
 import ScheduleReminderModal, { ScheduleData } from './ScheduleReminderModal';
 
 interface MessageTemplate {
@@ -200,7 +200,7 @@ export default function MessageTemplateEditor() {
 
   const handleSendReminder = async (
     patients: any[],
-    channel: 'SMS' | 'EMAIL' | 'WHATSAPP'
+    channels: DeliveryChannel[]
   ) => {
     if (!templateToSend) return;
 
@@ -221,7 +221,7 @@ export default function MessageTemplateEditor() {
             message: templateToSend.message,
             variables: templateToSend.variables,
           },
-          channel,
+          channels,
           sendImmediately: true,
         }),
       });
@@ -243,7 +243,7 @@ export default function MessageTemplateEditor() {
         });
       }
     } catch (error) {
-      console.error('Error sending reminders:', error);
+      // Error handled via setSendResult below
       setSendResult({
         success: false,
         message: 'Network error. Please try again.',
@@ -281,7 +281,7 @@ export default function MessageTemplateEditor() {
             message: templateToSchedule.message,
             variables: templateToSchedule.variables,
           },
-          channel: scheduleData.channel,
+          channels: scheduleData.channels,
           scheduledFor: scheduleData.scheduledFor.toISOString(),
           recurrence: scheduleData.recurrence,
         }),
@@ -304,7 +304,7 @@ export default function MessageTemplateEditor() {
         });
       }
     } catch (error) {
-      console.error('Error scheduling reminder:', error);
+      // Error handled via setSendResult below
       setSendResult({
         success: false,
         message: 'Network error. Please try again.',
@@ -333,39 +333,38 @@ export default function MessageTemplateEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 lg:p-8">
+    <div className="p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Message Templates</h1>
+        <div className="mb-5">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Message Templates</h1>
           <p className="text-gray-600 dark:text-gray-400">Create and manage automated reminder templates for your patients</p>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-1.5 mb-5">
           {categories.map(category => (
             <button
               key={category.value}
               onClick={() => setActiveCategory(category.value)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all ${
                 activeCategory === category.value
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  ? 'bg-white/10 dark:bg-white/10 text-white border border-white/20'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
               }`}
             >
-              <span className="mr-2">{category.icon}</span>
               {category.label}
-              <span className="ml-2 text-sm opacity-75">({category.count})</span>
+              <span className="ml-1.5 text-[11px] opacity-60">({category.count})</span>
             </button>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Template List */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900">Templates</h2>
+                <h2 className="font-bold text-gray-900 dark:text-white">Templates</h2>
                 <button
                   onClick={handleCreateNew}
                   className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -383,12 +382,12 @@ export default function MessageTemplateEditor() {
                     className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
                       selectedTemplate?.id === template.id
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                     onClick={() => setSelectedTemplate(template)}
                   >
                     <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-semibold text-sm text-gray-900">{template.name}</h3>
+                      <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{template.name}</h3>
                       {template.isDefault && (
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
                           Default
@@ -466,10 +465,10 @@ export default function MessageTemplateEditor() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                       {editingTemplate.isDefault ? 'Edit Template' : 'Create Template'}
                     </h2>
                     <button
@@ -485,27 +484,27 @@ export default function MessageTemplateEditor() {
                   <div className="space-y-4">
                     {/* Template Name */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Template Name
                       </label>
                       <input
                         type="text"
                         value={editingTemplate.name || ''}
                         onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="e.g., Appointment Reminder (24h)"
                       />
                     </div>
 
                     {/* Category */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Category
                       </label>
                       <select
                         value={editingTemplate.category || 'general'}
                         onChange={(e) => setEditingTemplate({ ...editingTemplate, category: e.target.value as any })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="appointment">Appointment</option>
                         <option value="medication">Medication</option>
@@ -517,21 +516,21 @@ export default function MessageTemplateEditor() {
 
                     {/* Subject (optional for emails) */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Subject (Optional - for emails)
                       </label>
                       <input
                         type="text"
                         value={editingTemplate.subject || ''}
                         onChange={(e) => setEditingTemplate({ ...editingTemplate, subject: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="e.g., Appointment Reminder"
                       />
                     </div>
 
                     {/* Message */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Message
                       </label>
                       <textarea
@@ -549,7 +548,7 @@ export default function MessageTemplateEditor() {
 
                     {/* Available Variables */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Available Variables (Click to insert)
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -575,7 +574,7 @@ export default function MessageTemplateEditor() {
                       </button>
                       <button
                         onClick={() => setIsEditing(false)}
-                        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                        className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         Cancel
                       </button>
@@ -588,10 +587,10 @@ export default function MessageTemplateEditor() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">{selectedTemplate.name}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedTemplate.name}</h2>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(selectedTemplate)}
@@ -616,38 +615,38 @@ export default function MessageTemplateEditor() {
                       <div>
                         {/* Decorative - low contrast intentional for label */}
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
-                        <p className="font-semibold text-gray-900 capitalize">{selectedTemplate.category}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white capitalize">{selectedTemplate.category}</p>
                       </div>
                       <div>
                         {/* Decorative - low contrast intentional for label */}
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Variables Used</p>
-                        <p className="font-semibold text-gray-900">{selectedTemplate.variables.length}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{selectedTemplate.variables.length}</p>
                       </div>
                     </div>
 
                     {selectedTemplate.subject && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Subject</p>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <p className="text-gray-900">{selectedTemplate.subject}</p>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject</p>
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <p className="text-gray-900 dark:text-white">{selectedTemplate.subject}</p>
                         </div>
                       </div>
                     )}
 
                     {/* Message Content */}
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Message Template</p>
-                      <div className="p-4 bg-gray-50 rounded-lg font-mono text-sm text-gray-900 whitespace-pre-wrap">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Message Template</p>
+                      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                         {selectedTemplate.message}
                       </div>
                     </div>
 
                     {/* Preview with Sample Data */}
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Preview with Sample Data</p>
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preview with Sample Data</p>
                       <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
                         <div
-                          className="text-gray-900"
+                          className="text-gray-900 dark:text-white"
                           dangerouslySetInnerHTML={{ __html: renderPreview(selectedTemplate) }}
                         />
                       </div>
@@ -656,7 +655,7 @@ export default function MessageTemplateEditor() {
                     {/* Variables List */}
                     {selectedTemplate.variables.length > 0 && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Variables in This Template</p>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Variables in This Template</p>
                         <div className="flex flex-wrap gap-2">
                           {selectedTemplate.variables.map(varKey => {
                             const variable = AVAILABLE_VARIABLES.find(v => v.key === varKey);
@@ -679,14 +678,14 @@ export default function MessageTemplateEditor() {
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
+                  className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center"
                 >
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Template</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Select a Template</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Choose a template from the list to preview or edit it
                   </p>
@@ -762,10 +761,10 @@ export default function MessageTemplateEditor() {
       {/* Loading Overlay */}
       {sending && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600" />
-            <p className="text-lg font-semibold text-gray-900">Sending reminders...</p>
-            <p className="text-sm text-gray-600">This may take a moment</p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">Sending reminders...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">This may take a moment</p>
           </div>
         </div>
       )}

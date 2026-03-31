@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Info, CheckCircle2,
   Settings, MessageSquare,
@@ -90,11 +90,14 @@ export type CDSCard = {
   patientIdHash?: string;
 };
 
-export type ModelId = 'anthropic' | 'openai' | 'gemini';
+import { MODEL_CATALOG, type ModelInfo } from '@/lib/ai/types';
+
+export type ModelId = string;
 
 export interface ModelConfig {
   isConfigured: boolean;
   isActive: boolean;
+  source?: 'platform' | 'byok';
 }
 
 /** Minimal patient context needed to build LLM payloads. */
@@ -455,23 +458,7 @@ function toConversationHistory(messages: ChatMessage[]): ApiConversationMessage[
 // Static UI data
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MODEL_OPTIONS: Array<{ id: ModelId; label: string; description: string }> = [
-  {
-    id: 'anthropic',
-    label: 'DeepSeek-R1',
-    description: 'Best for complex diagnostics and drug interactions (High Precision)',
-  },
-  {
-    id: 'openai',
-    label: 'OpenAI GPT-OSS-120B',
-    description: 'Best for rapid transcription and chart completion (High Efficiency)',
-  },
-  {
-    id: 'gemini',
-    label: 'Google Gemini 1.5 Pro',
-    description: 'Recommended for high-volume clinical tasks',
-  },
-];
+export const DEFAULT_MODEL_ID = 'claude-sonnet-4-20250514';
 
 const INDICATOR_CONFIG = {
   critical: {
@@ -518,22 +505,23 @@ function RationalePopover({
         onBlur={() => setOpen(false)}
         aria-label="View AI reasoning"
         className="
-          w-4 h-4 rounded-full flex items-center justify-center
+          w-4 h-4 flex items-center justify-center
           text-[9px] font-bold
-          bg-slate-200 dark:bg-slate-700/60
-          text-slate-500 dark:text-slate-400
+          dark:bg-slate-700/60
+          dark:text-slate-400
           hover:text-cyan-600 dark:hover:text-cyan-400
           hover:bg-slate-300 dark:hover:bg-slate-700
           transition-colors
           focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
         "
+        style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-tertiary)' }}
       >
         ℹ
       </button>
 
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.9, y: 4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -542,21 +530,22 @@ function RationalePopover({
               absolute bottom-full right-0 mb-2 w-60 z-20
               bg-slate-900 dark:bg-slate-950
               border border-slate-700
-              rounded-xl p-3 shadow-2xl pointer-events-none
+              p-3 pointer-events-none
             "
+            style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
           >
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                 {t('confidence')}
               </span>
               <span className="text-xs font-bold text-cyan-400">
                 {rationale.confidence}%
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed">
+            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               {rationale.reasoning}
             </p>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -600,13 +589,14 @@ function SystemMessage({ message }: { message: ChatMessage }) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`rounded-xl border p-3 ${
+      className={`border p-3 ${
         cfg?.bg ?? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700/60'
       }`}
+      style={{ borderRadius: 'var(--radius-xl)' }}
     >
       <div className="flex items-start gap-2">
         {Icon && (
@@ -622,7 +612,8 @@ function SystemMessage({ message }: { message: ChatMessage }) {
           )}
           <p
             className="text-xs leading-relaxed
-                       text-slate-800 dark:text-slate-300 whitespace-pre-line"
+                       dark:text-slate-300 whitespace-pre-line"
+            style={{ color: 'var(--text-primary)' }}
           >
             {message.content}
           </p>
@@ -633,14 +624,16 @@ function SystemMessage({ message }: { message: ChatMessage }) {
               <button
                 onClick={handleAccept}
                 aria-label="Accept this recommendation"
-                className="p-1 rounded-md text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                className="p-1 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                style={{ borderRadius: 'var(--radius-md)', color: 'var(--text-tertiary)' }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017a2 2 0 01-.95-.24l-3.296-1.882V10l4-7h.5A2.5 2.5 0 0114 5.5V10z" /></svg>
               </button>
               <button
                 onClick={handleReject}
                 aria-label="Reject this recommendation"
-                className="p-1 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                className="p-1 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                style={{ borderRadius: 'var(--radius-md)', color: 'var(--text-tertiary)' }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.95.24l3.296 1.882V14l-4 7h-.5A2.5 2.5 0 0110 18.5V14z" /></svg>
               </button>
@@ -653,14 +646,14 @@ function SystemMessage({ message }: { message: ChatMessage }) {
             <p className="text-[10px] text-red-400 mt-1.5 animate-pulse">{t('cdssFeedbackNoted')}</p>
           )}
           {feedbackState === 'noted' && (
-            <p className="text-[10px] text-slate-500 mt-1.5">{t('cdssFeedbackNoted')}</p>
+            <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('cdssFeedbackNoted')}</p>
           )}
         </div>
         {message.rationale && (
           <RationalePopover rationale={message.rationale} />
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -671,7 +664,7 @@ function SystemMessage({ message }: { message: ChatMessage }) {
 function UserMessage({ message }: { message: ChatMessage }) {
   return (
     <div className="flex justify-end">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 6, x: 8 }}
         animate={{ opacity: 1, y: 0, x: 0 }}
         transition={{ duration: 0.2 }}
@@ -681,8 +674,8 @@ function UserMessage({ message }: { message: ChatMessage }) {
           border border-cyan-300/40 dark:border-cyan-500/30
         "
       >
-        <p className="text-xs text-slate-700 dark:text-slate-300">{message.content}</p>
-      </motion.div>
+        <p className="text-xs dark:text-slate-300" style={{ color: 'var(--text-secondary)' }}>{message.content}</p>
+      </m.div>
     </div>
   );
 }
@@ -697,17 +690,18 @@ function AlertSkeleton() {
       {[0, 1].map((i) => (
         <div
           key={i}
-          className="rounded-xl border p-3
-                     border-slate-200 dark:border-slate-700/40
-                     bg-slate-100 dark:bg-slate-700/20"
+          className="border p-3
+                     dark:border-slate-700/40
+                     dark:bg-slate-700/20"
+          style={{ borderRadius: 'var(--radius-xl)', borderColor: 'var(--border-default)', backgroundColor: 'var(--surface-tertiary)' }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <div className="h-2 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="w-3.5 h-3.5 dark:bg-slate-700" style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-tertiary)' }} />
+            <div className="h-2 w-12 dark:bg-slate-700" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-tertiary)' }} />
           </div>
           <div className="space-y-1.5">
-            <div className="h-2.5 rounded w-full bg-slate-200/80 dark:bg-slate-700/60" />
-            <div className="h-2 rounded w-3/4 bg-slate-200/60 dark:bg-slate-700/40" />
+            <div className="h-2.5 w-full dark:bg-slate-700/60" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-tertiary)' }} />
+            <div className="h-2 w-3/4 dark:bg-slate-700/40" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-tertiary)' }} />
           </div>
         </div>
       ))}
@@ -736,8 +730,9 @@ export function CdssAlertsPane({
   const t = useTranslations('dashboard.clinicalCommand');
   const activeCfg    = modelConfigs[activeModel];
   const isConfigured = activeCfg?.isConfigured ?? false;
+  const providerSource = activeCfg?.source;
   const syncEnabled  = isConfigured && patientSelected && hasTranscript && !isSyncing;
-  const activeOption = MODEL_OPTIONS.find((m) => m.id === activeModel);
+  const activeOption = MODEL_CATALOG.find((m) => m.id === activeModel);
 
   const doctorLastNameLabel = getDoctorLastNameLabel(sessionData?.user?.name);
 
@@ -988,12 +983,12 @@ export function CdssAlertsPane({
   return (
     <div className="
       relative px-4 pt-2.5 pb-4 flex flex-col gap-2.5 overflow-hidden h-full
-      bg-white dark:bg-gray-950
-    ">
+      dark:bg-gray-950
+    " style={{ backgroundColor: 'var(--surface-primary)' }}>
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center flex-shrink-0">
         <h2 className="text-xs font-semibold uppercase tracking-wider
-                       text-slate-500 dark:text-slate-400">
+                       dark:text-slate-400" style={{ color: 'var(--text-tertiary)' }}>
           {t('coPilotHeader')}
         </h2>
       </div>
@@ -1019,35 +1014,37 @@ export function CdssAlertsPane({
               <div className="flex items-center gap-2 px-3 py-2">
                 <div className="flex gap-1">
                   {[0, 1, 2].map((i) => (
-                    <motion.div
+                    <m.div
                       key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-cyan-400/60"
+                      className="w-1.5 h-1.5 bg-cyan-400/60"
+                      style={{ borderRadius: 'var(--radius-full)' }}
                       animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
                       transition={{ duration: 0.8, delay: i * 0.15, repeat: Infinity }}
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-slate-500">{t('aiThinking')}</span>
+                <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('aiThinking')}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-4 py-8 px-6">
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="w-9 h-9 rounded-full flex items-center justify-center
+              className="w-9 h-9 flex items-center justify-center
                          bg-gradient-to-br from-cyan-400/20 via-violet-400/15 to-blue-500/20
                          dark:from-cyan-400/10 dark:via-violet-400/10 dark:to-blue-500/10
                          border border-cyan-200/50 dark:border-cyan-500/20"
+              style={{ borderRadius: 'var(--radius-full)' }}
             >
               <MessageSquare className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-            </motion.div>
+            </m.div>
 
             <div className="text-center space-y-1">
-              <motion.h3
+              <m.h3
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.1 }}
@@ -1055,8 +1052,8 @@ export function CdssAlertsPane({
                            text-slate-300 dark:text-slate-300"
               >
                 {doctorLastNameLabel ? t('hiDoctor', { name: doctorLastNameLabel }) : t('hiThere')}
-              </motion.h3>
-              <motion.h2
+              </m.h3>
+              <m.h2
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.2 }}
@@ -1064,15 +1061,16 @@ export function CdssAlertsPane({
                            text-slate-100 dark:text-slate-100"
               >
                 {t('whereToStart')}
-              </motion.h2>
-              <motion.p
+              </m.h2>
+              <m.p
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.28 }}
-                className="text-xs text-slate-500 dark:text-slate-500 mt-2"
+                className="text-xs dark:text-slate-500 mt-2"
+                style={{ color: 'var(--text-tertiary)' }}
               >
                 {t('suggestionsAdapt')}
-              </motion.p>
+              </m.p>
             </div>
           </div>
         )}
@@ -1090,7 +1088,7 @@ export function CdssAlertsPane({
           aria-label="Quick clinical actions"
         >
           {sortedBubbles.map((bubble, i) => (
-            <motion.button
+            <m.button
               key={bubble.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1102,24 +1100,26 @@ export function CdssAlertsPane({
                 group flex items-center gap-2 whitespace-nowrap flex-shrink-0
                 bg-slate-900/55 hover:bg-slate-800/90
                 text-slate-200 border border-slate-700/50
-                rounded-full px-4 py-2 text-[12px] font-medium
+                px-4 py-2 text-[12px] font-medium
                 transition-all
                 disabled:opacity-50 disabled:cursor-not-allowed
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
               "
+              style={{ borderRadius: 'var(--radius-full)' }}
               title={syncEnabled ? `${t(bubble.label)}${bubble.id === topUsedBubbleId ? ' - ' + t('mostUsed') : ''}` : t('enableSyncHint')}
             >
-              <bubble.Icon className="w-3.5 h-3.5 flex-shrink-0 text-slate-400 group-hover:text-cyan-300 transition-colors" />
+              <bubble.Icon className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-cyan-300 transition-colors" style={{ color: 'var(--text-muted)' }} />
               {t(bubble.label)}
               {bubble.id === topUsedBubbleId && (
                 <span
-                  className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px]
+                  className="inline-flex items-center px-1.5 py-0.5 text-[9px]
                              bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 >
                   {t('topBadge')}
                 </span>
               )}
-            </motion.button>
+            </m.button>
           ))}
         </div>
       )}
@@ -1142,35 +1142,42 @@ export function CdssAlertsPane({
         onModelChange={onModelChange}
       />
 
-      {/* ── API Key Required overlay ────────────────────────────────────────── */}
+      {/* ── Provider source badge (top-right, subtle) ─────────────────────── */}
+      {isConfigured && providerSource === 'byok' && (
+        <span className="absolute top-2.5 right-3 z-10 text-[10px] font-medium text-emerald-500 dark:text-emerald-400">
+          {t('customKey')}
+        </span>
+      )}
+
+      {/* ── No AI provider overlay (only when genuinely no provider exists) ── */}
       <AnimatePresence>
         {!isConfigured && (
-          <motion.div
-            key="byok-overlay"
+          <m.div
+            key="no-ai-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="
-              absolute inset-0 z-10 rounded-2xl
-              bg-white/95 dark:bg-slate-900/95
+              absolute inset-0 z-10
+              dark:bg-slate-900/95
               backdrop-blur-sm
               flex flex-col items-center justify-center gap-4 p-6 text-center
             "
+            style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'rgba(255,255,255,0.95)' }}
           >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center
-                            bg-amber-50 dark:bg-amber-900/30
-                            border border-amber-200 dark:border-amber-700/50">
+            <div className="w-12 h-12 flex items-center justify-center
+                            dark:bg-amber-900/30
+                            border dark:border-amber-700/50"
+                 style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-warning)', borderColor: 'var(--border-default)' }}>
               <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400" />
             </div>
 
             <div className="space-y-1.5">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                {t('apiKeyRequired')}
+              <p className="text-sm font-semibold dark:text-white" style={{ color: 'var(--text-primary)' }}>
+                {t('noAiAvailable')}
               </p>
-              <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {t('modelNotConfigured', { model: activeOption?.label ?? '' })}
-                <br />
+              <p className="text-xs leading-relaxed dark:text-slate-400" style={{ color: 'var(--text-tertiary)' }}>
                 {t('addByokKey')}
               </p>
             </div>
@@ -1179,19 +1186,20 @@ export function CdssAlertsPane({
               href="/dashboard/settings/ai-providers"
               aria-label="Configure BYOK in Settings"
               className="
-                inline-flex items-center gap-1.5 px-4 py-2 rounded-xl
+                inline-flex items-center gap-1.5 px-4 py-2
                 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600
                 text-white text-xs font-semibold
-                shadow-md shadow-cyan-500/20
+                shadow-cyan-500/20
                 transition-colors
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                 focus-visible:ring-offset-2
               "
+              style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-md)' }}
             >
               <Settings className="w-3.5 h-3.5" />
               {t('configureByok')}
             </Link>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

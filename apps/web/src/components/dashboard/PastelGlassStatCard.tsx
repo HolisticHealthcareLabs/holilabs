@@ -108,7 +108,7 @@ export function PastelGlassStatCard({
       transition={{ duration: 0.3 }}
       onClick={onClick}
       className={`
-        relative overflow-hidden rounded-2xl p-6
+        relative overflow-hidden p-6
         backdrop-blur-xl
         ${styles.bg}
         border ${styles.border}
@@ -116,6 +116,7 @@ export function PastelGlassStatCard({
         transition-all duration-300
         ${className}
       `}
+      style={{ borderRadius: 'var(--radius-xl)' }}
     >
       {/* Glass effect overlay */}
       <div className="absolute inset-0 bg-white/5 dark:bg-black/5 pointer-events-none" />

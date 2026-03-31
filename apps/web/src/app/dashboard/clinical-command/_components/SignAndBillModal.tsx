@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Loader2, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ export function SignAndBillModal({
     try {
       const res = await fetch('/api/billing/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Access-Reason': 'CLINICAL_CARE' },
         body: JSON.stringify({ soapNote, transcript, patientData: patientData ?? {} }),
       });
 
@@ -176,7 +176,7 @@ export function SignAndBillModal({
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             key="bill-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -188,7 +188,7 @@ export function SignAndBillModal({
           />
 
           {/* Modal */}
-          <motion.div
+          <m.div
             key="bill-modal"
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -203,9 +203,10 @@ export function SignAndBillModal({
               className="
                 pointer-events-auto w-full max-w-lg
                 bg-slate-900 border border-slate-700
-                rounded-2xl shadow-2xl flex flex-col overflow-hidden
+                flex flex-col overflow-hidden
                 max-h-[90vh]
               "
+              style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
             >
               {/* Header */}
               <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-800">
@@ -213,7 +214,7 @@ export function SignAndBillModal({
                   <h2 className="text-base font-semibold text-white">
                     {t('claimReview')}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                     {t('billingStandards')}
                   </p>
                 </div>
@@ -222,10 +223,11 @@ export function SignAndBillModal({
                     onClick={onClose}
                     aria-label="Close billing modal"
                     className="
-                      p-1.5 rounded-lg text-slate-500 hover:text-white
+                      p-1.5 hover:text-white
                       hover:bg-slate-800 transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                     "
+                    style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -239,7 +241,7 @@ export function SignAndBillModal({
                 {fetchState === 'loading' && (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                    <p className="text-xs text-slate-500">{t('analyzingDocumentation')}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('analyzingDocumentation')}</p>
                   </div>
                 )}
 
@@ -251,10 +253,11 @@ export function SignAndBillModal({
                     <button
                       onClick={fetchBillingAnalysis}
                       className="
-                        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                        inline-flex items-center gap-1.5 px-3 py-1.5
                         bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs
                         transition-colors
                       "
+                      style={{ borderRadius: 'var(--radius-lg)' }}
                     >
                       <RefreshCw className="w-3 h-3" />
                       {t('retry')}
@@ -267,7 +270,7 @@ export function SignAndBillModal({
                   <>
                     {/* Extracted Diagnoses */}
                     <section>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-tertiary)' }}>
                         {t('extractedDiagnoses')}
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -275,9 +278,10 @@ export function SignAndBillModal({
                           <span
                             key={dx.code}
                             className={`
-                              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                              inline-flex items-center gap-1.5 px-2.5 py-1
                               text-xs font-medium ${DIAGNOSIS_TYPE_CHIP[dx.type]}
                             `}
+                            style={{ borderRadius: 'var(--radius-full)' }}
                           >
                             <span className="font-bold font-mono">{dx.code}</span>
                             <span className="text-[10px] opacity-80">- {dx.name}</span>
@@ -288,7 +292,7 @@ export function SignAndBillModal({
 
                     {/* Suggested Services */}
                     <section>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-tertiary)' }}>
                         {t('suggestedServices')}
                       </p>
                       <div className="space-y-2">
@@ -297,12 +301,13 @@ export function SignAndBillModal({
                             key={svc.code}
                             className="
                               flex items-center justify-between px-3 py-2.5
-                              bg-slate-800 border border-slate-700/60 rounded-xl
+                              bg-slate-800 border border-slate-700/60
                             "
+                            style={{ borderRadius: 'var(--radius-xl)' }}
                           >
                             <div>
                               <p className="text-xs font-medium text-slate-200">{svc.name}</p>
-                              <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                              <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                                 {svc.system} {svc.code}
                               </p>
                             </div>
@@ -317,8 +322,8 @@ export function SignAndBillModal({
                     {/* Revenue capture summary */}
                     <section className="
                       flex items-center gap-3 px-4 py-3
-                      bg-emerald-500/8 border border-emerald-500/20 rounded-xl
-                    ">
+                      bg-emerald-500/8 border border-emerald-500/20
+                    " style={{ borderRadius: 'var(--radius-xl)' }}>
                       <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                       <div>
                         <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider font-semibold">
@@ -336,8 +341,9 @@ export function SignAndBillModal({
                             key={idx}
                             className="
                               flex items-start gap-2.5 px-3.5 py-3
-                              bg-amber-500/8 border border-amber-500/20 rounded-xl
+                              bg-amber-500/8 border border-amber-500/20
                             "
+                            style={{ borderRadius: 'var(--radius-xl)' }}
                           >
                             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
                             <p className="text-[11px] text-amber-400/80 leading-relaxed">
@@ -357,17 +363,18 @@ export function SignAndBillModal({
                   <button
                     onClick={onClose}
                     className="
-                      flex-1 py-2.5 rounded-xl text-sm font-medium
+                      flex-1 py-2.5 text-sm font-medium
                       bg-slate-800 hover:bg-slate-700 text-slate-300
                       transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500
                     "
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                   >
                     {t('editNoteFirst')}
                   </button>
                 )}
 
-                <motion.button
+                <m.button
                   onClick={handleApprove}
                   disabled={
                     (submitState !== 'idle' && submitState !== 'ehr_error') ||
@@ -377,7 +384,7 @@ export function SignAndBillModal({
                   whileTap={submitState === 'idle' || submitState === 'ehr_error' ? { scale: 0.97 } : {}}
                   aria-label="Approve and submit billing claim"
                   className={`
-                    flex-[2] py-3 rounded-xl text-sm font-semibold
+                    flex-[2] py-3 text-sm font-semibold
                     flex items-center justify-center gap-2
                     transition-all
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
@@ -386,12 +393,23 @@ export function SignAndBillModal({
                       : submitState === 'syncing_to_ehr'
                         ? 'bg-cyan-600/60 text-white cursor-not-allowed'
                         : submitState === 'ehr_error'
-                          ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20'
+                          ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-500/20'
                           : fetchState !== 'loaded'
-                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                            ? 'bg-slate-700 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-cyan-500/20'
                     }
                   `}
+                  style={{
+                    borderRadius: 'var(--radius-xl)',
+                    ...(submitState === 'ehr_error'
+                      ? { boxShadow: 'var(--token-shadow-lg)' }
+                      : fetchState !== 'loaded' && submitState !== 'success' && submitState !== 'syncing_to_ehr'
+                        ? { color: 'var(--text-tertiary)' }
+                        : fetchState === 'loaded' && submitState === 'idle'
+                          ? { boxShadow: 'var(--token-shadow-lg)' }
+                          : {}
+                    ),
+                  }}
                 >
                   {submitState === 'syncing_to_ehr' && (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -406,10 +424,10 @@ export function SignAndBillModal({
                   {submitState === 'syncing_to_ehr' && t('pushingToEhr')}
                   {submitState === 'success'        && t('successPushedToEhr')}
                   {submitState === 'ehr_error'      && t('failedSyncRetry')}
-                </motion.button>
+                </m.button>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

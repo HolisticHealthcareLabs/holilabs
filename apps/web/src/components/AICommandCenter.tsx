@@ -36,36 +36,36 @@ export function AICommandCenter({ isOpen, onClose }: AICommandCenterProps) {
 
     // Navigation logic
     if (lowercaseMessage.includes('cdss') || lowercaseMessage.includes('clinical decision') || lowercaseMessage.includes('decisiones clínicas') || lowercaseMessage.includes('decisão clínica')) {
-      response = t.aiCommandCenter.navigation.cdss;
+      response = t('aiCommandCenter.navigation.cdss');
       shouldNavigate = true;
       navigationPath = '/dashboard/cdss';
     } else if (lowercaseMessage.includes('scribe') || lowercaseMessage.includes('ai médica') || lowercaseMessage.includes('transcripción') || lowercaseMessage.includes('transcrição')) {
-      response = t.aiCommandCenter.navigation.scribe;
+      response = t('aiCommandCenter.navigation.scribe');
       shouldNavigate = true;
       navigationPath = '/dashboard/scribe';
     } else if (lowercaseMessage.includes('prevención') || lowercaseMessage.includes('prevention') || lowercaseMessage.includes('prevenção') || lowercaseMessage.includes('screening')) {
-      response = t.aiCommandCenter.navigation.prevention;
+      response = t('aiCommandCenter.navigation.prevention');
       shouldNavigate = true;
       navigationPath = '/dashboard/prevention';
     } else if (lowercaseMessage.includes('pacientes') || lowercaseMessage.includes('patient') || lowercaseMessage.includes('portal')) {
-      response = t.aiCommandCenter.navigation.patients;
+      response = t('aiCommandCenter.navigation.patients');
       shouldNavigate = true;
       navigationPath = '/dashboard/patients';
     } else if (lowercaseMessage.includes('precio') || lowercaseMessage.includes('plan') || lowercaseMessage.includes('preço') || lowercaseMessage.includes('suscripción') || lowercaseMessage.includes('assinatura')) {
-      response = t.aiCommandCenter.navigation.pricing;
+      response = t('aiCommandCenter.navigation.pricing');
       shouldNavigate = true;
       navigationPath = '/#precios';
     } else if (lowercaseMessage.includes('login') || lowercaseMessage.includes('entrar') || lowercaseMessage.includes('iniciar sesión')) {
-      response = t.aiCommandCenter.navigation.login;
+      response = t('aiCommandCenter.navigation.login');
       shouldNavigate = true;
       navigationPath = '/auth/login';
     } else if (lowercaseMessage.includes('dashboard') || lowercaseMessage.includes('panel') || lowercaseMessage.includes('painel')) {
-      response = t.aiCommandCenter.navigation.dashboard;
+      response = t('aiCommandCenter.navigation.dashboard');
       shouldNavigate = true;
       navigationPath = '/dashboard';
     } else {
       // Default helpful response
-      response = t.aiCommandCenter.defaultResponse.replace('{query}', message);
+      response = t('aiCommandCenter.defaultResponse').replace('{query}', message);
     }
 
     setMessages(prev => [...prev, { role: 'assistant', content: response }]);

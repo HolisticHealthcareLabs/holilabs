@@ -163,14 +163,15 @@ function DefaultErrorFallback({
   const errorConfig = getErrorConfig();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 px-4" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       <div className="max-w-md w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="dark:bg-gray-800 p-6" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--token-shadow-lg)' }}>
           {/* Error Icon */}
           <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
+            <div className="dark:bg-red-900/30 p-3" style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-danger)' }}>
               <svg
-                className="w-8 h-8 text-red-600 dark:text-red-400"
+                className="w-8 h-8 dark:text-red-400"
+                style={{ color: 'var(--text-danger)' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -186,20 +187,20 @@ function DefaultErrorFallback({
           </div>
 
           {/* Error Message */}
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-2">
+          <h2 className="text-xl font-semibold dark:text-gray-100 text-center mb-2" style={{ color: 'var(--text-primary)' }}>
             {errorConfig.title}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+          <p className="dark:text-gray-400 text-center mb-6" style={{ color: 'var(--text-secondary)' }}>
             {errorConfig.message}
           </p>
 
           {/* Error Details (dev only) */}
           {process.env.NODE_ENV === 'development' && error && (
-            <details className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs">
-              <summary className="cursor-pointer font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <details className="mb-4 p-3 dark:bg-red-900/20 dark:border-red-800 text-xs" style={{ backgroundColor: 'var(--surface-danger)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)' }}>
+              <summary className="cursor-pointer font-medium dark:text-gray-100 mb-2" style={{ color: 'var(--text-primary)' }}>
                 Detalles técnicos
               </summary>
-              <pre className="font-mono text-red-800 dark:text-red-300 break-all overflow-auto">
+              <pre className="font-mono dark:text-red-300 break-all overflow-auto" style={{ color: 'var(--text-danger)' }}>
                 {error.message}
                 {'\n\n'}
                 {error.stack}
@@ -212,7 +213,8 @@ function DefaultErrorFallback({
             {retryCount < maxRetries && errorType !== 'auth' ? (
               <button
                 onClick={onRetry}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all inline-flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 font-medium hover:from-blue-600 hover:to-blue-700 transition-all inline-flex items-center justify-center gap-2"
+                style={{ borderRadius: 'var(--radius-lg)' }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -222,7 +224,8 @@ function DefaultErrorFallback({
             ) : (
               <button
                 onClick={handleReload}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-600 hover:to-indigo-700 transition-all"
+                className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 font-medium hover:from-purple-600 hover:to-indigo-700 transition-all"
+                style={{ borderRadius: 'var(--radius-lg)' }}
               >
                 Recargar página
               </button>
@@ -231,14 +234,16 @@ function DefaultErrorFallback({
             {errorType === 'auth' ? (
               <a
                 href="/login"
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all text-center"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 font-medium hover:from-blue-600 hover:to-blue-700 transition-all text-center"
+                style={{ borderRadius: 'var(--radius-lg)' }}
               >
                 Iniciar Sesión
               </a>
             ) : (
               <button
                 onClick={() => window.history.back()}
-                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                className="flex-1 dark:bg-gray-700 dark:text-gray-300 px-4 py-2 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)' }}
               >
                 Volver
               </button>
@@ -249,14 +254,15 @@ function DefaultErrorFallback({
           <div className="mt-4 text-center">
             <a
               href="mailto:support@holilabs.com"
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-sm dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              style={{ color: 'var(--text-secondary)' }}
             >
               ¿Necesitas ayuda? Contacta soporte
             </a>
           </div>
 
           {retryCount >= maxRetries && (
-            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+            <p className="mt-4 text-sm dark:text-gray-400 text-center" style={{ color: 'var(--text-secondary)' }}>
               Si el problema persiste, contacta a soporte técnico.
             </p>
           )}
@@ -277,11 +283,12 @@ export function SectionErrorFallback({
   onRetry?: () => void;
 }) {
   return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div className="p-4" style={{ backgroundColor: 'var(--surface-danger)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg
-            className="h-5 w-5 text-red-400"
+            className="h-5 w-5"
+            style={{ color: 'var(--text-danger)' }}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -293,14 +300,15 @@ export function SectionErrorFallback({
           </svg>
         </div>
         <div className="ml-3 flex-1">
-          <h3 className="text-sm font-medium text-red-800">{title}</h3>
-          <p className="mt-1 text-sm text-red-700">
+          <h3 className="text-sm font-medium" style={{ color: 'var(--text-danger)' }}>{title}</h3>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-danger)' }}>
             No se pudo cargar esta sección. Por favor, intenta de nuevo.
           </p>
           {onRetry && (
             <button
               onClick={onRetry}
-              className="mt-2 text-sm font-medium text-red-600 hover:text-red-500"
+              className="mt-2 text-sm font-medium hover:text-red-500"
+              style={{ color: 'var(--text-danger)' }}
             >
               Reintentar →
             </button>

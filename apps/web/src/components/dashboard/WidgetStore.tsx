@@ -55,20 +55,21 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
             className="fixed inset-x-4 top-20 bottom-20 md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:h-[600px] z-50
               bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl
               border border-white/20 dark:border-gray-700/50
-              rounded-3xl shadow-2xl
               flex flex-col"
+            style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
           >
             {/* Header */}
             <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold dark:text-white" style={{ color: 'var(--text-primary)' }}>
                   Widget Store
                 </h2>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
                 >
-                  <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <XMarkIcon className="w-5 h-5 dark:text-gray-400" style={{ color: 'var(--text-tertiary)' }} />
                 </button>
               </div>
 
@@ -78,9 +79,10 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
                 placeholder="Search widgets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg
-                  text-gray-900 dark:text-white
+                className="w-full px-4 py-2 dark:bg-gray-800 dark:border-gray-700
+                  dark:text-white
                   focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ backgroundColor: 'var(--surface-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
               />
             </div>
 
@@ -91,7 +93,7 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
 
                 return (
                   <div key={category} className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    <h3 className="text-sm font-semibold dark:text-gray-400 uppercase tracking-wider mb-3" style={{ color: 'var(--text-tertiary)' }}>
                       {category}
                     </h3>
                     <div className="space-y-2">
@@ -99,17 +101,18 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
                         <motion.div
                           key={widget.id}
                           layout
-                          className="flex items-center justify-between p-4 rounded-xl
+                          className="flex items-center justify-between p-4
                             bg-gray-50/50 dark:bg-gray-800/50
                             border border-gray-200/50 dark:border-gray-700/50
                             hover:bg-gray-100/50 dark:hover:bg-gray-800/50
                             transition-colors"
+                          style={{ borderRadius: 'var(--radius-xl)' }}
                         >
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                            <h4 className="font-semibold dark:text-white mb-1" style={{ color: 'var(--text-primary)' }}>
                               {widget.name}
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
                               {widget.description}
                             </p>
                           </div>

@@ -7,20 +7,21 @@ export default function NotFound() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       <div className="text-center p-8">
-        <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-4">
-          {t.errorPages?.notFoundCode ?? '404'}
+        <h1 className="text-6xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+          {t('errorPages.notFoundCode')}
         </h1>
-        <h2 className="text-2xl text-gray-700 dark:text-gray-300 mb-6">
-          {t.errorPages?.notFound ?? 'Page not found'}
+        <h2 className="text-2xl mb-6" style={{ color: 'var(--text-secondary)' }}>
+          {t('errorPages.notFound')}
         </h2>
         <Link
           href="/auth/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block"
-          aria-label={t.errorPages?.goToSignIn ?? 'Go to Sign In'}
+          className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 inline-block"
+          style={{ borderRadius: 'var(--radius-lg)' }}
+          aria-label={t('errorPages.goToSignIn')}
         >
-          {t.errorPages?.goToSignIn ?? 'Go to Sign In'}
+          {t('errorPages.goToSignIn')}
         </Link>
       </div>
     </div>

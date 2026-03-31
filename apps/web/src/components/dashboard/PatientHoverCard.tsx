@@ -79,20 +79,24 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="fixed z-50 bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-5 w-80 pointer-events-none"
+            className="fixed z-50 p-5 w-80 pointer-events-none"
             style={{
               left: mousePosition.x + 20,
               top: mousePosition.y - 50,
+              backgroundColor: 'var(--surface-primary)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--token-shadow-xl)',
+              border: '2px solid var(--border-default)',
             }}
           >
             {/* Header */}
             <div className="mb-4">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900">
+                  <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>
                     {patient.firstName} {patient.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {calculateAge(patient.dateOfBirth)} years old
                   </p>
                 </div>
@@ -105,18 +109,18 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
               <div className="mb-4 space-y-2">
                 {patient.phone && (
                   <div className="flex items-center gap-2 text-sm">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" style={{ color: 'var(--text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span className="text-gray-700">{patient.phone}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{patient.phone}</span>
                   </div>
                 )}
                 {patient.email && (
                   <div className="flex items-center gap-2 text-sm">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" style={{ color: 'var(--text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-gray-700 truncate">{patient.email}</span>
+                    <span className="truncate" style={{ color: 'var(--text-secondary)' }}>{patient.email}</span>
                   </div>
                 )}
               </div>
@@ -126,7 +130,7 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
             {patient.conditions && patient.conditions.length > 0 && (
               <div className="mb-4">
                 {/* Decorative - low contrast intentional for section header */}
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold dark:text-gray-400 uppercase tracking-wide mb-2" style={{ color: 'var(--text-tertiary)' }}>
                   Active Conditions
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -139,7 +143,7 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
                     </span>
                   ))}
                   {patient.conditions.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                    <span className="px-2 py-1 text-xs font-medium" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-full)' }}>
                       +{patient.conditions.length - 3} more
                     </span>
                   )}
@@ -148,17 +152,17 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
             )}
 
             {/* Visit Info */}
-            <div className="border-t border-gray-200 pt-3 space-y-2">
+            <div className="pt-3 space-y-2" style={{ borderTop: '1px solid var(--border-default)' }}>
               {patient.lastVisit && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Last Visit:</span>
-                  <span className="font-semibold text-gray-900">{patient.lastVisit}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Last Visit:</span>
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{patient.lastVisit}</span>
                 </div>
               )}
               {patient.nextAppointment && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Next Appointment:</span>
-                  <span className="font-semibold text-blue-600">{patient.nextAppointment}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Next Appointment:</span>
+                  <span className="font-semibold" style={{ color: 'var(--text-accent)' }}>{patient.nextAppointment}</span>
                 </div>
               )}
             </div>

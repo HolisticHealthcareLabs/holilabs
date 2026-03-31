@@ -30,14 +30,21 @@ export interface CardProps {
 }
 
 const baseStyles =
-  'bg-white dark:bg-neutral-900 rounded-xl transition-all';
+  'transition-all';
 
 const variantStyles: Record<CardVariant, string> = {
   flat: 'border-0',
-  elevated: 'shadow-lg hover:shadow-xl',
-  outlined: 'border border-neutral-200 dark:border-neutral-800',
+  elevated: 'hover:shadow-xl',
+  outlined: '',
   interactive:
-    'border border-neutral-200 dark:border-neutral-800 cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md active:scale-[0.98]',
+    'cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md active:scale-[0.98]',
+};
+
+const variantInlineStyles: Record<CardVariant, React.CSSProperties> = {
+  flat: {},
+  elevated: { boxShadow: 'var(--token-shadow-lg)' },
+  outlined: { border: '1px solid var(--border-default)' },
+  interactive: { border: '1px solid var(--border-default)' },
 };
 
 const paddingStyles: Record<CardPadding, string> = {
@@ -75,6 +82,11 @@ export function Card({
   return (
     <Component
       className={cardClasses}
+      style={{
+        backgroundColor: 'var(--surface-primary)',
+        borderRadius: 'var(--radius-xl)',
+        ...variantInlineStyles[variant],
+      }}
       onClick={onClick}
       {...(onClick && {
         type: 'button',
@@ -117,11 +129,11 @@ export function CardHeader({
 
         {/* Title and subtitle */}
         <div>
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
             {title}
           </h3>
           {subtitle && (
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               {subtitle}
             </p>
           )}
@@ -144,7 +156,7 @@ export interface CardContentProps {
 
 export function CardContent({ children, className = '' }: CardContentProps) {
   return (
-    <div className={`text-neutral-700 dark:text-neutral-300 ${className}`}>
+    <div className={className} style={{ color: 'var(--text-secondary)' }}>
       {children}
     </div>
   );
@@ -168,9 +180,10 @@ export function CardFooter({
     <div
       className={`${
         divider
-          ? 'mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800'
+          ? 'mt-6 pt-4'
           : 'mt-4'
       } ${className}`}
+      style={divider ? { borderTop: '1px solid var(--border-default)' } : undefined}
     >
       {children}
     </div>
@@ -228,10 +241,10 @@ export function StatCard({
     <Card variant={variant} padding="lg" hover={!!onClick} onClick={onClick} className={className}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
             {label}
           </p>
-          <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+          <p className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
             {value}
           </p>
 
@@ -240,7 +253,7 @@ export function StatCard({
             <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${trendColors[change.trend]}`}>
               {trendIcons[change.trend]}
               <span>{Math.abs(change.value)}%</span>
-              <span className="text-neutral-500 dark:text-neutral-500 font-normal">
+              <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>
                 {change.trend === 'up' ? 'increase' : change.trend === 'down' ? 'decrease' : 'no change'}
               </span>
             </div>
@@ -249,7 +262,7 @@ export function StatCard({
 
         {/* Icon */}
         {icon && (
-          <div className={`p-3 rounded-lg ${iconBackground}`}>
+          <div className={`p-3 ${iconBackground}`} style={{ borderRadius: 'var(--radius-lg)' }}>
             <div className="w-6 h-6 text-primary-600 dark:text-primary-400">
               {icon}
             </div>
@@ -308,10 +321,11 @@ export function PatientCard({
             <img
               src={avatar}
               alt={name}
-              className="w-12 h-12 rounded-full object-cover"
+              className="w-12 h-12 object-cover"
+              style={{ borderRadius: 'var(--radius-full)' }}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center" style={{ borderRadius: 'var(--radius-full)' }}>
               <span className="text-lg font-semibold text-primary-700 dark:text-primary-300">
                 {name.charAt(0).toUpperCase()}
               </span>
@@ -322,29 +336,30 @@ export function PatientCard({
         {/* Patient info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+            <h4 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {name}
             </h4>
             {status === 'active' && (
-              <span className="flex-shrink-0 w-2 h-2 rounded-full bg-success-500" />
+              <span className="flex-shrink-0 w-2 h-2 bg-success-500" style={{ borderRadius: 'var(--radius-full)' }} />
             )}
           </div>
 
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
             ID: {id}
           </p>
 
           {/* Metadata */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {lastVisit && (
-              <span className="text-neutral-500 dark:text-neutral-500">
+              <span style={{ color: 'var(--text-tertiary)' }}>
                 Last visit: {lastVisit}
               </span>
             )}
 
             {riskLevel && (
               <span
-                className={`px-2 py-0.5 rounded-full font-medium ${riskColors[riskLevel]}`}
+                className={`px-2 py-0.5 font-medium ${riskColors[riskLevel]}`}
+                style={{ borderRadius: 'var(--radius-full)' }}
               >
                 {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)} Risk
               </span>

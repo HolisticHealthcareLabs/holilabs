@@ -147,23 +147,23 @@ export default function ShareRecordModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
           >
             {/* Header */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6" style={{ borderBottom: '1px solid var(--border-default)' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 id="share-modal-title" className="text-2xl font-bold text-gray-900">
+                  <h2 id="share-modal-title" className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                     Compartir Registro Médico
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">{recordTitle}</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{recordTitle}</p>
                 </div>
                 {/* Decorative - low contrast intentional for close button icon */}
                 <button
                   ref={closeButtonRef}
                   onClick={handleClose}
                   aria-label="Cerrar diálogo"
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="hover:text-gray-600 transition-colors" style={{ color: 'var(--text-muted)' }}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path
@@ -183,12 +183,12 @@ export default function ShareRecordModal({
                 <div className="space-y-6">
                   {/* Recipient Information */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                       Información del Destinatario (Opcional)
                     </h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                           Nombre
                         </label>
                         <input
@@ -197,12 +197,12 @@ export default function ShareRecordModal({
                           onChange={(e) =>
                             setConfig({ ...config, recipientName: e.target.value })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                           placeholder="Dr. Juan Pérez"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                           Email
                         </label>
                         <input
@@ -211,19 +211,19 @@ export default function ShareRecordModal({
                           onChange={(e) =>
                             setConfig({ ...config, recipientEmail: e.target.value })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                           placeholder="doctor@ejemplo.com"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                           Propósito
                         </label>
                         <textarea
                           value={config.purpose || ''}
                           onChange={(e) => setConfig({ ...config, purpose: e.target.value })}
                           rows={2}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                           placeholder="Segunda opinión médica"
                         />
                       </div>
@@ -232,12 +232,12 @@ export default function ShareRecordModal({
 
                   {/* Access Settings */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                       Configuración de Acceso
                     </h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                           Tiempo de Expiración
                         </label>
                         <select
@@ -245,7 +245,7 @@ export default function ShareRecordModal({
                           onChange={(e) =>
                             setConfig({ ...config, expiresInHours: parseInt(e.target.value) })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                         >
                           <option value={24}>24 horas</option>
                           <option value={72}>3 días</option>
@@ -256,7 +256,7 @@ export default function ShareRecordModal({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                           Límite de Accesos (Opcional)
                         </label>
                         <input
@@ -270,7 +270,7 @@ export default function ShareRecordModal({
                               maxAccesses: e.target.value ? parseInt(e.target.value) : undefined,
                             })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                           placeholder="Ilimitado"
                         />
                       </div>
@@ -284,9 +284,9 @@ export default function ShareRecordModal({
                             onChange={(e) =>
                               setConfig({ ...config, allowDownload: e.target.checked })
                             }
-                            className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            className="w-5 h-5 text-green-600 focus:ring-green-500" style={{ borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-md)' }}
                           />
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Permitir descarga de PDF
                           </span>
                         </label>
@@ -298,9 +298,9 @@ export default function ShareRecordModal({
                             onChange={(e) =>
                               setConfig({ ...config, requirePassword: e.target.checked })
                             }
-                            className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            className="w-5 h-5 text-green-600 focus:ring-green-500" style={{ borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-md)' }}
                           />
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Requerir contraseña
                           </span>
                         </label>
@@ -308,7 +308,7 @@ export default function ShareRecordModal({
 
                       {config.requirePassword && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                             Contraseña
                           </label>
                           <input
@@ -317,7 +317,7 @@ export default function ShareRecordModal({
                             onChange={(e) =>
                               setConfig({ ...config, password: e.target.value })
                             }
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                             placeholder="Mínimo 6 caracteres"
                             minLength={6}
                           />
@@ -331,9 +331,10 @@ export default function ShareRecordModal({
                     <div
                       role="alert"
                       aria-live="assertive"
-                      className="bg-red-50 border border-red-200 rounded-lg p-4"
+                      className="p-4"
+                      style={{ backgroundColor: 'var(--surface-danger)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)' }}
                     >
-                      <p className="text-sm text-red-600">
+                      <p className="text-sm" style={{ color: 'var(--text-danger)' }}>
                         <span className="sr-only">Error: </span>
                         {error}
                       </p>
@@ -345,14 +346,14 @@ export default function ShareRecordModal({
                     <button
                       onClick={handleClose}
                       disabled={isLoading}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="flex-1 px-6 py-3 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50" style={{ border: '1px solid var(--border-strong)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)' }}
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleShare}
                       disabled={isLoading}
-                      className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2" style={{ borderRadius: 'var(--radius-lg)' }}
                     >
                       {isLoading ? (
                         <>
@@ -385,9 +386,9 @@ export default function ShareRecordModal({
                 <div className="space-y-6">
                   {/* Success Icon */}
                   <div className="flex justify-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 flex items-center justify-center" style={{ backgroundColor: 'var(--surface-success)', borderRadius: 'var(--radius-full)' }}>
                       <svg
-                        className="w-8 h-8 text-green-600"
+                        className="w-8 h-8" style={{ color: 'var(--text-success)' }}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -403,17 +404,17 @@ export default function ShareRecordModal({
                   </div>
 
                   <div className="text-center">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                       ¡Enlace Generado Exitosamente!
                     </h3>
-                    <p className="text-gray-600">
+                    <p style={{ color: 'var(--text-secondary)' }}>
                       Comparte este enlace seguro con el destinatario
                     </p>
                   </div>
 
                   {/* Share Link */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="p-4" style={{ backgroundColor: 'var(--surface-secondary)', borderRadius: 'var(--radius-lg)' }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                       Enlace de Compartir
                     </label>
                     <div className="flex gap-2">
@@ -421,12 +422,12 @@ export default function ShareRecordModal({
                         type="text"
                         value={shareResult.shareUrl}
                         readOnly
-                        className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm"
+                        className="flex-1 px-4 py-2 text-sm" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                       />
                       <button
                         onClick={handleCopyLink}
                         aria-label={copied ? "Enlace copiado al portapapeles" : "Copiar enlace al portapapeles"}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors flex items-center gap-2" style={{ borderRadius: 'var(--radius-lg)' }}
                       >
                         {copied ? (
                           <>
@@ -458,7 +459,7 @@ export default function ShareRecordModal({
                   </div>
 
                   {/* Expiration Info */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="p-4" style={{ backgroundColor: 'var(--surface-warning)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
                     <div className="flex gap-3">
                       <svg
                         className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
@@ -490,7 +491,7 @@ export default function ShareRecordModal({
                   {/* Close Button */}
                   <button
                     onClick={handleClose}
-                    className="w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition-colors"
+                    className="w-full px-6 py-3 hover:bg-gray-200 font-semibold transition-colors" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-primary)', borderRadius: 'var(--radius-lg)' }}
                   >
                     Cerrar
                   </button>

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   X,
   RotateCw,
@@ -124,7 +124,7 @@ export function ContextDrawer({
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             key="ctx-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -136,7 +136,7 @@ export function ContextDrawer({
           />
 
           {/* Drawer panel */}
-          <motion.aside
+          <m.aside
             key="ctx-drawer"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -145,30 +145,31 @@ export function ContextDrawer({
             className="
               fixed top-0 right-0 z-50 h-full w-[400px] max-w-[90vw]
               flex flex-col
-              bg-white dark:bg-slate-900
-              border-l border-slate-200 dark:border-slate-700/60
-              shadow-2xl
             "
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              borderLeft: '1px solid var(--border-default)',
+              boxShadow: 'var(--token-shadow-xl)',
+            }}
             role="complementary"
             aria-label="Clinical Context Drawer"
           >
             {/* Header */}
             <div className="
               flex items-center justify-between px-5 py-4 flex-shrink-0
-              border-b border-slate-200 dark:border-slate-700/60
-            ">
+            " style={{ borderBottom: '1px solid var(--border-default)' }}>
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-cyan-500" />
-                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {t('clinicalContext')}
                 </h2>
                 {activeEntities.length > 0 && (
                   <span className="
-                    text-[10px] font-bold px-2 py-0.5 rounded-full
+                    text-[10px] font-bold px-2 py-0.5
                     bg-cyan-100 dark:bg-cyan-500/15
                     text-cyan-700 dark:text-cyan-400
                     border border-cyan-200 dark:border-cyan-500/25
-                  ">
+                  " style={{ borderRadius: 'var(--radius-full)' }}>
                     {t('activeCount', { count: activeEntities.length })}
                   </span>
                 )}
@@ -176,13 +177,12 @@ export function ContextDrawer({
               <button
                 onClick={onClose}
                 className="
-                  p-1.5 rounded-lg
-                  text-slate-400 dark:text-slate-500
-                  hover:text-slate-600 dark:hover:text-slate-300
+                  p-1.5
                   hover:bg-slate-100 dark:hover:bg-slate-800
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                 "
+                style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-muted)' }}
                 aria-label="Close context drawer"
               >
                 <X className="w-4 h-4" />
@@ -194,7 +194,7 @@ export function ContextDrawer({
               {activeEntities.length === 0 && rejectedEntities.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <ShieldCheck className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm text-slate-400 dark:text-slate-500 text-center">
+                  <p className="text-sm text-center" style={{ color: 'var(--text-tertiary)' }}>
                     {t('noEntitiesYet')}
                     <br />
                     {t('startRecordingContext')}
@@ -209,7 +209,7 @@ export function ContextDrawer({
                 const config = CATEGORY_CONFIG[category];
 
                 return (
-                  <motion.section
+                  <m.section
                     key={category}
                     variants={sectionVariants}
                     initial="initial"
@@ -222,7 +222,7 @@ export function ContextDrawer({
                       <h3 className={`text-[11px] font-bold uppercase tracking-wider ${config.accent}`}>
                         {t(config.label)}
                       </h3>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                         ({items.length})
                       </span>
                     </div>
@@ -230,7 +230,7 @@ export function ContextDrawer({
                     <div className="flex flex-wrap gap-2">
                       <AnimatePresence mode="popLayout">
                         {items.map((entity) => (
-                          <motion.div
+                          <m.div
                             key={entity.id}
                             layout
                             variants={chipVariants}
@@ -239,23 +239,25 @@ export function ContextDrawer({
                             exit="exit"
                             transition={{ duration: 0.2, layout: { duration: 0.25 } }}
                             className={`
-                              group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+                              group flex items-center gap-1.5 px-2.5 py-1.5
                               border text-xs font-medium
                               ${config.chipBg} ${config.chipBorder} ${config.chipText}
-                              transition-shadow hover:shadow-md
+                              transition-shadow
                             `}
+                            style={{ borderRadius: 'var(--radius-lg)' }}
                           >
                             {/* Confidence dot */}
                             <span
-                              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${CONFIDENCE_DOT[entity.confidence]}`}
+                              className={`w-1.5 h-1.5 flex-shrink-0 ${CONFIDENCE_DOT[entity.confidence]}`}
+                              style={{ borderRadius: 'var(--radius-full)' }}
                               title={`Confidence: ${entity.confidence}`}
                             />
 
                             {/* Code badge */}
                             <span className="
                               text-[10px] font-mono font-bold opacity-60
-                              bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded
-                            ">
+                              bg-black/5 dark:bg-white/5 px-1 py-0.5
+                            " style={{ borderRadius: 'var(--radius-md)' }}>
                               {entity.code}
                             </span>
 
@@ -268,7 +270,7 @@ export function ContextDrawer({
                             <button
                               onClick={() => onRejectEntity(entity.id)}
                               className="
-                                ml-1 p-0.5 rounded
+                                ml-1 p-0.5
                                 opacity-0 group-hover:opacity-100
                                 text-red-400 dark:text-red-500
                                 hover:text-red-600 dark:hover:text-red-400
@@ -277,48 +279,50 @@ export function ContextDrawer({
                                 focus-visible:opacity-100
                                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400
                               "
+                              style={{ borderRadius: 'var(--radius-md)' }}
                               aria-label={`Reject entity: ${entity.label}`}
                               title={t('rejectEntityHint')}
                             >
                               <X className="w-3 h-3" />
                             </button>
-                          </motion.div>
+                          </m.div>
                         ))}
                       </AnimatePresence>
                     </div>
-                  </motion.section>
+                  </m.section>
                 );
               })}
 
               {/* Discarded Context section (ELENA: negative space heuristic) */}
               <AnimatePresence>
                 {rejectedEntities.length > 0 && (
-                  <motion.section
+                  <m.section
                     key="discarded"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="pt-4 border-t border-slate-200 dark:border-slate-700/40"
+                    className="pt-4"
+                    style={{ borderTop: '1px solid var(--border-default)' }}
                   >
                     <div className="flex items-center gap-2 mb-2.5">
-                      <Trash2 className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      <Trash2 className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                         {t('discardedContext')}
                       </h3>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                         ({rejectedEntities.length})
                       </span>
                     </div>
 
-                    <p className="text-[10px] text-slate-400 dark:text-slate-600 mb-2.5">
+                    <p className="text-[10px] mb-2.5" style={{ color: 'var(--text-muted)' }}>
                       {t('discardedContextDesc')}
                     </p>
 
                     <div className="flex flex-wrap gap-1.5">
                       <AnimatePresence mode="popLayout">
                         {rejectedEntities.map((entity) => (
-                          <motion.div
+                          <m.div
                             key={entity.id}
                             layout
                             variants={chipVariants}
@@ -327,13 +331,16 @@ export function ContextDrawer({
                             exit="exit"
                             transition={{ duration: 0.2 }}
                             className="
-                              group flex items-center gap-1.5 px-2 py-1 rounded-lg
+                              group flex items-center gap-1.5 px-2 py-1
                               border text-xs font-medium
-                              bg-slate-50 dark:bg-slate-800/40
-                              border-slate-200 dark:border-slate-700/40
-                              text-slate-400 dark:text-slate-500
-                              line-through decoration-slate-300 dark:decoration-slate-600
+                              line-through
                             "
+                            style={{
+                              borderRadius: 'var(--radius-lg)',
+                              backgroundColor: 'var(--surface-secondary)',
+                              borderColor: 'var(--border-default)',
+                              color: 'var(--text-muted)',
+                            }}
                           >
                             <span className="text-[10px] font-mono opacity-50">
                               {entity.code}
@@ -346,7 +353,7 @@ export function ContextDrawer({
                             <button
                               onClick={() => onRestoreEntity(entity.id)}
                               className="
-                                ml-1 p-0.5 rounded
+                                ml-1 p-0.5
                                 opacity-0 group-hover:opacity-100
                                 text-emerald-500 dark:text-emerald-400
                                 hover:text-emerald-600 dark:hover:text-emerald-300
@@ -355,16 +362,17 @@ export function ContextDrawer({
                                 focus-visible:opacity-100
                                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400
                               "
+                              style={{ borderRadius: 'var(--radius-md)' }}
                               aria-label={`Restore entity: ${entity.label}`}
                               title={t('restoreEntityHint')}
                             >
                               <RotateCw className="w-3 h-3" />
                             </button>
-                          </motion.div>
+                          </m.div>
                         ))}
                       </AnimatePresence>
                     </div>
-                  </motion.section>
+                  </m.section>
                 )}
               </AnimatePresence>
             </div>
@@ -372,14 +380,15 @@ export function ContextDrawer({
             {/* Footer */}
             <div className="
               flex-shrink-0 px-5 py-3
-              border-t border-slate-200 dark:border-slate-700/60
-              bg-slate-50/50 dark:bg-slate-800/30
-            ">
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed">
+            " style={{
+              borderTop: '1px solid var(--border-default)',
+              backgroundColor: 'var(--surface-secondary)',
+            }}>
+              <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 {t('contextFooter')}
               </p>
             </div>
-          </motion.aside>
+          </m.aside>
         </>
       )}
     </AnimatePresence>

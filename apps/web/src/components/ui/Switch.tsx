@@ -44,7 +44,7 @@ export function Switch({
     <HeadlessSwitch.Group>
       <div className="flex items-center gap-3">
         {label && (
-          <HeadlessSwitch.Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <HeadlessSwitch.Label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             {label}
           </HeadlessSwitch.Label>
         )}

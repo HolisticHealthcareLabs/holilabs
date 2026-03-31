@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Eye, Upload } from 'lucide-react';
 import type { DrawerImagingStudy } from '../_data/demo-facesheet';
@@ -42,16 +42,17 @@ export function DrawerImagingPanel({ studies, onSwitchToDocuments, onStudySelect
   if (studies.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 bg-slate-800 border border-slate-700/60 flex items-center justify-center mb-4" style={{ borderRadius: 'var(--radius-xl)' }}>
           <Eye className="w-5 h-5 text-slate-600" />
         </div>
-        <p className="text-sm font-medium text-slate-400 mb-1">{t('noImagingStudies')}</p>
-        <p className="text-xs text-slate-600 text-center mb-4">{t('uploadDicomCta')}</p>
+        <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('noImagingStudies')}</p>
+        <p className="text-xs text-center mb-4" style={{ color: 'var(--text-muted)' }}>{t('uploadDicomCta')}</p>
         <button
           onClick={onSwitchToDocuments}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
                      text-cyan-400 bg-cyan-500/10 border border-cyan-500/25
                      hover:bg-cyan-500/20 transition-colors"
+          style={{ borderRadius: 'var(--radius-lg)' }}
         >
           <Upload className="w-3 h-3" />
           {t('uploadRecordsCta')}
@@ -63,17 +64,18 @@ export function DrawerImagingPanel({ studies, onSwitchToDocuments, onStudySelect
   return (
     <div className="space-y-1.5">
       {studies.map((study, i) => (
-        <motion.button
+        <m.button
           key={study.id}
           type="button"
           onClick={() => onStudySelect?.(study)}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.03, duration: 0.15 }}
-          className="w-full text-left grid grid-cols-[64px_1fr] gap-3 px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700/60 hover:border-cyan-500/30 hover:bg-slate-800/80 transition-all cursor-pointer group"
+          className="w-full text-left grid grid-cols-[64px_1fr] gap-3 px-3 py-2.5 bg-slate-800 border border-slate-700/60 hover:border-cyan-500/30 hover:bg-slate-800/80 transition-all cursor-pointer group"
+          style={{ borderRadius: 'var(--radius-xl)' }}
         >
           {/* Thumbnail — 64×64 rounded */}
-          <div className="w-16 h-16 rounded-lg overflow-hidden relative ring-1 ring-white/5 group-hover:ring-cyan-500/20 transition-all self-start">
+          <div className="w-16 h-16 overflow-hidden relative ring-1 ring-white/5 group-hover:ring-cyan-500/20 transition-all self-start" style={{ borderRadius: 'var(--radius-lg)' }}>
             <img src={study.thumbnailUrl || ''} alt="" className="w-full h-full object-cover" />
             <span className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 text-white px-1 py-px rounded-tl">
               {MODALITY_ICONS[study.modality] ?? study.modality.slice(0, 2).toUpperCase()}
@@ -85,7 +87,7 @@ export function DrawerImagingPanel({ studies, onSwitchToDocuments, onStudySelect
             <div className="flex items-center gap-1.5">
               <span className="text-[13px] font-medium text-slate-200 truncate group-hover:text-white transition-colors">{study.description}</span>
               {study.isAbnormal && (
-                <span className="shrink-0 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30">ABN</span>
+                <span className="shrink-0 text-[8px] font-bold uppercase px-1.5 py-0.5 bg-red-500/15 text-red-400 border border-red-500/30" style={{ borderRadius: 'var(--radius-sm)' }}>ABN</span>
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
@@ -116,7 +118,7 @@ export function DrawerImagingPanel({ studies, onSwitchToDocuments, onStudySelect
               <p className="text-[10px] text-slate-500 truncate leading-tight">{study.findings}</p>
             )}
           </div>
-        </motion.button>
+        </m.button>
       ))}
     </div>
   );

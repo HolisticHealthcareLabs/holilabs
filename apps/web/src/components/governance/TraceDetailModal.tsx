@@ -32,10 +32,10 @@ export default function TraceDetailModal({ isOpen, onClose, log }: TraceDetailMo
     return (
         // Fixed inset overlay (Tailwind Modal)
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--token-shadow-lg)' }}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <h2 className="text-lg font-semibold">Audit Trace: {log.id.slice(0, 8)}</h2>
@@ -59,26 +59,26 @@ export default function TraceDetailModal({ isOpen, onClose, log }: TraceDetailMo
                 <div className="flex-1 overflow-hidden p-0">
                     <div className="grid grid-cols-2 h-full">
                         {/* Left: Input (Transcript) */}
-                        <div className="flex flex-col border-r h-full bg-slate-50/50">
-                            <div className="p-3 border-b bg-slate-100 font-semibold text-xs uppercase tracking-wide text-slate-500">Transcript (Input)</div>
-                            <div className="flex-1 p-4 text-sm font-mono whitespace-pre-wrap overflow-y-auto text-slate-700">
+                        <div className="flex flex-col border-r h-full" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border-default)' }}>
+                            <div className="p-3 border-b font-semibold text-xs uppercase tracking-wide" style={{ backgroundColor: 'var(--surface-tertiary)', borderColor: 'var(--border-default)', color: 'var(--text-tertiary)' }}>Transcript (Input)</div>
+                            <div className="flex-1 p-4 text-sm font-mono whitespace-pre-wrap overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
                                 {transcript}
                             </div>
                         </div>
 
                         {/* Right: Output (Note or Reasoning) */}
-                        <div className="flex flex-col h-full bg-white">
-                            <div className="p-3 border-b bg-slate-100 font-semibold text-xs uppercase tracking-wide text-slate-500">Output / Reasoning</div>
+                        <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--surface-primary)' }}>
+                            <div className="p-3 border-b font-semibold text-xs uppercase tracking-wide" style={{ backgroundColor: 'var(--surface-tertiary)', borderColor: 'var(--border-default)', color: 'var(--text-tertiary)' }}>Output / Reasoning</div>
                             <div className="flex-1 p-4 text-sm whitespace-pre-wrap overflow-y-auto">
                                 {primaryEvent ? (
                                     <div className="space-y-4">
-                                        <div className="p-3 bg-red-50 border border-red-100 rounded text-red-900 text-sm">
+                                        <div className="p-3 border text-sm" style={{ backgroundColor: 'var(--surface-danger)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-md)', color: 'var(--text-danger)' }}>
                                             <strong>Intervention:</strong> {primaryEvent.description}
                                         </div>
 
                                         <div>
-                                            <h4 className="font-semibold text-xs uppercase text-slate-400 mb-1">Reasoning Trace</h4>
-                                            <div className="p-3 bg-slate-50 border rounded font-mono text-xs text-slate-600 leading-relaxed">
+                                            <h4 className="font-semibold text-xs uppercase mb-1" style={{ color: 'var(--text-muted)' }}>Reasoning Trace</h4>
+                                            <div className="p-3 border font-mono text-xs leading-relaxed" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)' }}>
                                                 {tryParseReasoning(log.rawModelOutput) || "No chain of thought captured."}
                                             </div>
                                         </div>

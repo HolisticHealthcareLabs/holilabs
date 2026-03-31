@@ -117,15 +117,16 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={handleClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}>
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--border-default)' }}>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
               Import Patients from CSV
             </h2>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="hover:text-gray-600 dark:hover:text-gray-300"
+              style={{ color: 'var(--text-muted)' }}
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
@@ -136,11 +137,11 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
             {/* Instructions */}
             {!result && (
               <div className="mb-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                <div className="border p-4 mb-4" style={{ backgroundColor: 'var(--surface-accent)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
+                  <h3 className="font-semibold mb-2" style={{ color: 'var(--text-accent)' }}>
                     Instructions
                   </h3>
-                  <ol className="list-decimal list-inside text-sm text-blue-800 dark:text-blue-400 space-y-1">
+                  <ol className="list-decimal list-inside text-sm space-y-1" style={{ color: 'var(--text-accent)' }}>
                     <li>Download the CSV template below</li>
                     <li>Fill in your patient data following the format</li>
                     <li>Upload the completed CSV file</li>
@@ -151,7 +152,8 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
                 {/* Download Template Button */}
                 <button
                   onClick={downloadTemplate}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium border-2 border-dashed hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                  style={{ color: 'var(--text-accent)', backgroundColor: 'var(--surface-accent)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}
                 >
                   <ArrowDownTrayIcon className="w-5 h-5" />
                   Download CSV Template
@@ -162,7 +164,7 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
             {/* File Upload */}
             {!result && (
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                   Upload CSV File
                 </label>
                 <div className="flex items-center gap-3">
@@ -170,10 +172,11 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
                     type="file"
                     accept=".csv"
                     onChange={handleFileChange}
-                    className="flex-1 text-sm text-gray-900 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/30"
+                    className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/30"
+                    style={{ color: 'var(--text-primary)' }}
                   />
                   {file && (
-                    <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span className="text-sm flex items-center gap-1" style={{ color: 'var(--text-success)' }}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path
                           fillRule="evenodd"
@@ -190,8 +193,8 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
 
             {/* Error */}
             {error && (
-              <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <p className="text-red-800 dark:text-red-400 text-sm">{error}</p>
+              <div className="mb-6 border p-4" style={{ backgroundColor: 'var(--surface-danger)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-danger)' }}>{error}</p>
               </div>
             )}
 
@@ -200,30 +203,30 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
               <div className="space-y-4">
                 {/* Summary */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <div className="p-4 text-center" style={{ backgroundColor: 'var(--surface-secondary)', borderRadius: 'var(--radius-lg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                       {result.summary.total}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total</div>
                   </div>
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <div className="p-4 text-center" style={{ backgroundColor: 'var(--surface-success)', borderRadius: 'var(--radius-lg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-success)' }}>
                       {result.summary.imported}
                     </div>
-                    <div className="text-sm text-green-600 dark:text-green-400">Imported</div>
+                    <div className="text-sm" style={{ color: 'var(--text-success)' }}>Imported</div>
                   </div>
-                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  <div className="p-4 text-center" style={{ backgroundColor: 'var(--surface-danger)', borderRadius: 'var(--radius-lg)' }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--text-danger)' }}>
                       {result.summary.failed}
                     </div>
-                    <div className="text-sm text-red-600 dark:text-red-400">Failed</div>
+                    <div className="text-sm" style={{ color: 'var(--text-danger)' }}>Failed</div>
                   </div>
                 </div>
 
                 {/* Success Message */}
                 {result.summary.failed === 0 && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <p className="text-green-800 dark:text-green-400 text-sm font-medium">
+                  <div className="border p-4" style={{ backgroundColor: 'var(--surface-success)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-success)' }}>
                       All patients imported successfully! Redirecting...
                     </p>
                   </div>
@@ -232,16 +235,16 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
                 {/* Failed Imports */}
                 {result.failed.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="font-semibold text-red-900 dark:text-red-300 mb-2">
+                    <h3 className="font-semibold mb-2" style={{ color: 'var(--text-danger)' }}>
                       Failed Imports ({result.failed.length})
                     </h3>
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-h-60 overflow-y-auto">
+                    <div className="border p-4 max-h-60 overflow-y-auto" style={{ backgroundColor: 'var(--surface-danger)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
                       {result.failed.map((fail, idx) => (
                         <div key={idx} className="mb-3 last:mb-0">
-                          <div className="text-sm font-medium text-red-800 dark:text-red-400">
+                          <div className="text-sm font-medium" style={{ color: 'var(--text-danger)' }}>
                             Row {fail.row}: {fail.data.firstName} {fail.data.lastName}
                           </div>
-                          <div className="text-xs text-red-600 dark:text-red-500">
+                          <div className="text-xs" style={{ color: 'var(--text-danger)' }}>
                             {fail.reason}
                           </div>
                         </div>
@@ -253,19 +256,20 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
                 {/* Imported Patients */}
                 {result.imported.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="font-semibold text-green-900 dark:text-green-300 mb-2">
+                    <h3 className="font-semibold mb-2" style={{ color: 'var(--text-success)' }}>
                       Successfully Imported ({result.imported.length})
                     </h3>
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 max-h-60 overflow-y-auto">
+                    <div className="border p-4 max-h-60 overflow-y-auto" style={{ backgroundColor: 'var(--surface-success)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
                       {result.imported.map((imp, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between py-2 border-b border-green-200 dark:border-green-800 last:border-0"
+                          className="flex items-center justify-between py-2 border-b last:border-0"
+                          style={{ borderColor: 'var(--border-default)' }}
                         >
-                          <span className="text-sm text-green-800 dark:text-green-400">
+                          <span className="text-sm" style={{ color: 'var(--text-success)' }}>
                             {imp.name}
                           </span>
-                          <span className="text-xs text-green-600 dark:text-green-500">
+                          <span className="text-xs" style={{ color: 'var(--text-success)' }}>
                             Row {imp.row}
                           </span>
                         </div>
@@ -278,10 +282,11 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end gap-3 p-6 border-t" style={{ borderColor: 'var(--border-default)' }}>
             <button
               onClick={handleClose}
-              className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-6 py-2 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--surface-tertiary)', borderRadius: 'var(--radius-lg)' }}
             >
               {result ? 'Close' : 'Cancel'}
             </button>
@@ -289,7 +294,8 @@ Jane,Smith,1985-05-20,FEMALE,jane@example.com,+9876543210,"456 Oak Ave",MRN002,J
               <button
                 onClick={handleImport}
                 disabled={!file || uploading}
-                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                style={{ borderRadius: 'var(--radius-lg)' }}
               >
                 {uploading ? (
                   <>
