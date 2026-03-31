@@ -61,7 +61,7 @@ export const POST = createProtectedRoute(
       }
 
       // Load existing note if refining
-      let existingNote: { chiefComplaint: string; subjective: string; objective: string; assessment: string; plan: string } | null = null;
+      let existingNote: { chiefComplaint: string | null; subjective: string | null; objective: string | null; assessment: string | null; plan: string | null } | null = null;
       if (noteId) {
         existingNote = await prisma.clinicalNote.findUnique({
           where: { id: noteId },
@@ -130,15 +130,18 @@ export const POST = createProtectedRoute(
       };
 
       try {
-        const provider = await AIProviderFactory.getProvider(context.user.id, undefined, {
+        const provider = await AIProviderFactory.getProviderV2(context.user.id, undefined, {
           workspaceId: context.user.workspaceId,
         });
-        const response = await provider.chat([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ]);
+        const response = await provider.chat({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          responseFormat: 'json',
+        });
 
-        const content = typeof response === 'string' ? response : (response as any)?.content || (response as any)?.text || '';
+        const content = response.content;
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);

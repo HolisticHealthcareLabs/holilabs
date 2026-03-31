@@ -6,7 +6,7 @@
  * Rules:
  * 1. Every type here is consumed by BOTH apps/clinic and apps/enterprise.
  * 2. Breaking changes require SWARM-K approval + version bump.
- * 3. App-specific types belong in their own apps/*/src/types/, NOT here.
+ * 3. App-specific types belong in their own apps/{app}/src/types/, NOT here.
  * 4. All dates are ISO-8601 strings. All IDs are branded string types.
  *
  * @module @holi/shared-kernel
