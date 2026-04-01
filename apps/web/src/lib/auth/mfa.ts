@@ -650,7 +650,7 @@ function generateBackupCodes(count: number, length: number): string[] {
   for (let i = 0; i < count; i++) {
     let code = '';
     for (let j = 0; j < length; j++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+      code += chars.charAt(crypto.randomInt(chars.length));
     }
     codes.push(code);
   }
