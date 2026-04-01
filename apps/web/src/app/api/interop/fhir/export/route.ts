@@ -45,7 +45,13 @@ const FhirExportRequestSchema = z.object({
 });
 
 const EHR_MOCK_ENDPOINT = 'https://ehr.hospital-mock.com/fhir';
-const EHR_MOCK_BEARER_TOKEN = process.env.EHR_BEARER_TOKEN || 'mock-bearer-token-cortex-fhir';
+const EHR_MOCK_BEARER_TOKEN = (() => {
+  const token = process.env.EHR_BEARER_TOKEN;
+  if (!token && process.env.NODE_ENV === 'production') {
+    throw new Error('EHR_BEARER_TOKEN must be set in production (CVI-006)');
+  }
+  return token || 'mock-bearer-token-dev-only';
+})();
 
 export const POST = createProtectedRoute(
   async (request: NextRequest) => {

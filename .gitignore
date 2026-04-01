@@ -59,6 +59,10 @@ PRODUCTION_SECRETS_*.md
 **/*SECRET*.md
 **/*_SECRETS*.md
 
+# Secret files (NEVER commit)
+*.secret
+*.secrets
+
 # Cosign keys (NEVER commit private keys)
 cosign.key
 *.key

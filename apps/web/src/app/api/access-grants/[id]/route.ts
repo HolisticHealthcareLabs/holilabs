@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -75,6 +75,14 @@ export const GET = createProtectedRoute(
         );
       }
 
+      const hasAccess = await verifyPatientAccess(context.user!.id, accessGrant.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
+        );
+      }
+
       // Compute status
       const now = new Date();
       const isExpired = accessGrant.expiresAt ? accessGrant.expiresAt <= now : false;
@@ -124,6 +132,14 @@ export const PATCH = createProtectedRoute(
         return NextResponse.json(
           { error: 'Access grant not found' },
           { status: 404 }
+        );
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, existing.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
         );
       }
 
@@ -264,6 +280,14 @@ export const DELETE = createProtectedRoute(
         return NextResponse.json(
           { error: 'Access grant not found' },
           { status: 404 }
+        );
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, existing.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
         );
       }
 

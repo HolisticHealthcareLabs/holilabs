@@ -167,20 +167,19 @@ export const GET = createProtectedRoute(
         },
       }),
 
-      // Daily breakdown (last 30 days max)
-      prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
-        SELECT
-          DATE(created_at) as date,
-          SUM(estimated_cost) as cost,
-          COUNT(*) as requests
-        FROM ai_usage_logs
-        WHERE created_at >= ${startDate}
-          AND created_at <= ${now}
-          ${clinicId ? prisma.$queryRaw`AND clinic_id = ${clinicId}` : prisma.$queryRaw``}
-        GROUP BY DATE(created_at)
-        ORDER BY date ASC
-        LIMIT 30
-      `.catch(() => []), // Fallback to empty array if raw query fails
+      // Daily breakdown (last 30 days max) — CVI-006: safe parameterized query
+      (clinicId
+        ? prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
+            SELECT DATE(created_at) as date, SUM(estimated_cost) as cost, COUNT(*) as requests
+            FROM ai_usage_logs
+            WHERE created_at >= ${startDate} AND created_at <= ${now} AND clinic_id = ${clinicId}
+            GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`
+        : prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
+            SELECT DATE(created_at) as date, SUM(estimated_cost) as cost, COUNT(*) as requests
+            FROM ai_usage_logs
+            WHERE created_at >= ${startDate} AND created_at <= ${now}
+            GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`
+      ).catch(() => []),
     ]);
 
     // Calculate cache hit rate

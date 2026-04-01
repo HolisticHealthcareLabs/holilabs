@@ -12,7 +12,7 @@ import logger from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export const GET = createProtectedRoute(
-  async (request: NextRequest) => {
+  async (request: NextRequest, context: any) => {
     const { searchParams } = new URL(request.url);
     const range = searchParams.get('range') || '30d';
 
@@ -36,6 +36,9 @@ export const GET = createProtectedRoute(
         startDate.setDate(now.getDate() - 30);
     }
 
+    const isAdmin = context.user?.role === 'ADMIN';
+    const clinicianFilter = isAdmin ? {} : { assignedClinicianId: context.user!.id };
+
     const [
       totalPatients,
       activePatients,
@@ -44,10 +47,10 @@ export const GET = createProtectedRoute(
       totalForms,
       completedForms,
     ] = await Promise.all([
-      prisma.patient.count(),
-      prisma.patient.count({ where: { isActive: true } }),
-      prisma.clinicalNote.count({ where: { createdAt: { gte: startDate } } }),
-      prisma.prescription.count({ where: { createdAt: { gte: startDate } } }),
+      prisma.patient.count({ where: clinicianFilter }),
+      prisma.patient.count({ where: { isActive: true, ...clinicianFilter } }),
+      prisma.clinicalNote.count({ where: { createdAt: { gte: startDate }, patient: clinicianFilter } }),
+      prisma.prescription.count({ where: { createdAt: { gte: startDate }, patient: clinicianFilter } }),
       prisma.formInstance.count({ where: { sentAt: { gte: startDate } } }),
       prisma.formInstance.count({
         where: {
@@ -67,11 +70,13 @@ export const GET = createProtectedRoute(
       prisma.patient.count({
         where: {
           createdAt: { gte: prevStartDate, lt: startDate },
+          ...clinicianFilter,
         },
       }),
       prisma.clinicalNote.count({
         where: {
           createdAt: { gte: prevStartDate, lt: startDate },
+          patient: clinicianFilter,
         },
       }),
       prisma.formInstance.count({
@@ -82,7 +87,7 @@ export const GET = createProtectedRoute(
     ]);
 
     const currentPatients = await prisma.patient.count({
-      where: { createdAt: { gte: startDate } },
+      where: { createdAt: { gte: startDate }, ...clinicianFilter },
     });
 
     const patientsGrowth =
@@ -123,11 +128,13 @@ export const GET = createProtectedRoute(
         prisma.clinicalNote.count({
           where: {
             createdAt: { gte: date, lt: nextDate },
+            patient: clinicianFilter,
           },
         }),
         prisma.patient.count({
           where: {
             createdAt: { gte: date, lt: nextDate },
+            ...clinicianFilter,
           },
         }),
         prisma.formInstance.count({
@@ -149,7 +156,7 @@ export const GET = createProtectedRoute(
 
     try {
       const notes = await prisma.clinicalNote.findMany({
-        where: { createdAt: { gte: startDate } },
+        where: { createdAt: { gte: startDate }, patient: clinicianFilter },
         select: { diagnosis: true },
       });
 

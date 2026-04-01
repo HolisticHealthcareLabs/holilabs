@@ -10,6 +10,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: () => Promise.resolve(true),
 }));
 
 jest.mock('@/lib/prisma', () => ({

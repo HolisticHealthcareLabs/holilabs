@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -32,6 +32,14 @@ export const GET = createProtectedRoute(
         return NextResponse.json(
           { error: 'patientId query parameter is required' },
           { status: 400 }
+        );
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
         );
       }
 
@@ -113,6 +121,14 @@ export const POST = createProtectedRoute(
         return NextResponse.json(
           { error: 'Missing required fields: patientId, modality, bodyPart, description, studyDate' },
           { status: 400 }
+        );
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
         );
       }
 

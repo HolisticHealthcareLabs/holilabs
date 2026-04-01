@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
@@ -30,6 +31,16 @@ jest.mock('@/lib/api/safe-error-response', () => ({
   }),
 }));
 
+const TEST_SECRET = 'test-nextauth-secret';
+
+function signState(userId: string): string {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const payload = `${userId}:${timestamp}:${nonce}`;
+  const sig = crypto.createHmac('sha256', TEST_SECRET).update(payload).digest('hex');
+  return `${payload}:${sig}`;
+}
+
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
 
@@ -38,6 +49,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
   process.env.MICROSOFT_CLIENT_ID = 'ms-client-id';
   process.env.MICROSOFT_CLIENT_SECRET = 'ms-secret';
+  process.env.NEXTAUTH_SECRET = TEST_SECRET;
 
   global.fetch = jest.fn()
     .mockResolvedValueOnce({
@@ -62,7 +74,8 @@ beforeEach(() => {
 
 describe('GET /api/calendar/microsoft/callback', () => {
   it('exchanges code for tokens and redirects to success URL', async () => {
-    const url = 'http://localhost:3000/api/calendar/microsoft/callback?code=auth-code-xyz&state=user-abc';
+    const state = signState('user-abc');
+    const url = `http://localhost:3000/api/calendar/microsoft/callback?code=auth-code-xyz&state=${encodeURIComponent(state)}`;
     const req = new NextRequest(url);
     const res = await GET(req);
 
@@ -93,17 +106,30 @@ describe('GET /api/calendar/microsoft/callback', () => {
   });
 
   it('redirects with token_exchange_failed when Microsoft returns error', async () => {
+    const state = signState('user-abc');
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       json: jest.fn().mockResolvedValue({ error: 'invalid_grant', error_description: 'Code expired' }),
     } as any);
 
-    const url = 'http://localhost:3000/api/calendar/microsoft/callback?code=bad-code&state=user-abc';
+    const url = `http://localhost:3000/api/calendar/microsoft/callback?code=bad-code&state=${encodeURIComponent(state)}`;
     const req = new NextRequest(url);
     const res = await GET(req);
 
     expect(res.status).toBe(307);
     const location = res.headers.get('location') || '';
     expect(location).toContain('token_exchange_failed');
+  });
+
+  it('rejects tampered state tokens', async () => {
+    global.fetch = jest.fn();
+    const url = 'http://localhost:3000/api/calendar/microsoft/callback?code=auth-code&state=tampered';
+    const req = new NextRequest(url);
+    const res = await GET(req);
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get('location') || '';
+    expect(location).toContain('csrf_validation_failed');
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

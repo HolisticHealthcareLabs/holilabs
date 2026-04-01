@@ -59,7 +59,7 @@ export const POST = createProtectedRoute(
           counter: Number(credentialRecord.counter),
           transports: credentialRecord.transports as AuthenticatorTransport[],
         },
-        requireUserVerification: false,
+        requireUserVerification: true, // CVI-001: enforce biometric/PIN for prescription signing
       });
     } catch (err) {
       logger.warn({ event: 'webauthn_sign_verify_failed', error: String(err) });
