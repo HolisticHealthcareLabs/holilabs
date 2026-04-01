@@ -935,7 +935,7 @@ export function compose(...middlewares: Middleware[]) {
           const middleware = middlewares[index++];
           return middleware(request, context, next);
         }
-        const result = handler(request, context);
+        const result = await handler(request, context);
         return result instanceof NextResponse ? result : NextResponse.json(result);
       };
 
