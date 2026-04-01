@@ -95,7 +95,7 @@ export default function RolesAdminPage() {
       });
       const data = await response.json();
       if (response.ok && data.success) {
-        setInviteMessage({ type: 'success', text: `Invitation sent to ${inviteEmail}` });
+        setInviteMessage({ type: 'success', text: t('invitationSent', { email: inviteEmail }) });
         setInviteEmail('');
         setInviteRole('STAFF');
         setTimeout(() => {
@@ -103,10 +103,10 @@ export default function RolesAdminPage() {
           setInviteMessage(null);
         }, 2000);
       } else {
-        setInviteMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
+        setInviteMessage({ type: 'error', text: data.error || t('invitationFailed') });
       }
     } catch {
-      setInviteMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setInviteMessage({ type: 'error', text: t('networkError') });
     } finally {
       setInviteLoading(false);
     }
@@ -301,7 +301,7 @@ export default function RolesAdminPage() {
               </div>
               <div className="flex justify-end gap-2 mt-5">
                 <button onClick={() => { setShowInvite(false); setInviteMessage(null); }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t('cancel')}</button>
-                <button onClick={handleSendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{inviteLoading ? 'Sending...' : t('sendInvitation')}</button>
+                <button onClick={handleSendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{inviteLoading ? t('sending') : t('sendInvitation')}</button>
               </div>
             </div>
           </div>

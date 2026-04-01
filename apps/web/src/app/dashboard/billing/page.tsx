@@ -173,7 +173,7 @@ function PreAuthModal({
                   <div className="flex items-start gap-2">
                     <FileText className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
                     <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed">
-                      Cortex will auto-attach the relevant SOAP note, ICD-10 codes, and supporting lab results from this patient&apos;s record to strengthen the authorization request.
+                      {t('priorAuthDocumentationNote')}
                     </p>
                   </div>
                 </div>
