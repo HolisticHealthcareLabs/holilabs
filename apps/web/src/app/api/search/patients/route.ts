@@ -26,9 +26,14 @@ export const GET = createProtectedRoute(
       return NextResponse.json({ patients: [] });
     }
 
+    // Scope search: non-ADMIN users only see their assigned patients
+    const isAdmin = context.user?.role === 'ADMIN';
+    const clinicianFilter = isAdmin ? {} : { assignedClinicianId: context.user!.id };
+
     // Search patients with fuzzy matching
     const patients = await prisma.patient.findMany({
       where: {
+        ...clinicianFilter,
         OR: [
           {
             firstName: {

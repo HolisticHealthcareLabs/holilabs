@@ -28,7 +28,8 @@ export const dynamic = 'force-dynamic';
  * Generate internal service token for trusted agent gateway requests.
  */
 function generateInternalToken(): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error('NEXTAUTH_SECRET must be set for agent token signing (CVI-006)');
   const timestamp = Math.floor(Date.now() / 60000);
   return crypto
     .createHmac('sha256', secret)

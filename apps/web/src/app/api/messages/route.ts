@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { emitNewMessage, emitUnreadCountUpdate } from '@/lib/socket-server';
 import { notifyNewMessage } from '@/lib/notifications';
@@ -155,6 +155,14 @@ export const POST = createProtectedRoute(
       return NextResponse.json(
         { success: false, error: 'Faltan campos requeridos (mensaje o archivos)' },
         { status: 400 }
+      );
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Access denied: no clinical relationship with this patient' },
+        { status: 403 }
       );
     }
 

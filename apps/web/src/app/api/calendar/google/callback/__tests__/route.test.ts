@@ -2,6 +2,7 @@
  * GET /api/calendar/google/callback - Google OAuth callback tests
  */
 
+import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
@@ -31,6 +32,16 @@ jest.mock('@/lib/api/safe-error-response', () => ({
   ),
 }));
 
+const TEST_SECRET = 'test-nextauth-secret';
+
+function signState(userId: string): string {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const payload = `${userId}:${timestamp}:${nonce}`;
+  const sig = crypto.createHmac('sha256', TEST_SECRET).update(payload).digest('hex');
+  return `${payload}:${sig}`;
+}
+
 const originalFetch = global.fetch;
 
 const { GET } = require('../route');
@@ -42,6 +53,7 @@ describe('GET /api/calendar/google/callback', () => {
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
     process.env.GOOGLE_CLIENT_ID = 'test-client-id';
     process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
+    process.env.NEXTAUTH_SECRET = TEST_SECRET;
     (prisma.calendarIntegration.upsert as jest.Mock).mockResolvedValue({});
     (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
   });
@@ -73,13 +85,14 @@ describe('GET /api/calendar/google/callback', () => {
   });
 
   it('redirects with error when token exchange fails', async () => {
+    const state = signState('user-1');
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       json: () => Promise.resolve({ error: 'invalid_grant' }),
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/calendar/google/callback?code=test-code&state=user-1'
+      `http://localhost:3000/api/calendar/google/callback?code=test-code&state=${encodeURIComponent(state)}`
     );
     const response = await GET(request);
 
@@ -89,6 +102,7 @@ describe('GET /api/calendar/google/callback', () => {
   });
 
   it('upserts integration and redirects on success', async () => {
+    const state = signState('user-1');
     global.fetch = jest.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -109,7 +123,7 @@ describe('GET /api/calendar/google/callback', () => {
       });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/calendar/google/callback?code=test-code&state=user-1'
+      `http://localhost:3000/api/calendar/google/callback?code=test-code&state=${encodeURIComponent(state)}`
     );
     const response = await GET(request);
 
@@ -118,5 +132,18 @@ describe('GET /api/calendar/google/callback', () => {
     expect(location).toContain('success=google_connected');
     expect(prisma.calendarIntegration.upsert).toHaveBeenCalled();
     expect(prisma.auditLog.create).toHaveBeenCalled();
+  });
+
+  it('redirects with csrf error when state is tampered', async () => {
+    global.fetch = jest.fn();
+    const request = new NextRequest(
+      'http://localhost:3000/api/calendar/google/callback?code=test-code&state=tampered-state'
+    );
+    const response = await GET(request);
+
+    expect(response.status).toBe(307);
+    const location = response.headers.get('location');
+    expect(location).toContain('error=csrf_validation_failed');
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

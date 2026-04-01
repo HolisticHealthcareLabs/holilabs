@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +44,14 @@ export const GET = createProtectedRoute(
 
     if (!encounter) {
       return NextResponse.json({ error: 'Encounter not found' }, { status: 404 });
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, encounter.patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Access denied: no clinical relationship with this patient' },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json({

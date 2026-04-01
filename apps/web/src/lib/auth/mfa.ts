@@ -268,7 +268,7 @@ export async function verifyMFAEnrollment(
       data: {
         mfaEnabled: true,
         mfaServiceSid: TWILIO_VERIFY_SERVICE_SID,
-        mfaPhoneNumber: encryptPHI(phoneNumber), // Encrypt phone number
+        mfaPhoneNumber: phoneNumber, // Prisma encryption extension handles field-level encryption (CVI-003)
         mfaBackupCodes: encryptedBackupCodes,
         mfaEnrolledAt: new Date(),
       },
@@ -358,12 +358,8 @@ export async function sendMFALoginCode(
       throw new Error('MFA not enabled for this user');
     }
 
-    // Decrypt phone number
-    const phoneNumber = decryptPHI(user.mfaPhoneNumber);
-
-    if (!phoneNumber) {
-      throw new Error('Failed to decrypt phone number');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    const phoneNumber = user.mfaPhoneNumber;
 
     const client = getTwilioClient();
 
@@ -468,12 +464,8 @@ export async function verifyMFALoginCode(
       throw new Error('MFA not enabled for this user');
     }
 
-    // Decrypt phone number
-    const phoneNumber = decryptPHI(user.mfaPhoneNumber);
-
-    if (!phoneNumber) {
-      throw new Error('Failed to decrypt phone number');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    const phoneNumber = user.mfaPhoneNumber;
 
     const client = getTwilioClient();
 
@@ -757,10 +749,8 @@ export async function getMFAStatus(userId: string): Promise<{
 
   let phoneNumberMasked: string | null = null;
   if (user.mfaPhoneNumber) {
-    const decrypted = decryptPHI(user.mfaPhoneNumber);
-    if (decrypted) {
-      phoneNumberMasked = decrypted.replace(/\d(?=\d{4})/g, '*');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    phoneNumberMasked = user.mfaPhoneNumber.replace(/\d(?=\d{4})/g, '*');
   }
 
   return {

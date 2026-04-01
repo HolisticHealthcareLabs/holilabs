@@ -157,14 +157,27 @@ export const PATCH = createProtectedRoute(
       );
     }
 
+    // CVI-003: Allowlist permitted fields to prevent mass assignment
+    const ALLOWED_FIELDS = new Set([
+      'workingDays', 'weeklyViewDays', 'defaultSlotDuration', 'breakBetweenSlots',
+      'consultationTypes', 'maxDailyAppointments', 'bufferBeforeStart', 'bufferAfterEnd',
+      'timezone', 'locale', 'theme', 'notificationPreferences', 'defaultView',
+    ]);
+    const sanitizedData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (ALLOWED_FIELDS.has(key)) {
+        sanitizedData[key] = value;
+      }
+    }
+
     const preferences = await prisma.doctorPreferences.upsert({
       where: { doctorId },
       create: {
         doctorId,
-        ...body,
+        ...sanitizedData,
       },
       update: {
-        ...body,
+        ...sanitizedData,
         updatedAt: new Date(),
       },
       include: {

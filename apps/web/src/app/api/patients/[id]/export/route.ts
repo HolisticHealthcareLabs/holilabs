@@ -28,22 +28,22 @@ export const GET = createProtectedRoute(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Authorization: ADMIN can export any patient; PATIENT can export themselves; others must own the patient
-    if (user.role !== 'ADMIN' && user.role !== 'PATIENT') {
-      const hasAccess = await verifyPatientAccess(user.id, patientId);
-      if (!hasAccess) {
-        return NextResponse.json(
-          { error: 'You do not have permission to export this patient record' },
-          { status: 403 }
-        );
-      }
-    }
-
+    // Authorization: PATIENT can export themselves; all others must have clinical relationship
     if (user.role === 'PATIENT' && user.id !== patientId) {
       return NextResponse.json(
         { error: 'You can only export your own records' },
         { status: 403 }
       );
+    }
+
+    if (user.role !== 'PATIENT') {
+      const hasAccess = await verifyPatientAccess(user.id, patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
+        );
+      }
     }
 
     // Fetch patient record
@@ -102,5 +102,5 @@ export const GET = createProtectedRoute(
       { status: 200 }
     );
   },
-  { skipCsrf: true }
+  { roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN', 'PATIENT'], skipCsrf: true }
 );

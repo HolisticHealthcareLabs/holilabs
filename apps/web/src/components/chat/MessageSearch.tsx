@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Search, X, Filter, Loader2, MessageSquare, ChevronDown } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useDebounce } from '@/hooks/useDebounce';
 
 interface SearchResult {
@@ -328,7 +329,7 @@ export default function MessageSearch({
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
                             {result._formatted?.content
-                              ? <span dangerouslySetInnerHTML={{ __html: result._formatted.content }} />
+                              ? <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(result._formatted.content, { ALLOWED_TAGS: ['em', 'mark'] }) }} />
                               : highlightText(result.content, query)
                             }
                           </p>

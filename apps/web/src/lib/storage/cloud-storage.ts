@@ -31,7 +31,11 @@ const ENCRYPTION_CONFIG = {
   saltLength: 64, // 512 bits
   tagLength: 16, // 128 bits
   // Master key should be rotated regularly
-  masterKey: process.env.ENCRYPTION_MASTER_KEY || process.env.NEXTAUTH_SECRET || 'fallback-key-change-in-production',
+  masterKey: (() => {
+    const key = process.env.ENCRYPTION_MASTER_KEY || process.env.NEXTAUTH_SECRET;
+    if (!key) throw new Error('ENCRYPTION_MASTER_KEY or NEXTAUTH_SECRET must be set (CVI-006)');
+    return key;
+  })(),
 };
 
 // File constraints

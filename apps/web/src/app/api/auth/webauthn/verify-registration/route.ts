@@ -42,7 +42,7 @@ export const POST = createProtectedRoute(
         expectedChallenge,
         expectedOrigin: ORIGIN,
         expectedRPID: RP_ID,
-        requireUserVerification: false,
+        requireUserVerification: true, // CVI-001: enforce biometric/PIN for non-repudiation
       });
     } catch (err) {
       logger.warn({ event: 'webauthn_registration_verify_failed', error: String(err) });
