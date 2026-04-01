@@ -17,7 +17,6 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Suspense } from 'react';
-import { DemoCredentialsBanner } from '@/components/demo/DemoCredentialsBanner';
 
 // ─── Google colour-accurate G mark ───────────────────────────────────────────
 function GoogleMark() {
@@ -86,9 +85,27 @@ function LoginContent() {
     signIn('google', { callbackUrl });
   }
 
-  // ── Interactive demo → navigate to the setup survey ────────────────────────
-  function handleDemo() {
-    router.push('/demo/setup');
+  // ── Interactive demo → auto-sign-in with seeded demo credentials ───────────
+  async function handleDemo() {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'dr.silva@holilabs.xyz',
+        password: 'Cortex2026!',
+        redirect: false,
+      });
+      if (!result || result.error) {
+        setError('Demo sign-in failed. Ensure the database is seeded.');
+        setIsLoading(false);
+        return;
+      }
+      router.push('/dashboard');
+      router.refresh();
+    } catch {
+      setError('Demo sign-in failed. Please try again.');
+      setIsLoading(false);
+    }
   }
 
   // ── Credentials sign-in ─────────────────────────────────────────────────────
@@ -149,8 +166,6 @@ function LoginContent() {
         transition={{ duration: 0.35, delay: 0.05 }}
         className="w-full max-w-[400px]"
       >
-        <DemoCredentialsBanner variant="clinician" />
-
         <h1 className="text-[26px] font-bold text-gray-900 dark:text-white text-center mb-7 tracking-tight">
           Sign in
         </h1>
