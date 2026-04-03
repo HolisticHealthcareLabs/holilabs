@@ -70,7 +70,7 @@ describe('GET /api/dashboard/priority-patients', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data)).toBe(true);
     expect(data.data[0]).toHaveProperty('urgencyScore');
     expect(data.data[0]).toHaveProperty('urgencyReasons');
     expect(data.summary).toBeDefined();

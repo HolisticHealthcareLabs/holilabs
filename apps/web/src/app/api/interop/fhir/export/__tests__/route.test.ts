@@ -10,10 +10,10 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
-jest.mock('@/lib/audit', () => ({ createAuditLog: jest.fn() }));
+jest.mock('@/lib/audit', () => ({ createAuditLog: jest.fn().mockResolvedValue(undefined) }));
 
 const mockBuildFhirBundle = jest.fn();
-jest.mock('../../../../../../../../packages/shared-kernel/src/clinical/fhir-mapper', () => ({
+jest.mock('../../../../../../../../../packages/shared-kernel/src/clinical/fhir-mapper', () => ({
   buildFhirBundle: mockBuildFhirBundle,
 }));
 
@@ -21,6 +21,7 @@ const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
 
 const { POST } = require('../route');
+const { createAuditLog } = require('@/lib/audit');
 
 const mockContext = {
   user: { id: 'doc-1', email: 'dr@test.com', role: 'CLINICIAN' },
@@ -43,7 +44,10 @@ const validPayload = {
 };
 
 describe('POST /api/interop/fhir/export', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (createAuditLog as jest.Mock).mockResolvedValue(undefined);
+  });
 
   it('returns 400 for invalid JSON body', async () => {
     const req = new NextRequest('http://localhost:3000/api/interop/fhir/export', {

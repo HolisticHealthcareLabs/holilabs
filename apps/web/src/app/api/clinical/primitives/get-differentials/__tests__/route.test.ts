@@ -83,7 +83,7 @@ describe('POST /api/clinical/primitives/get-differentials', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data.differentials).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data.differentials)).toBe(true);
     expect(data.data.urgency).toBeDefined();
     expect(data.metadata.method).toBeDefined();
     expect(data.metadata.confidence).toBeDefined();

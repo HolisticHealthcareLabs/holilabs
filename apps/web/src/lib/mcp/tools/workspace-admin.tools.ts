@@ -50,9 +50,8 @@ export const workspaceAdminTools: MCPTool[] = [
           select: {
             id: true,
             name: true,
-            timezone: true,
-            defaultLanguage: true,
-            billingRegion: true,
+            slug: true,
+            metadata: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -122,9 +121,12 @@ export const workspaceAdminTools: MCPTool[] = [
 
         const updateData: Record<string, any> = {};
         if (input.name !== undefined) updateData.name = input.name;
-        if (input.timezone !== undefined) updateData.timezone = input.timezone;
-        if (input.defaultLanguage !== undefined) updateData.defaultLanguage = input.defaultLanguage;
-        if (input.billingRegion !== undefined) updateData.billingRegion = input.billingRegion;
+        // timezone, defaultLanguage, billingRegion stored in metadata Json
+        const metaUpdates: Record<string, any> = {};
+        if (input.timezone !== undefined) metaUpdates.timezone = input.timezone;
+        if (input.defaultLanguage !== undefined) metaUpdates.defaultLanguage = input.defaultLanguage;
+        if (input.billingRegion !== undefined) metaUpdates.billingRegion = input.billingRegion;
+        if (Object.keys(metaUpdates).length > 0) updateData.metadata = metaUpdates;
 
         if (Object.keys(updateData).length === 0) {
           return {
@@ -140,9 +142,8 @@ export const workspaceAdminTools: MCPTool[] = [
           select: {
             id: true,
             name: true,
-            timezone: true,
-            defaultLanguage: true,
-            billingRegion: true,
+            slug: true,
+            metadata: true,
             updatedAt: true,
           },
         });
@@ -198,19 +199,19 @@ export const workspaceAdminTools: MCPTool[] = [
           };
         }
 
-        const config = await prisma.workspaceLLMConfig.findUnique({
+        const configs = await prisma.workspaceLLMConfig.findMany({
           where: { workspaceId },
           select: {
             workspaceId: true,
             provider: true,
-            modelName: true,
-            apiKey: true,
+            encryptedKey: true,
+            isActive: true,
             createdAt: true,
             updatedAt: true,
           },
         });
 
-        if (!config) {
+        if (configs.length === 0) {
           return {
             success: true,
             data: {
@@ -224,13 +225,15 @@ export const workspaceAdminTools: MCPTool[] = [
         return {
           success: true,
           data: {
-            workspaceId: config.workspaceId,
+            workspaceId,
             configured: true,
-            provider: config.provider,
-            modelName: config.modelName,
-            apiKeyMasked: config.apiKey ? maskSensitiveString(config.apiKey) : null,
-            createdAt: config.createdAt,
-            updatedAt: config.updatedAt,
+            providers: configs.map(c => ({
+              provider: c.provider,
+              isActive: c.isActive,
+              apiKeyMasked: c.encryptedKey ? '***encrypted***' : null,
+              createdAt: c.createdAt,
+              updatedAt: c.updatedAt,
+            })),
           },
         };
       } catch (error: any) {
@@ -278,9 +281,9 @@ export const workspaceAdminTools: MCPTool[] = [
 
         if (input.action === 'delete') {
           // Delete the config
-          await prisma.workspaceLLMConfig.delete({
+          await prisma.workspaceLLMConfig.deleteMany({
             where: { workspaceId },
-          }).catch(() => null); // Ignore if not found
+          });
 
           logger.info({
             event: 'workspace_llm_config_deleted',
@@ -300,35 +303,33 @@ export const workspaceAdminTools: MCPTool[] = [
         }
 
         // action === 'set'
-        if (!input.provider || !input.modelName || !input.apiKey) {
+        if (!input.provider || !input.apiKey) {
           return {
             success: false,
-            error: 'provider, modelName, and apiKey are required when action=set',
+            error: 'provider and apiKey are required when action=set',
             data: null,
           };
         }
 
         // Encrypt API key (CYRUS requirement: encryptPHIWithVersion)
-        const encryptedKey = await encryptPHIWithVersion(input.apiKey);
+        const encryptedKey = await encryptPHIWithVersion(input.apiKey) as string;
 
         const config = await prisma.workspaceLLMConfig.upsert({
-          where: { workspaceId },
+          where: { workspaceId_provider: { workspaceId, provider: input.provider } },
           update: {
-            provider: input.provider,
-            modelName: input.modelName,
-            apiKey: encryptedKey,
+            encryptedKey: encryptedKey!,
+            isActive: true,
           },
           create: {
             workspaceId,
             provider: input.provider,
-            modelName: input.modelName,
-            apiKey: encryptedKey,
+            encryptedKey: encryptedKey!,
+            isActive: true,
           },
           select: {
             workspaceId: true,
             provider: true,
-            modelName: true,
-            apiKey: true,
+            isActive: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -338,7 +339,6 @@ export const workspaceAdminTools: MCPTool[] = [
           event: 'workspace_llm_config_set',
           workspaceId,
           provider: input.provider,
-          modelName: input.modelName,
           clinicianId: context.clinicianId,
           agentId: context.agentId,
         });
@@ -350,7 +350,6 @@ export const workspaceAdminTools: MCPTool[] = [
             action: 'set',
             status: 'saved',
             provider: config.provider,
-            modelName: config.modelName,
             apiKeyMasked: maskSensitiveString(input.apiKey),
             createdAt: config.createdAt,
             updatedAt: config.updatedAt,

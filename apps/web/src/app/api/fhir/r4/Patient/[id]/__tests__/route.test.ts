@@ -1,11 +1,3 @@
-/**
- * Tests for /api/fhir/r4/Patient/[id]
- *
- * - GET returns FHIR Patient by ID
- * - GET returns 404 when patient not found
- * - GET returns 403 when access denied
- */
-
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
@@ -46,6 +38,8 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { auditView } = require('@/lib/audit');
+const { toFHIRPatient, validateFHIRPatient } = require('@/lib/fhir/patient-mapper');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -57,6 +51,13 @@ describe('GET /api/fhir/r4/Patient/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (auditView as jest.Mock).mockResolvedValue(undefined);
+    (toFHIRPatient as jest.Mock).mockReturnValue({
+      resourceType: 'Patient',
+      id: 'patient-1',
+      name: [{ family: 'Silva', given: ['João'] }],
+    });
+    (validateFHIRPatient as jest.Mock).mockReturnValue([]);
   });
 
   it('returns FHIR Patient resource by ID', async () => {

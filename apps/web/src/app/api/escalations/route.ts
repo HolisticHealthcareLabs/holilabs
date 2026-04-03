@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -37,6 +37,14 @@ async function handleGet(req: NextRequest, context: any) {
             { error: `Invalid query parameters: ${parsed.error.errors.map(e => e.message).join(', ')}` },
             { status: 400 }
         );
+    }
+
+    // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+    if (parsed.data.patientId) {
+      const hasAccess = await verifyPatientAccess(context.user.id, parsed.data.patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+      }
     }
 
     const where: any = {};
@@ -118,6 +126,12 @@ async function handlePost(req: NextRequest, context: any) {
             { error: `Invalid request body: ${parsed.error.errors.map(e => e.message).join(', ')}` },
             { status: 400 }
         );
+    }
+
+    // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+    const hasAccess = await verifyPatientAccess(context.user.id, parsed.data.patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
     }
 
     const slaDeadline = parsed.data.slaDeadlineHours

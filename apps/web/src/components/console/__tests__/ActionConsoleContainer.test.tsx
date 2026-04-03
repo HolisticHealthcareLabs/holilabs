@@ -13,15 +13,15 @@ jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...props
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }), usePathname: () => '/test', useSearchParams: () => new URLSearchParams() }));
 jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', email: 'dr@test.com', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
 jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (key: string) => key }) }));
-jest.mock('./ConsoleFilterBar', () => ({
+jest.mock('../ConsoleFilterBar', () => ({
   ConsoleFilterBar: ({ onFilterChange, isLoading }: any) => (
     <div data-testid="filter-bar">Filter Bar</div>
   ),
 }));
-jest.mock('./KPIGrid', () => ({
+jest.mock('../KPIGrid', () => ({
   KPIGrid: (props: any) => <div data-testid="kpi-grid">KPI Grid</div>,
 }));
-jest.mock('./OverrideReasonsRanking', () => ({
+jest.mock('../OverrideReasonsRanking', () => ({
   OverrideReasonsRanking: (props: any) => <div data-testid="override-ranking">Override Ranking</div>,
 }));
 

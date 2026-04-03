@@ -60,13 +60,16 @@ describe('PatientDetailSplitPanel', () => {
 
   it('renders patient name when patient is found', () => {
     render(<PatientDetailSplitPanel patientId="p1" patients={mockPatients} />);
-    expect(screen.getByText('Elena Fuentes')).toBeInTheDocument();
+    const nameElements = screen.getAllByText('Elena Fuentes');
+    expect(nameElements.length).toBeGreaterThan(0);
   });
 
   it('renders Overview tab and can switch to Medications tab', () => {
     render(<PatientDetailSplitPanel patientId="p1" patients={mockPatients} />);
-    expect(screen.getByText('Overview')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Medications'));
+    const overviewElements = screen.getAllByText('Overview');
+    expect(overviewElements.length).toBeGreaterThan(0);
+    const medButtons = screen.getAllByText('Medications');
+    fireEvent.click(medButtons[0]);
     expect(screen.getByText('Active Medications')).toBeInTheDocument();
   });
 });

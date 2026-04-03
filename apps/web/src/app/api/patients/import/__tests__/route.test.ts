@@ -50,6 +50,8 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { sanitizeString, sanitizeCSVField, validateFileSize, isValidEmail, isValidPhone, isValidDate } = require('@/lib/security/validation');
+const { generateMRN, generateTokenId } = require('@/lib/fhir/patient-mapper');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'ADMIN' },
@@ -69,6 +71,14 @@ function createCSVRequest(csvContent: string) {
 describe('POST /api/patients/import', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (sanitizeString as jest.Mock).mockImplementation((s: string) => s);
+    (sanitizeCSVField as jest.Mock).mockImplementation((s: string) => s);
+    (validateFileSize as jest.Mock).mockImplementation(() => {});
+    (isValidEmail as jest.Mock).mockReturnValue(true);
+    (isValidPhone as jest.Mock).mockReturnValue(true);
+    (isValidDate as jest.Mock).mockReturnValue(true);
+    (generateMRN as jest.Mock).mockReturnValue('MRN-AUTO');
+    (generateTokenId as jest.Mock).mockReturnValue('tok-auto');
     (prisma.patient.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.userBehaviorEvent.create as jest.Mock).mockResolvedValue({});
     (prisma.dataQualityEvent.createMany as jest.Mock).mockResolvedValue({});

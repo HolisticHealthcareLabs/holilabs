@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
@@ -63,19 +63,19 @@ export const POST = createProtectedRoute(
     const userId = context.user.id;
     const organizationId = context.user.organizationId;
 
-    // Verify patient exists and belongs to this org
+    // CYRUS CVI-002: Verify workspace-scoped patient access
+    const hasAccess = await verifyPatientAccess(userId, data.patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     const patient = await prisma.patient.findUnique({
       where: { id: data.patientId },
-      select: { id: true, organizationId: true, name: true },
+      select: { id: true, firstName: true, lastName: true },
     });
 
     if (!patient) {
       return NextResponse.json({ success: false, error: 'Patient not found' }, { status: 404 });
-    }
-
-    // CYRUS: organizationId scoping — no cross-tenant access
-    if (patient.organizationId && patient.organizationId !== organizationId) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     // RUTH: invasive tests require consent acknowledgment
@@ -99,9 +99,10 @@ export const POST = createProtectedRoute(
         patientId: data.patientId,
         testName: `LAB_ORDER:${data.tests.map((t) => t.loincCode).join(',')}`,
         status: 'PRELIMINARY',
-        value: 0,
+        value: '0',
         unit: 'order',
-        collectedAt: new Date(),
+        resultDate: new Date(),
+        collectedDate: new Date(),
         notes: JSON.stringify({
           type: 'lab_order',
           orderStatus: 'DRAFT',
@@ -156,7 +157,7 @@ export const POST = createProtectedRoute(
           icd10Code: data.icd10Code,
           labFacilityName: data.labFacilityName,
           specialInstructions: data.specialInstructions,
-          orderedAt: labOrder.collectedAt,
+          orderedAt: labOrder.collectedDate,
           orderedBy: userId,
         },
       },
@@ -181,17 +182,9 @@ export const GET = createProtectedRoute(
       );
     }
 
-    // CYRUS: verify patient belongs to caller's org
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-      select: { organizationId: true },
-    });
-
-    if (!patient) {
-      return NextResponse.json({ success: false, error: 'Patient not found' }, { status: 404 });
-    }
-
-    if (patient.organizationId && patient.organizationId !== context.user.organizationId) {
+    // CYRUS CVI-002: Verify workspace-scoped patient access
+    const hasPatientAccess = await verifyPatientAccess(context.user.id, patientId);
+    if (!hasPatientAccess) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -200,7 +193,7 @@ export const GET = createProtectedRoute(
         patientId,
         testName: { startsWith: 'LAB_ORDER:' },
       },
-      orderBy: { collectedAt: 'desc' },
+      orderBy: { collectedDate: 'desc' },
       take: limit,
     });
 

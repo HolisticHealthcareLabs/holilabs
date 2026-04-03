@@ -1,5 +1,10 @@
 import { NextRequest } from 'next/server';
 
+const CRON_SECRET = 'test-cron-secret';
+
+// Set env BEFORE module load so the route captures the correct value
+process.env.CRON_SECRET = CRON_SECRET;
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
   createPublicRoute: (handler: any) => handler,
@@ -22,8 +27,6 @@ jest.mock('@/lib/logger', () => ({
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
 
-const CRON_SECRET = 'test-cron-secret';
-
 function makeRequest(headers: Record<string, string> = {}) {
   return new NextRequest('http://localhost:3000/api/cron/cleanup-ephemeral', {
     method: 'POST',
@@ -32,13 +35,14 @@ function makeRequest(headers: Record<string, string> = {}) {
 }
 
 describe('POST /api/cron/cleanup-ephemeral', () => {
-  const origEnv = process.env;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env = { ...origEnv, CRON_SECRET };
+    (prisma.workspace.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.tenantDiscipline.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+    (prisma.workspaceMember.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.workspace.delete as jest.Mock).mockResolvedValue({});
+    (prisma.user.delete as jest.Mock).mockResolvedValue({});
   });
-  afterAll(() => { process.env = origEnv; });
 
   it('returns 401 when authorization header is missing or wrong', async () => {
     const res = await POST(makeRequest({ authorization: 'Bearer wrong' }));
@@ -49,8 +53,6 @@ describe('POST /api/cron/cleanup-ephemeral', () => {
   });
 
   it('returns success with 0 processed when no expired workspaces', async () => {
-    (prisma.workspace.findMany as jest.Mock).mockResolvedValue([]);
-
     const res = await POST(makeRequest({ authorization: `Bearer ${CRON_SECRET}` }));
     const data = await res.json();
 

@@ -10,7 +10,7 @@ jest.mock('@/lib/api/middleware', () => ({
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
-    appointment: { findUnique: jest.fn(), count: jest.fn() },
+    appointment: { findUnique: jest.fn(), count: jest.fn(), update: jest.fn() },
     noShowHistory: { findFirst: jest.fn(), findMany: jest.fn(), count: jest.fn(), create: jest.fn() },
     $transaction: jest.fn(),
   },

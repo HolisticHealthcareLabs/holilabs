@@ -45,8 +45,8 @@ export async function enforceDataRetention(): Promise<RetentionStats> {
     // 1. Archive old audit logs (>6 months)
     stats.auditLogsArchived = await archiveOldAuditLogs(now);
 
-    // 2. Delete archived audit logs (>7 years per HIPAA)
-    stats.auditLogsDeleted = await deleteArchivedAuditLogs(now);
+    // 2. Audit logs are NEVER hard-deleted (CYRUS veto CVI-004/005, LGPD Art. 37)
+    // Archival above is the only lifecycle action. stats.auditLogsDeleted stays 0.
 
     // 3. Mark inactive patients (no visits in 2 years)
     stats.patientsInactivated = await markInactivePatients(now);
@@ -83,20 +83,10 @@ async function archiveOldAuditLogs(now: Date): Promise<number> {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   try {
-    // TODO: Add 'archived' and 'archivedAt' fields to AuditLog schema
-    // For now, we skip archiving since these fields don't exist
-    logger.warn({
-      event: 'audit_logs_archival_skipped',
-      reason: 'archived/archivedAt fields not yet in schema',
-    });
-
-    return 0;
-
-    /* Original code - requires schema update:
     const result = await prisma.auditLog.updateMany({
       where: {
         timestamp: { lt: sixMonthsAgo },
-        archived: false, // Only archive non-archived logs
+        archived: false,
       },
       data: {
         archived: true,
@@ -111,7 +101,6 @@ async function archiveOldAuditLogs(now: Date): Promise<number> {
     });
 
     return result.count;
-    */
   } catch (error) {
     logger.error({
       event: 'archive_audit_logs_error',
@@ -121,39 +110,9 @@ async function archiveOldAuditLogs(now: Date): Promise<number> {
   }
 }
 
-/**
- * Delete archived audit logs older than 7 years
- * HIPAA §164.530(j) requires 6-year retention minimum
- * We retain for 7 years to be safe, then delete
- */
-async function deleteArchivedAuditLogs(now: Date): Promise<number> {
-  const sevenYearsAgo = new Date(now);
-  sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
-
-  try {
-    // Delete audit logs older than 7 years (HIPAA compliance)
-    const result = await prisma.auditLog.deleteMany({
-      where: {
-        timestamp: { lt: sevenYearsAgo },
-      },
-    });
-
-    logger.info({
-      event: 'audit_logs_deleted',
-      count: result.count,
-      cutoffDate: sevenYearsAgo.toISOString(),
-      compliance: 'HIPAA §164.530(j) - 6 year minimum met',
-    });
-
-    return result.count;
-  } catch (error) {
-    logger.error({
-      event: 'delete_audit_logs_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return 0;
-  }
-}
+// NOTE: Audit log deletion is permanently prohibited.
+// CYRUS veto CVI-004/005 + LGPD Art. 37: audit records are immutable.
+// Only soft-archival (archived=true) is allowed via archiveOldAuditLogs().
 
 /**
  * Mark patients as inactive if no visits in 2 years
@@ -182,16 +141,15 @@ async function markInactivePatients(now: Date): Promise<number> {
       return 0;
     }
 
-    // Mark as inactive
-    // TODO: Add 'inactivatedAt' and 'inactivationReason' fields to Patient schema
+    // Mark as inactive with audit trail
     const result = await prisma.patient.updateMany({
       where: {
         id: { in: inactivePatients.map(p => p.id) },
       },
       data: {
         isActive: false,
-        // inactivatedAt: now,  // Field not yet in schema
-        // inactivationReason: 'AUTO_INACTIVE_NO_VISITS_2Y',  // Field not yet in schema
+        inactivatedAt: now,
+        inactivationReason: 'AUTO_INACTIVE_NO_VISITS_2Y',
       },
     });
 
@@ -221,18 +179,9 @@ async function deleteExpiredExports(now: Date): Promise<number> {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   try {
-    // TODO: Add 'DeIDExport' model to schema for de-identified data exports
-    logger.warn({
-      event: 'exports_deletion_skipped',
-      reason: 'DeIDExport model not yet in schema',
-    });
-
-    return 0;
-
-    /* Original code - requires DeIDExport model:
-    const result = await (prisma as any).deIDExport.deleteMany({
+    const result = await prisma.deIDExport.deleteMany({
       where: {
-        createdAt: { lt: thirtyDaysAgo },
+        expiresAt: { lt: now },
       },
     });
 
@@ -244,7 +193,6 @@ async function deleteExpiredExports(now: Date): Promise<number> {
     });
 
     return result.count;
-    */
   } catch (error) {
     logger.error({
       event: 'delete_exports_error',
@@ -263,53 +211,26 @@ async function deleteExpiredSessions(now: Date): Promise<number> {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   try {
-    // TODO: Add 'PatientSession' and 'Session' models to schema
-    logger.warn({
-      event: 'sessions_deletion_skipped',
-      reason: 'PatientSession and Session models not yet in schema',
-    });
-
-    return 0;
-
-    /* Original code - requires PatientSession and Session models:
-    // Delete patient sessions
-    const patientSessions = await (prisma as any).patientSession.deleteMany({
+    // Delete patient portal sessions (expired or inactive >30 days)
+    const patientSessions = await prisma.patientSession.deleteMany({
       where: {
         OR: [
-          { expiresAt: { lt: now } }, // Expired
-          { lastActiveAt: { lt: thirtyDaysAgo } }, // Inactive >30 days
+          { expiresAt: { lt: now } },
+          { lastActiveAt: { lt: thirtyDaysAgo } },
         ],
       },
     });
 
-    // Delete NextAuth sessions (if using database sessions)
-    const authSessions = await (prisma as any).session.deleteMany({
-      where: {
-        expires: { lt: now },
-      },
-    });
+    const totalDeleted = patientSessions.count;
 
-    const totalDeleted = patientSessions.count + authSessions.count;*/
-
-    const totalDeleted = 0;
-
-    logger.info({
-      event: 'sessions_deleted',
-      count: totalDeleted,
-      note: 'Session models not yet in schema',
-    });
-
-    return totalDeleted;
-
-    /* Original logging code:
     logger.info({
       event: 'sessions_deleted',
       count: totalDeleted,
       patientSessions: patientSessions.count,
-      authSessions: authSessions.count,
       cutoffDate: thirtyDaysAgo.toISOString(),
     });
-    */
+
+    return totalDeleted;
   } catch (error) {
     logger.error({
       event: 'delete_sessions_error',
@@ -340,7 +261,7 @@ export async function generateRetentionReport(): Promise<{
     oldestPatient,
   ] = await Promise.all([
     prisma.auditLog.count(),
-    Promise.resolve(0), // TODO: Add 'archived' field to count archived logs
+    prisma.auditLog.count({ where: { archived: true } }),
     prisma.patient.count(),
     prisma.patient.count({ where: { isActive: false } }),
     prisma.auditLog.findFirst({

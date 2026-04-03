@@ -106,8 +106,13 @@ export default function PrescriptionsPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/prescriptions');
-      if (!res.ok) throw new Error('Failed to load prescriptions');
+      const res = await fetch('/api/prescriptions', {
+        headers: { 'X-Access-Reason': 'CLINICAL_CARE' },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.message || 'Failed to load prescriptions');
+      }
       const data = await res.json();
       setPrescriptions(data.data || []);
     } catch (err: any) {
@@ -129,6 +134,7 @@ export default function PrescriptionsPage() {
     const controller = new AbortController();
     fetch(`/api/patients?search=${encodeURIComponent(patientSearch)}&limit=10`, {
       signal: controller.signal,
+      headers: { 'X-Access-Reason': 'CLINICAL_CARE' },
     })
       .then((res) => (res.ok ? res.json() : { data: [] }))
       .then((data) => setPatients(data.data || []))
@@ -166,7 +172,7 @@ export default function PrescriptionsPage() {
     try {
       const res = await fetch('/api/prescriptions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Access-Reason': 'CLINICAL_CARE' },
         body: JSON.stringify({
           patientId: selectedPatient.id,
           medications: medications.map((m) => ({

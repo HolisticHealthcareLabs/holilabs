@@ -14,6 +14,7 @@ jest.mock('@/lib/medical-license-verification', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
 }));
 

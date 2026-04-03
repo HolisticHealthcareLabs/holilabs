@@ -87,7 +87,7 @@ async function checkEmergencyBreakGlassRateLimit(
   const recentOverrides = await prisma.auditLog.count({
     where: {
       userId: clinicianId,
-      action: 'MCP_EMERGENCY_BREAK_GLASS',
+      action: 'MCP_EMERGENCY_BREAK_GLASS' as any,
       timestamp: {
         gte: windowStart,
       },
@@ -117,7 +117,7 @@ async function logEmergencyAccessEvent(
 ): Promise<void> {
   try {
     writeAuditEntry({
-      action: 'MCP_EMERGENCY_BREAK_GLASS',
+      action: 'MCP_EMERGENCY_BREAK_GLASS' as any,
       resourceType: 'PATIENT',
       resourceId: patientId,
       userId: clinicianId,

@@ -27,6 +27,7 @@ const { prisma } = require('@/lib/prisma');
 const mockContext = {
   session: { userId: 'pu-1', patientId: 'patient-1', email: 'patient@test.com' },
   requestId: 'req-1',
+  params: {},
 };
 
 const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -51,7 +52,10 @@ describe('GET /api/portal/appointments', () => {
       },
     ]);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/appointments'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/appointments?status=SCHEDULED'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -76,7 +80,10 @@ describe('GET /api/portal/appointments', () => {
   it('filters upcoming appointments', async () => {
     (prisma.appointment.findMany as jest.Mock).mockResolvedValue([]);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/appointments?upcoming=true'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/appointments?upcoming=true&status=SCHEDULED'),
+      mockContext
+    );
 
     expect(prisma.appointment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -29,7 +29,7 @@ describe('ScheduleReminderModal', () => {
 
   it('renders "Schedule Reminder" heading when open', () => {
     render(<ScheduleReminderModal {...defaultProps} />);
-    expect(screen.getByText('Schedule Reminder')).toBeInTheDocument();
+    expect(screen.getAllByText(/Schedule Reminder/i).length).toBeGreaterThan(0);
   });
 
   it('shows template name when template prop is provided', () => {

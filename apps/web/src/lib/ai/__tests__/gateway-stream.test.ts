@@ -1,3 +1,5 @@
+export {};
+
 /**
  * Tests for streamGateway() — compliance pipeline for streaming
  * Verifies: de-id before stream, audit logging, usage tracking

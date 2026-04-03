@@ -46,7 +46,7 @@ jest.mock('@/lib/clinical/lab-reference-ranges', () => ({
 
 const { GET } = require('../route');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
-const { getTestInfoByLoincCode, getReferenceRange } = require('@/lib/clinical/lab-reference-ranges');
+const { getTestInfoByLoincCode, getReferenceRange, getDatabaseStats } = require('@/lib/clinical/lab-reference-ranges');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -57,6 +57,11 @@ describe('GET /api/lab-reference-ranges', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (getDatabaseStats as jest.Mock).mockReturnValue({
+      totalTests: 50,
+      totalCategories: 8,
+      lastUpdated: '2026-03-12',
+    });
   });
 
   it('returns paginated reference ranges by default', async () => {

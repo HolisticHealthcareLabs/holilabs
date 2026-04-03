@@ -232,6 +232,7 @@ model PatientUser {
   // Relations
   magicLinks MagicLink[]
   otpCodes   OTPCode[]
+  sessions   PatientSession[]
 
   @@index([email])
   @@index([phone])
@@ -637,7 +638,7 @@ enum NotificationPriority {
 model HealthMetric {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Metric details
   metricType MetricType
@@ -1029,9 +1030,14 @@ model Patient {
   lastBMIUpdate DateTime?
 
   // Metadata
-  isActive            Boolean @default(true)
+  isActive            Boolean   @default(true)
+  inactivatedAt       DateTime? // When patient was marked inactive
+  inactivationReason  String? // Why patient was inactivated (e.g., "DECEASED", "TRANSFERRED", "NO_SHOW_THRESHOLD")
   assignedClinicianId String?
-  assignedClinician   User?   @relation(fields: [assignedClinicianId], references: [id])
+  assignedClinician   User?     @relation(fields: [assignedClinicianId], references: [id])
+
+  // FHIR Interoperability
+  fhirId String? @unique // FHIR R4 resource ID for RNDS sync
 
   // GDPR/LGPD Right to Be Forgotten (Priority 3: Legal Compliance)
   deletedAt      DateTime? // Soft delete timestamp
@@ -1050,6 +1056,8 @@ model Patient {
   documents           Document[]
   clinicalNotes       ClinicalNote[]
   prescriptions       Prescription[]
+  deIDExports         DeIDExport[]
+  clinicalReferrals   ClinicalReferral[]
   scribeSessions      ScribeSession[]
   soapNotes           SOAPNote[]
   messages            Message[]
@@ -1059,6 +1067,7 @@ model Patient {
   formInstances       FormInstance[]
   labResults          LabResult[]
   imagingStudies      ImagingStudy[]
+  ingestedRecords     IngestedRecord[]
   grantedAccess       DataAccessGrant[]    @relation("PatientAccess")
   receivedAccess      DataAccessGrant[]    @relation("GrantedToUser")
   invoices            Invoice[]
@@ -1068,7 +1077,6 @@ model Patient {
   aiUsageLogs         AIUsageLog[]
   vitalSigns          VitalSign[]
   diagnoses           Diagnosis[]
-  clinicalReferrals   ClinicalReferral[]
 
   // Palliative care relations
   carePlans                 CarePlan[]
@@ -1224,7 +1232,7 @@ model VitalSign {
 model Diagnosis {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Diagnosis details
   icd10Code   String
@@ -1360,7 +1368,7 @@ model MedicationAdministration {
   medicationId String
   medication   Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   patientId    String
-  patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Administration details
   scheduledTime DateTime // When it was supposed to be given
@@ -1431,7 +1439,7 @@ model LabResult {
   id String @id @default(cuid())
 
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Blockchain fields
   resultHash String? // SHA-256 hash of results for integrity
@@ -1491,7 +1499,7 @@ model ImagingStudy {
   id String @id @default(cuid())
 
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Blockchain fields
   studyHash String? // SHA-256 hash for integrity
@@ -1624,7 +1632,7 @@ model DataAccessGrant {
 model Prescription {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   clinicianId String
   clinician   User   @relation(fields: [clinicianId], references: [id])
@@ -1644,10 +1652,25 @@ model Prescription {
   refillsRemaining  Int  @default(0) // Remaining refills
   daysSupply        Int? // Days supply per fill (e.g., 30, 90)
 
+  // ANVISA regulatory classification
+  prescriptionType         PrescriptionType? // Auto-classified from medication schedule
+  controlledSubstanceClass String? // ANVISA schedule: A1/A2/A3/B1/B2/C1-C5
+  validUntil               DateTime? // Expiry per ANVISA rules (30d white, 10d antimicrobial)
+
+  // SNCR (Sistema Nacional de Controle de Receitas) — ANVISA RDC 1.000/2025
+  sncrId          String?    @unique // SNCR tracking number
+  sncrStatus      SNCRStatus @default(NOT_REQUIRED)
+  sncrSubmittedAt DateTime?
+  sncrResponseAt  DateTime?
+  sncrErrorCode   String? // ANVISA rejection reason code
+
   // Electronic signature
-  signatureMethod String // "pin" or "signature_pad"
-  signatureData   String   @db.Text // Encrypted signature or PIN hash
-  signedAt        DateTime @default(now())
+  signatureMethod        String // "pin", "signature_pad", "webauthn", "icp_brasil"
+  signatureData          String                @db.Text // Encrypted signature or PIN hash
+  digitalSignatureType   DigitalSignatureType? // Typed enum version of signatureMethod
+  icpBrasilCertSerial    String? // ICP-Brasil certificate serial number
+  icpBrasilSignatureBlob String?               @db.Text // PKCS#7/CAdES detached signature
+  signedAt               DateTime              @default(now())
 
   // Status
   status         PrescriptionStatus @default(PENDING)
@@ -1671,6 +1694,10 @@ model Prescription {
   @@index([encounterId])
   @@index([prescriptionHash])
   @@index([txHash])
+  @@index([sncrId])
+  @@index([sncrStatus])
+  @@index([prescriptionType])
+  @@index([validUntil])
   @@map("prescriptions")
 }
 
@@ -1680,6 +1707,30 @@ enum PrescriptionStatus {
   SENT
   FILLED
   CANCELLED
+}
+
+enum PrescriptionType {
+  BRANCA // White - non-controlled, OTC-adjacent
+  AZUL // Blue - psychotropics (B1/B2)
+  AMARELA // Yellow - narcotics (A1/A2/A3)
+  ESPECIAL // Special control (C1-C5, thalidomide, retinoids)
+  ANTIMICROBIAL // RDC 20/2011 - 10-day validity
+}
+
+enum SNCRStatus {
+  NOT_REQUIRED // Non-controlled substance, no SNCR submission needed
+  PENDING // Awaiting submission
+  SUBMITTED // Sent to ANVISA SNCR
+  ACCEPTED // SNCR confirmed
+  REJECTED // SNCR rejected (invalid cert, missing fields, etc.)
+  CANCELLED // Cancelled after acceptance
+}
+
+enum DigitalSignatureType {
+  PIN // Simple PIN (white prescriptions only)
+  SIGNATURE_PAD // Drawn signature (white prescriptions only)
+  WEBAUTHN // Biometric via WebAuthn (white prescriptions only)
+  ICP_BRASIL // ICP-Brasil certificate (required for controlled substances)
 }
 
 // ============================================================================
@@ -1762,7 +1813,7 @@ enum DispenseStatus {
 model Consent {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Blockchain fields - CRITICAL for immutable proof
   consentHash    String    @unique // SHA-256 of consent content + signature
@@ -1834,7 +1885,7 @@ enum ConsentType {
 model DeletionRequest {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Request details
   status               DeletionRequestStatus @default(PENDING_CONFIRMATION)
@@ -2068,7 +2119,7 @@ enum ProcessingStatus {
 model ClinicalNote {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Blockchain fields
   noteHash String  @unique
@@ -2233,7 +2284,15 @@ model AuditLog {
   legalBasis     String? @map("legal_basis") // LGPD Art. 7 legal basis citation
   phiAccessScore Float?  @map("phi_access_score") // Risk score for this access (0.0-1.0, higher = more sensitive)
 
+  // Data Retention (HIPAA §164.530(j) — 6-month archive cycle)
+  archived   Boolean   @default(false)
+  archivedAt DateTime?
+
+  // Multi-tenant org scoping
+  organizationId String? @map("organization_id")
+
   @@index([userId])
+  @@index([organizationId])
   @@index([action])
   @@index([resourceId])
   @@index([timestamp])
@@ -2290,50 +2349,6 @@ enum AccessReason {
   LEGAL_COMPLIANCE // Conformidade legal (Art. 7, II - Obrigação legal)
   RESEARCH_IRB_APPROVED // Pesquisa aprovada por comitê de ética
   PUBLIC_HEALTH // Saúde pública (Art. 7, III - Políticas públicas)
-}
-
-// ============================================================================
-// BLOCKCHAIN TRANSACTIONS (Future)
-// ============================================================================
-
-model BlockchainTransaction {
-  id String @id @default(cuid())
-
-  // Transaction details
-  txHash      String  @unique
-  blockNumber BigInt?
-  network     String  @default("polygon-mainnet") // or "ethereum", "base"
-
-  // What was recorded
-  recordType String // "consent", "prescription", "document"
-  recordId   String
-  dataHash   String // The hash that was recorded on-chain
-
-  // Contract details
-  contractAddress String
-  functionCalled  String
-  gasUsed         BigInt?
-  gasCost         String? // in native token
-
-  // Status
-  status        TxStatus @default(PENDING)
-  confirmations Int      @default(0)
-
-  // Timestamps
-  submittedAt DateTime  @default(now())
-  confirmedAt DateTime?
-
-  @@index([txHash])
-  @@index([recordId])
-  @@index([status])
-  @@map("blockchain_transactions")
-}
-
-enum TxStatus {
-  PENDING
-  CONFIRMED
-  FAILED
-  REVERTED
 }
 
 // ============================================================================
@@ -2547,7 +2562,7 @@ model ClinicalEncounter {
   id String @id @default(cuid())
 
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   providerId String
   provider   User   @relation(fields: [providerId], references: [id], onDelete: Cascade)
@@ -2673,7 +2688,7 @@ model SOAPNote {
   session   ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   clinicianId String
   clinician   User   @relation(fields: [clinicianId], references: [id])
@@ -4040,7 +4055,7 @@ enum ReferralRewardStatus {
 model CarePlan {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Plan details
   title       String
@@ -4108,7 +4123,7 @@ enum Priority {
 model PainAssessment {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Pain scale (0-10)
   painScore   Int // 0 = no pain, 10 = worst pain
@@ -4216,7 +4231,7 @@ enum FamilyAccessLevel {
 model Allergy {
   id        String  @id @default(cuid())
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   // Allergy details
   allergen    String // e.g., "Penicillin", "Peanuts", "Latex"
@@ -8864,7 +8879,7 @@ model SafetyCorrectiveAction {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
-  escalations        SafetyEscalation[]
+  escalations SafetyEscalation[]
 
   @@index([incidentId])
   @@index([status])
@@ -8880,20 +8895,20 @@ enum SafetyEscalationStatus {
 }
 
 model SafetyEscalation {
-  id                  String                   @id @default(cuid())
-  incidentId          String                   @map("incident_id")
-  incident            SafetyIncident           @relation(fields: [incidentId], references: [id], onDelete: Cascade)
-  correctiveActionId  String                   @map("corrective_action_id")
-  correctiveAction    SafetyCorrectiveAction   @relation(fields: [correctiveActionId], references: [id], onDelete: Cascade)
-  severity            IncidentSeverity
-  title               String
-  description         String                   @db.Text
-  status              SafetyEscalationStatus   @default(OPEN)
-  assignedToId        String?                  @map("assigned_to_id")
-  daysOverdue         Int                      @default(0)
-  resolvedAt          DateTime?
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
+  id                 String                 @id @default(cuid())
+  incidentId         String                 @map("incident_id")
+  incident           SafetyIncident         @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  correctiveActionId String                 @map("corrective_action_id")
+  correctiveAction   SafetyCorrectiveAction @relation(fields: [correctiveActionId], references: [id], onDelete: Cascade)
+  severity           IncidentSeverity
+  title              String
+  description        String                 @db.Text
+  status             SafetyEscalationStatus @default(OPEN)
+  assignedToId       String?                @map("assigned_to_id")
+  daysOverdue        Int                    @default(0)
+  resolvedAt         DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
   @@index([incidentId])
   @@index([correctiveActionId])
@@ -9444,4 +9459,138 @@ model QualityMeasureEvaluation {
   @@index([measureId])
   @@index([status])
   @@map("quality_measure_evaluations")
+}
+
+// ============================================================================
+// DE-IDENTIFICATION EXPORTS (Data Retention — 30-day auto-delete)
+// ============================================================================
+
+model DeIDExport {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  format   String           @default("FHIR_R4") // FHIR_R4, CSV, HL7
+  filePath String           @db.Text
+  fileSize Int? // bytes
+  status   DeIDExportStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Auto-delete after this date (default: createdAt + 30 days)
+
+  @@index([patientId])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("deid_exports")
+}
+
+enum DeIDExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  EXPIRED
+  FAILED
+}
+
+// ============================================================================
+// PATIENT SESSIONS (Data Retention — session cleanup)
+// ============================================================================
+
+model PatientSession {
+  id            String      @id @default(cuid())
+  patientUserId String
+  patientUser   PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  lastActiveAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([patientUserId])
+  @@index([expiresAt])
+  @@map("patient_sessions")
+}
+
+enum FHIRSyncStatus {
+  PENDING
+  IN_PROGRESS
+  SYNCED
+  FAILED
+  CONFLICT
+}
+
+enum FHIRSyncDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model FHIRSyncEvent {
+  id           String            @id @default(cuid())
+  resourceType String            @map("resource_type")
+  resourceId   String            @map("resource_id")
+  direction    FHIRSyncDirection
+  status       FHIRSyncStatus    @default(PENDING)
+
+  localVersion  Int?    @map("local_version")
+  remoteVersion String? @map("remote_version")
+
+  localData    Json?   @map("local_data") @db.JsonB
+  remoteData   Json?   @map("remote_data") @db.JsonB
+  errorMessage String? @map("error_message") @db.Text
+
+  syncedAt   DateTime? @map("synced_at")
+  resolvedBy String?   @map("resolved_by")
+  resolvedAt DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([resourceType, resourceId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("fhir_sync_events")
+}
+
+// ─── Data Ingestion ──────────────────────────────────────────────────────────
+
+model IngestedRecord {
+  id String @id @default(cuid())
+
+  sourceType String @map("source_type") // CSV, HL7, FHIR_BUNDLE, WEARABLE
+  recordType String @map("record_type") // LAB_RESULT, VITAL_SIGN, DIAGNOSIS, etc.
+
+  patientId String?  @map("patient_id")
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  tenantId String? @map("tenant_id")
+  sourceId String? @map("source_id") // External record identifier
+
+  payload Json    @db.JsonB // Full canonical record
+  rawHash String? @map("raw_hash") // SHA-256 of original input for dedup
+
+  status IngestStatus @default(PENDING)
+
+  ingestedBy String? @map("ingested_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([patientId])
+  @@index([sourceType, recordType])
+  @@index([tenantId])
+  @@index([status])
+  @@index([rawHash])
+  @@index([createdAt])
+  @@map("ingested_records")
+}
+
+enum IngestStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DUPLICATE
 }

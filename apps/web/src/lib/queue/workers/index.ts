@@ -11,6 +11,7 @@ import { startPatientDossierWorker } from './patient-dossier.worker';
 import { startDocumentParserWorker } from './document-parser.worker';
 import { startSummaryGenerationWorker } from './summary-generation.worker';
 import { startFhirSyncWorker } from './fhir-sync.worker';
+import { startPatientRemindersWorker } from './patient-reminders.worker';
 import logger from '@/lib/logger';
 
 // Store active workers for graceful shutdown
@@ -46,9 +47,9 @@ export function startAllWorkers(): void {
   const fhirSyncWorker = startFhirSyncWorker();
   activeWorkers.push(fhirSyncWorker);
 
-  // TODO: Add more workers as needed
-  // const patientRemindersWorker = startPatientRemindersWorker();
-  // activeWorkers.push(patientRemindersWorker);
+  // Start patient reminders worker (appointment and medication reminders)
+  const patientRemindersWorker = startPatientRemindersWorker();
+  activeWorkers.push(patientRemindersWorker);
 
   logger.info({
     event: 'all_workers_started',

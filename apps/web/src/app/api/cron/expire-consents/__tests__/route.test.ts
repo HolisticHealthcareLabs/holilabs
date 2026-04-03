@@ -70,7 +70,7 @@ describe('/api/cron/expire-consents', () => {
 
   it('blocks GET in production', async () => {
     const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
 
     const req = new NextRequest('http://localhost:3000/api/cron/expire-consents', {
       method: 'GET',
@@ -80,6 +80,6 @@ describe('/api/cron/expire-consents', () => {
     const data = await res.json();
 
     expect(res.status).toBe(405);
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 });

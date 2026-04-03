@@ -42,18 +42,19 @@ test.describe('Clinician Login Flow', () => {
     await emailInput.fill('garcia@clinic.com');
     await passwordInput.fill('SecurePass123!');
 
+    // Check the Terms of Service checkbox to enable submit
+    await page.locator('label:has(input[type="checkbox"])').click();
+
     const submitBtn = page.locator('button[type="submit"]');
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
 
     await page.waitForURL('**/dashboard**', { timeout: 5000 }).catch(() => {});
   });
 
-  test('should show validation for empty fields', async ({ page }) => {
+  test('should keep submit disabled when fields are empty', async ({ page }) => {
     await page.goto('/auth/login');
     const submitBtn = page.locator('button[type="submit"]');
-    await submitBtn.click();
-
-    const html = await page.content();
-    expect(html).toBeTruthy();
+    await expect(submitBtn).toBeDisabled();
   });
 });

@@ -11,9 +11,7 @@
 
 import React from 'react';
 import '@testing-library/jest-dom';
-import { describe, it, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { CoPilotPreventionAlerts } from '../CoPilotPreventionAlerts';
 import type {
   DetectedConditionFromServer,
   RecommendationFromServer,
@@ -21,17 +19,23 @@ import type {
 import type { RecommendationLite } from '@/lib/prevention/realtime';
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <div {...props}>{children}</div>
-    ),
-    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <span {...props}>{children}</span>
-    ),
-  },
-  AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
-}));
+jest.mock('framer-motion', () => {
+  const R = require('react');
+  const handler = {
+    get(_: any, tag: string) {
+      return R.forwardRef(({ children, ...props }: any, ref: any) =>
+        R.createElement(tag, { ...props, ref }, children)
+      );
+    },
+  };
+  return {
+    __esModule: true,
+    motion: new Proxy({}, handler),
+    AnimatePresence: ({ children }: any) => children,
+  };
+});
+
+import { CoPilotPreventionAlerts } from '../CoPilotPreventionAlerts';
 
 describe('CoPilotPreventionAlerts', () => {
   const mockPatientId = 'patient-123';

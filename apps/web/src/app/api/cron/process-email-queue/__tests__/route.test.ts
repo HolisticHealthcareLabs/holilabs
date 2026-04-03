@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 
+const mockStartEmailWorker = jest.fn();
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
   createPublicRoute: (handler: any) => handler,
@@ -14,9 +16,8 @@ jest.mock('@/lib/api/safe-error-response', () => ({
   safeErrorResponse: jest.fn(),
 }));
 
-const mockProcessQueue = jest.fn();
-jest.mock('@/lib/email/email-service', () => ({
-  processEmailQueue: mockProcessQueue,
+jest.mock('@/lib/email/email-queue', () => ({
+  startEmailWorker: mockStartEmailWorker,
 }));
 
 const { POST, GET } = require('../route');
@@ -36,6 +37,7 @@ describe('/api/cron/process-email-queue', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...origEnv, CRON_SECRET };
+    mockStartEmailWorker.mockReturnValue({});
   });
   afterAll(() => { process.env = origEnv; });
 
@@ -47,22 +49,25 @@ describe('/api/cron/process-email-queue', () => {
     expect(data.error).toMatch(/unauthorized/i);
   });
 
-  it('processes email queue and returns stats', async () => {
-    mockProcessQueue.mockResolvedValue({ processed: 12, failed: 1 });
-
+  it('initializes email worker and returns success', async () => {
     const res = await POST(makeRequest('POST', { authorization: `Bearer ${CRON_SECRET}` }));
     const data = await res.json();
 
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.processed).toBe(12);
-    expect(data.failed).toBe(1);
+    expect(data.message).toBeDefined();
+    expect(data.duration).toBeDefined();
   });
 
   it('returns 500 on processing failure', async () => {
-    mockProcessQueue.mockRejectedValue(new Error('SMTP down'));
+    jest.resetModules();
+    const failingWorker = jest.fn(() => { throw new Error('SMTP down'); });
+    jest.doMock('@/lib/email/email-queue', () => ({
+      startEmailWorker: failingWorker,
+    }));
+    const { POST: POST2 } = require('../route');
 
-    const res = await POST(makeRequest('POST', { authorization: `Bearer ${CRON_SECRET}` }));
+    const res = await POST2(makeRequest('POST', { authorization: `Bearer ${CRON_SECRET}` }));
     const data = await res.json();
 
     expect(res.status).toBe(500);
@@ -71,12 +76,12 @@ describe('/api/cron/process-email-queue', () => {
 
   it('blocks GET in production', async () => {
     const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
 
     const res = await GET(makeRequest('GET', { authorization: `Bearer ${CRON_SECRET}` }));
     const data = await res.json();
 
     expect(res.status).toBe(405);
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 });

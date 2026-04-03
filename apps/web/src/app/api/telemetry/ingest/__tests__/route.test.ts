@@ -40,10 +40,11 @@ describe('POST /api/telemetry/ingest', () => {
 
   it('returns 403 when signature is invalid', async () => {
     const body = JSON.stringify({ events: [] });
+    // Signature must be 64 hex chars (SHA-256 digest length) to avoid timingSafeEqual length mismatch error
     const req = new NextRequest('http://localhost:3000/api/telemetry/ingest', {
       method: 'POST',
       headers: {
-        'X-Signature': 'invalidsignature',
+        'X-Signature': 'a'.repeat(64),
         'X-Node-ID': 'fog-node-1',
       },
       body,

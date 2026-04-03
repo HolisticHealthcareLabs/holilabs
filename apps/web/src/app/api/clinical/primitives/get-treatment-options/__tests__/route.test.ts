@@ -80,7 +80,7 @@ describe('POST /api/clinical/primitives/get-treatment-options', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data.recommendations).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data.recommendations)).toBe(true);
     expect(data.data.condition).toBe('E11');
     expect(data.metadata.method).toBeDefined();
   });

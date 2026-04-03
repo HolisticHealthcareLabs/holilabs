@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } fro
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Step } from 'react-joyride';
-import { Stethoscope, Star, User, X, Eye, Upload, Mail, CheckCircle2, FlaskConical } from 'lucide-react';
+import { Stethoscope, Star, User, X, Eye, Upload, Mail, CheckCircle2, FlaskConical, Save } from 'lucide-react';
 const Send = Mail; // lucide-react v0.309 barrel export issue
 import { m, AnimatePresence } from 'framer-motion';
 import { TranscriptPane, type Segment } from './_components/TranscriptPane';
@@ -261,6 +261,8 @@ export default function ClinicalCommandCenterPage() {
 
   // ── Prior Authorization tracking ─────────────────────────────────────────
   const [preAuthAcknowledged, setPreAuthAcknowledged] = useState(false);
+  const [showSaveSessionModal, setShowSaveSessionModal] = useState(false);
+  const [pendingClearPatient, setPendingClearPatient] = useState(false);
   const [preAuthPopoverOpen, setPreAuthPopoverOpen] = useState(false);
   const [hasPreAuth, setHasPreAuth] = useState(false);
 
@@ -391,12 +393,22 @@ export default function ClinicalCommandCenterPage() {
 
     track('copilot.demo_run', { locale });
     setSegments([]);
+    setAmbientState('recording');
+    // Speed-up factor: deliver demo lines ~2x faster for snappier feel
+    const speedFactor = 0.5;
+    let lastDelay = 0;
     demoLines.forEach(({ speaker, text, delay }) => {
+      const fastDelay = Math.round(delay * speedFactor);
+      lastDelay = Math.max(lastDelay, fastDelay);
       setTimeout(() => {
         const prefix = speaker === 0 ? `${labels.doctor}: ` : `${labels.patient}: `;
         setSegments(prev => [...prev, { kind: 'text', text: `\n${prefix}${text}` }]);
-      }, delay);
+      }, fastDelay);
     });
+    // Auto-complete after the last line so SOAP sections fully unlock
+    setTimeout(() => {
+      setAmbientState('completed');
+    }, lastDelay + 1500);
   }, [locale, DEMO_LINES_BY_LOCALE]);
 
   const {
@@ -1016,6 +1028,31 @@ export default function ClinicalCommandCenterPage() {
     setIsContextDrawerOpen(false);
   }
 
+  function resetSession() {
+    setAmbientState('idle');
+    setSegments([]);
+    chunkIndexRef.current = 0;
+    hasAutoSyncedRef.current = false;
+    injectedEntityIdsRef.current.clear();
+    encounterIdRef.current = '';
+    setCdssAlerts([]);
+    setSyncError(null);
+    setSoapError(null);
+    setToastMessage(null);
+    setResetSignal((s) => s + 1);
+    setSelectedPatient(null);
+    setPatientResetKey((k) => k + 1);
+    setIsBillingModalOpen(false);
+    setIsReviewModalOpen(false);
+    setIsSigningModalOpen(false);
+    setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
+    setPreAuthAcknowledged(false);
+    setPreAuthPopoverOpen(false);
+    setHasPreAuth(false);
+    setExtractedEntities([]);
+    setIsContextDrawerOpen(false);
+  }
+
   // ── Feature flag kill-switch ─────────────────────────────────────────────
   if (!scribeEnabled) {
     return (
@@ -1059,79 +1096,85 @@ export default function ClinicalCommandCenterPage() {
         </Suspense>
       )}
 
-      {/* Modals (lazy-loaded at root to avoid z-index conflicts) */}
-      <Suspense fallback={null}>
-        <PatientHandoutModal isOpen={isHandoutModalOpen} onClose={() => setIsHandoutModalOpen(false)} />
-      </Suspense>
-      <Suspense fallback={null}>
-        <SignAndBillModal
-          isOpen={isBillingModalOpen}
-          onClose={() => setIsBillingModalOpen(false)}
-          onComplete={handleBillingComplete}
-          soapNote=""
-          transcript={transcriptText}
-          patientData={selectedPatient ? {
-            age: selectedPatient.dob
-              ? Math.floor((Date.now() - new Date(selectedPatient.dob).getTime()) / 31557600000)
-              : undefined,
-          } : undefined}
-        />
-      </Suspense>
-      <Suspense fallback={null}>
-        <PreSignOffReviewModal
-          isOpen={isReviewModalOpen}
-          onClose={() => setIsReviewModalOpen(false)}
-          onProceedToSign={handleReviewComplete}
-          onSkip={handleReviewSkip}
-          soapObjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).O}
-          soapSubjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).S}
-          patientId={selectedPatient?.id ?? ''}
-          clinicianSpecialty="Internal Medicine"
-        />
-      </Suspense>
-      <Suspense fallback={null}>
-        <FinalizeConsultationModal
-          isOpen={isFinalizeModalOpen}
-          onClose={() => setIsFinalizeModalOpen(false)}
-          onComplete={handleBillingComplete}
-          encounterId={encounterIdRef.current || null}
-          patientName={selectedPatient?.name ?? ''}
-          patientEmail={selectedPatient?.email}
-          soapContent={personaSoapNote ? {
-            subjective: personaSoapNote.S,
-            objective: personaSoapNote.O,
-            assessment: personaSoapNote.A,
-            plan: personaSoapNote.P,
-          } : undefined}
-        />
-      </Suspense>
-      <Suspense fallback={null}>
-        <PrescriptionSigningModal
-          isOpen={isSigningModalOpen}
-          onClose={() => setIsSigningModalOpen(false)}
-          onComplete={() => {
-            setIsSigningModalOpen(false);
-          }}
-          prescription={{
-            id: '',
-            patientName: selectedPatient?.name ?? '',
-            patientId: selectedPatient?.id ?? '',
-            clinicianName: '',
-            clinicianCRM: '',
-            medications: [],
-            createdAt: new Date().toISOString(),
-          }}
-        />
-      </Suspense>
-      <Suspense fallback={null}>
-        <ContextDrawer
-          isOpen={isContextDrawerOpen}
-          onClose={() => setIsContextDrawerOpen(false)}
-          entities={extractedEntities}
-          onRejectEntity={rejectEntity}
-          onRestoreEntity={restoreEntity}
-        />
-      </Suspense>
+      {/* Modals — deferred until after mount to prevent Suspense hydration
+          errors caused by browser extensions injecting DOM nodes into the
+          server-rendered HTML (e.g. wallet inpage.js scripts). */}
+      {isMounted && (
+        <>
+          <Suspense fallback={null}>
+            <PatientHandoutModal isOpen={isHandoutModalOpen} onClose={() => setIsHandoutModalOpen(false)} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <SignAndBillModal
+              isOpen={isBillingModalOpen}
+              onClose={() => setIsBillingModalOpen(false)}
+              onComplete={handleBillingComplete}
+              soapNote=""
+              transcript={transcriptText}
+              patientData={selectedPatient ? {
+                age: selectedPatient.dob
+                  ? Math.floor((Date.now() - new Date(selectedPatient.dob).getTime()) / 31557600000)
+                  : undefined,
+              } : undefined}
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <PreSignOffReviewModal
+              isOpen={isReviewModalOpen}
+              onClose={() => setIsReviewModalOpen(false)}
+              onProceedToSign={handleReviewComplete}
+              onSkip={handleReviewSkip}
+              soapObjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).O}
+              soapSubjective={(personaSoapNote ?? (isDemoModeEnabled() ? SOAP_DEMO_CONTENT : { O: '', S: '' })).S}
+              patientId={selectedPatient?.id ?? ''}
+              clinicianSpecialty="Internal Medicine"
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <FinalizeConsultationModal
+              isOpen={isFinalizeModalOpen}
+              onClose={() => setIsFinalizeModalOpen(false)}
+              onComplete={handleBillingComplete}
+              encounterId={encounterIdRef.current || null}
+              patientName={selectedPatient?.name ?? ''}
+              patientEmail={selectedPatient?.email}
+              soapContent={personaSoapNote ? {
+                subjective: personaSoapNote.S,
+                objective: personaSoapNote.O,
+                assessment: personaSoapNote.A,
+                plan: personaSoapNote.P,
+              } : undefined}
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <PrescriptionSigningModal
+              isOpen={isSigningModalOpen}
+              onClose={() => setIsSigningModalOpen(false)}
+              onComplete={() => {
+                setIsSigningModalOpen(false);
+              }}
+              prescription={{
+                id: '',
+                patientName: selectedPatient?.name ?? '',
+                patientId: selectedPatient?.id ?? '',
+                clinicianName: '',
+                clinicianCRM: '',
+                medications: [],
+                createdAt: new Date().toISOString(),
+              }}
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ContextDrawer
+              isOpen={isContextDrawerOpen}
+              onClose={() => setIsContextDrawerOpen(false)}
+              entities={extractedEntities}
+              onRejectEntity={rejectEntity}
+              onRestoreEntity={restoreEntity}
+            />
+          </Suspense>
+        </>
+      )}
 
       {/* Mobile: below 768px, prompt to use a larger device */}
       <div className="md:hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 p-8 text-center" style={{ background: 'var(--surface-primary)' }}>
@@ -1140,12 +1183,78 @@ export default function ClinicalCommandCenterPage() {
         <p className="max-w-xs text-sm" style={{ color: 'var(--text-secondary)' }}>{t('mobileUnsupportedDesc')}</p>
       </div>
 
+      {/* ── Save Session Modal ── */}
+      <AnimatePresence>
+        {showSaveSessionModal && selectedPatient && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowSaveSessionModal(false)}
+          >
+            <m.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15, ease: [0.32, 0.72, 0, 1] }}
+              className="w-full max-w-sm mx-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl"
+              style={{ borderRadius: 'var(--radius-xl)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 pt-6 pb-4">
+                <h2 className="text-sm font-semibold dark:text-white" style={{ color: 'var(--text-primary)' }}>
+                  {t('saveSessionTitle')}
+                </h2>
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  {t('saveSessionBody', { name: selectedPatient.name })}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 px-6 pb-5">
+                <button
+                  onClick={() => {
+                    track('copilot.session_saved');
+                    setShowSaveSessionModal(false);
+                    setPendingClearPatient(false);
+                    resetSession();
+                  }}
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
+                >
+                  {t('saveAndClose')}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSaveSessionModal(false);
+                    setPendingClearPatient(false);
+                    resetSession();
+                  }}
+                  className="flex-1 px-3 py-2 text-xs font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)' }}
+                >
+                  {t('discardSession')}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSaveSessionModal(false);
+                    setPendingClearPatient(false);
+                  }}
+                  className="px-3 py-2 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
+                >
+                  {t('cancel')}
+                </button>
+              </div>
+            </m.div>
+          </m.div>
+        )}
+      </AnimatePresence>
+
       <ThreePanelLayout
         /* ── HEADER BAR: Patient name, MRN, status, encounter timer ── */
         header={
-          <header className="flex-shrink-0 px-md py-sm dark:border-white/[0.06] flex items-center gap-md" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <h1 className="font-semibold text-body-dense flex items-center gap-xs flex-shrink-0 dark:text-white" style={{ color: 'var(--text-primary)' }}>
-              <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+          <header className="flex-shrink-0 px-md py-xs dark:border-white/[0.06] flex items-center gap-md" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <h1 className="font-semibold text-caption flex items-center gap-xs flex-shrink-0 dark:text-white" style={{ color: 'var(--text-primary)' }}>
               {t('pageTitle')}
             </h1>
 
@@ -1166,6 +1275,11 @@ export default function ClinicalCommandCenterPage() {
               inline
               onSelectPatient={(p) => {
                 if (p) track('copilot.session_started');
+                if (!p && selectedPatient) {
+                  setPendingClearPatient(true);
+                  setShowSaveSessionModal(true);
+                  return;
+                }
                 setSelectedPatient(p);
                 setPreAuthAcknowledged(false);
                 setPreAuthPopoverOpen(false);
@@ -1180,13 +1294,28 @@ export default function ClinicalCommandCenterPage() {
               onAttachModeChange={setAttachMode}
             />
 
-            {/* Encounter timer + actions */}
-            <div className="flex items-center gap-sm shrink-0 ml-auto">
+            {/* Header actions — Save + Quick Tour */}
+            <div className="flex items-center gap-xs shrink-0 ml-auto">
+              {selectedPatient && (
+                <button
+                  onClick={() => {
+                    track('copilot.session_saved');
+                    setToastMessage(t('saveSession'));
+                  }}
+                  className="flex items-center gap-xs px-sm py-xs text-[11px] font-semibold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/25 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
+                  aria-label={t('saveSession')}
+                >
+                  <Save className="w-3 h-3" />
+                  {t('saveSession')}
+                </button>
+              )}
               <button
                 onClick={() => setIsTourRunning(true)}
-                className="flex items-center gap-xs px-sm py-xs text-caption font-medium hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-all min-h-touch-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                className="flex items-center gap-xs px-sm py-xs text-[11px] font-medium border border-gray-200 dark:border-gray-700 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
                 style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
                 aria-label={t('startTour')}
+                title={t('quickTour')}
               >
                 <Star className="w-3 h-3" />
                 {t('quickTour')}
@@ -1198,8 +1327,8 @@ export default function ClinicalCommandCenterPage() {
         /* ── BANNER: Pre-Authorization Safety ── */
         banner={
           selectedPatient && !preAuthAcknowledged && !hasPreAuth ? (
-            <div className="mx-sm flex items-start gap-sm dark:bg-amber-500/10 border dark:border-amber-500/30 px-md py-sm" style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-warning)', borderColor: 'var(--border-default)' }}>
-              <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="mx-sm flex items-center gap-sm dark:bg-amber-500/10 border dark:border-amber-500/30 px-md py-xs" style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-warning)', borderColor: 'var(--border-default)' }}>
+              <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               </svg>
               <div className="flex-1 min-w-0">
@@ -1208,7 +1337,7 @@ export default function ClinicalCommandCenterPage() {
                   {t('noPreAuthBody', { name: selectedPatient.name })}
                 </p>
               </div>
-              <div className="relative flex items-center gap-sm shrink-0">
+              <div className="relative flex items-center gap-md shrink-0">
                 <button
                   onClick={() => setPreAuthPopoverOpen((o) => !o)}
                   className="flex items-center gap-xs text-caption font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 transition-colors px-sm py-xs hover:bg-amber-100 dark:hover:bg-amber-500/20 min-h-touch-sm"
@@ -1217,6 +1346,7 @@ export default function ClinicalCommandCenterPage() {
                   <Send className="h-3 w-3" />
                   {t('sendPreAuth')}
                 </button>
+                <span className="w-px h-4 bg-amber-300/50 dark:bg-amber-500/30" aria-hidden="true" />
                 <button
                   onClick={() => setPreAuthAcknowledged(true)}
                   className="text-caption font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors px-sm py-xs hover:bg-amber-100 dark:hover:bg-amber-500/20 min-h-touch-sm"
@@ -1313,8 +1443,8 @@ export default function ClinicalCommandCenterPage() {
         /* ── CENTER PANEL: Transcript (top, collapsible) + SOAP (middle) + History tabs ── */
         center={
           <div className="flex flex-col h-full min-h-0">
-            {/* Transcript section — collapsible */}
-            <div id="live-meeting-notes" className="shrink-0 max-h-[40%] flex flex-col dark:border-white/[0.06]" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            {/* Transcript section — fixed 35% height, independent scroll */}
+            <div id="live-meeting-notes" className="flex flex-col min-h-0 dark:border-white/[0.06]" style={{ borderBottom: '1px solid var(--border-default)', flex: '0 0 35%' }}>
               <TranscriptPane
                 segments={segments}
                 isRecording={isRecording}
@@ -1355,23 +1485,27 @@ export default function ClinicalCommandCenterPage() {
         /* ── RIGHT PANEL: AI Co-Pilot (CDSS alerts, chat, model selector) ── */
         right={
           <div id="cdss-pane" className="flex flex-col h-full">
-            <Suspense fallback={<div className="flex items-center justify-center h-full text-body-dense" style={{ color: 'var(--text-tertiary)' }}>{t('loadingCoPilot')}</div>}>
-              <CdssAlertsPane
-                activeModel={activeModel}
-                modelConfigs={modelConfigs}
-                onModelChange={handleModelChange}
-                cdssAlerts={cdssAlerts}
-                isSyncing={isSyncing}
-                onSync={handleSync}
-                syncError={syncError}
-                patientSelected={!!selectedPatient}
-                hasTranscript={segments.length > 0}
-                selectedPatient={selectedPatient}
-                transcript={transcriptText}
-                onOpenHandout={() => setIsHandoutModalOpen(true)}
-                resetSignal={resetSignal}
-              />
-            </Suspense>
+            {isMounted ? (
+              <Suspense fallback={<div className="flex items-center justify-center h-full text-body-dense" style={{ color: 'var(--text-tertiary)' }}>{t('loadingCoPilot')}</div>}>
+                <CdssAlertsPane
+                  activeModel={activeModel}
+                  modelConfigs={modelConfigs}
+                  onModelChange={handleModelChange}
+                  cdssAlerts={cdssAlerts}
+                  isSyncing={isSyncing}
+                  onSync={handleSync}
+                  syncError={syncError}
+                  patientSelected={!!selectedPatient}
+                  hasTranscript={segments.length > 0}
+                  selectedPatient={selectedPatient}
+                  transcript={transcriptText}
+                  onOpenHandout={() => setIsHandoutModalOpen(true)}
+                  resetSignal={resetSignal}
+                />
+              </Suspense>
+            ) : (
+              <div className="flex items-center justify-center h-full text-body-dense" style={{ color: 'var(--text-tertiary)' }}>{t('loadingCoPilot')}</div>
+            )}
           </div>
         }
 

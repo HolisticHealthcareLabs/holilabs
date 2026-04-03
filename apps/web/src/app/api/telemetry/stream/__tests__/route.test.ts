@@ -44,7 +44,7 @@ describe('GET /api/telemetry/stream', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.NODE_ENV = 'test'; // non-production forces synthetic
+    (process.env as any).NODE_ENV = 'test'; // non-production forces synthetic
   });
 
   afterEach(() => {

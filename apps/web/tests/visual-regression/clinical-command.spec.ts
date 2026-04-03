@@ -6,6 +6,7 @@ import {
   applyTheme,
   waitForStable,
 } from './helpers';
+import { setupMockAuth } from '../e2e/helpers/auth';
 
 const PAGE_NAME = 'clinical-command';
 const PAGE_URL = '/dashboard/clinical-command';
@@ -17,6 +18,7 @@ for (const theme of THEMES) {
     }, testInfo) => {
       const viewport = viewportFromProject(testInfo);
 
+      await setupMockAuth(page);
       await applyTheme(page, theme);
       await page.goto(PAGE_URL);
       await waitForStable(page);
@@ -33,6 +35,7 @@ for (const theme of THEMES) {
     }, testInfo) => {
       const viewport = viewportFromProject(testInfo);
 
+      await setupMockAuth(page);
       await applyTheme(page, theme);
       await page.goto(PAGE_URL);
       await waitForStable(page);
@@ -53,6 +56,7 @@ for (const theme of THEMES) {
     }, testInfo) => {
       const viewport = viewportFromProject(testInfo);
 
+      await setupMockAuth(page);
       await applyTheme(page, theme);
       await page.goto(PAGE_URL);
       await waitForStable(page);

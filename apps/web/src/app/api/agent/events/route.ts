@@ -19,10 +19,17 @@ import { agentEventBus } from '@/lib/mcp/agent-event-bus';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const ALLOWED_ROLES = ['CLINICIAN', 'PHYSICIAN', 'NURSE', 'ADMIN'];
+
 export async function GET(request: NextRequest) {
     const session = await auth();
     if (!session?.user) {
         return new Response('Unauthorized', { status: 401 });
+    }
+
+    const userRole = (session.user as any).role as string;
+    if (!ALLOWED_ROLES.includes(userRole)) {
+        return new Response('Forbidden', { status: 403 });
     }
 
     const clinicianId = (session.user as any).id as string;

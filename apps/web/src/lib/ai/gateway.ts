@@ -15,11 +15,133 @@
  * 5. Return response with provenance metadata
  */
 
+import crypto from 'crypto';
 import { chat, streamV2, type AIProvider, type ChatMessage, type ChatRequest, type ChatResponse, type ChatV2Request } from './chat';
 import type { ProviderStreamChunk } from './types';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 import { trackUsage, type UsageMetrics } from './usage-tracker';
 import logger from '@/lib/logger';
+
+// =============================================================================
+// SYSTEM PROMPT CACHE BOUNDARY
+// =============================================================================
+
+const DYNAMIC_BOUNDARY = '__HOLILABS_DYNAMIC_BOUNDARY__';
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CachedPromptSegment {
+  hash: string;
+  staticSegment: string;
+  cachedAt: number;
+}
+
+// In-memory cache keyed by hash (use Redis in multi-replica production)
+const promptCache = new Map<string, CachedPromptSegment>();
+
+// Metrics counters
+let cacheHits = 0;
+let cacheMisses = 0;
+
+export function getPromptCacheMetrics() {
+  return { cacheHits, cacheMisses, cacheSize: promptCache.size };
+}
+
+/**
+ * Split a system prompt at the __HOLILABS_DYNAMIC_BOUNDARY__ marker.
+ *
+ * Static segment (rules, tools, RBAC) is cacheable across requests.
+ * Dynamic segment (patient context, encounter data) changes per request.
+ *
+ * If no boundary marker exists, the entire prompt is treated as dynamic.
+ */
+export function splitSystemPrompt(prompt: string): {
+  staticSegment: string | null;
+  dynamicSegment: string;
+  hasBoundary: boolean;
+} {
+  const idx = prompt.indexOf(DYNAMIC_BOUNDARY);
+  if (idx === -1) {
+    return { staticSegment: null, dynamicSegment: prompt, hasBoundary: false };
+  }
+
+  return {
+    staticSegment: prompt.slice(0, idx).trimEnd(),
+    dynamicSegment: prompt.slice(idx + DYNAMIC_BOUNDARY.length).trimStart(),
+    hasBoundary: true,
+  };
+}
+
+/**
+ * Get cached static segment hash, or compute and cache it.
+ * Returns the hash for logging/metrics.
+ */
+function getCachedStaticHash(staticSegment: string): { hash: string; fromCache: boolean } {
+  const hash = crypto.createHash('sha256').update(staticSegment).digest('hex').slice(0, 16);
+
+  const cached = promptCache.get(hash);
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+    cacheHits++;
+    return { hash, fromCache: true };
+  }
+
+  // Evict expired entries
+  for (const [key, entry] of promptCache) {
+    if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
+      promptCache.delete(key);
+    }
+  }
+
+  promptCache.set(hash, { hash, staticSegment, cachedAt: Date.now() });
+  cacheMisses++;
+  return { hash, fromCache: false };
+}
+
+/**
+ * Prepare system prompt with cache boundary optimization.
+ *
+ * For Anthropic (Claude): Adds cache_control hint to static segment.
+ * For all providers: Logs cache hit/miss and estimated token savings.
+ */
+function prepareSystemPromptWithCache(
+  prompt: string | undefined,
+  provider: AIProvider,
+): { processedPrompt: string | undefined; cacheInfo: { hit: boolean; hash?: string; staticTokensEstimate?: number } } {
+  if (!prompt) {
+    return { processedPrompt: prompt, cacheInfo: { hit: false } };
+  }
+
+  const { staticSegment, dynamicSegment, hasBoundary } = splitSystemPrompt(prompt);
+
+  if (!hasBoundary || !staticSegment) {
+    return { processedPrompt: prompt, cacheInfo: { hit: false } };
+  }
+
+  const { hash, fromCache } = getCachedStaticHash(staticSegment);
+  const staticTokensEstimate = Math.ceil(staticSegment.length / 4);
+
+  logger.info({
+    event: 'ai_gateway_prompt_cache',
+    provider,
+    cacheHit: fromCache,
+    staticHash: hash,
+    staticChars: staticSegment.length,
+    dynamicChars: dynamicSegment.length,
+    estimatedStaticTokens: staticTokensEstimate,
+  });
+
+  // Recombine — the boundary marker is stripped but content is preserved.
+  // For Anthropic: the chat() layer handles cache_control based on the
+  // presence of the static/dynamic split. We pass metadata via a marker
+  // comment that the Anthropic adapter can detect.
+  const recombined = provider === 'claude'
+    ? `${staticSegment}\n<!-- cache_control:ephemeral -->\n${dynamicSegment}`
+    : `${staticSegment}\n${dynamicSegment}`;
+
+  return {
+    processedPrompt: recombined,
+    cacheInfo: { hit: fromCache, hash, staticTokensEstimate },
+  };
+}
 
 export interface AIGatewayRequest {
   messages: ChatMessage[];
@@ -91,6 +213,11 @@ export async function aiGateway(request: AIGatewayRequest): Promise<AIGatewayRes
       processedSystemPrompt = await deidentifyTranscriptOrThrow(processedSystemPrompt);
     }
 
+    // Apply cache boundary optimization to system prompt
+    const { processedPrompt: cachedPrompt, cacheInfo } =
+      prepareSystemPromptWithCache(processedSystemPrompt, provider);
+    processedSystemPrompt = cachedPrompt;
+
     // 2. Log the AI call (pre-execution audit)
     logger.info({
       event: 'ai_gateway_request',
@@ -100,6 +227,8 @@ export async function aiGateway(request: AIGatewayRequest): Promise<AIGatewayRes
       patientId: request.patientId,
       messageCount: processedMessages.length,
       deidentified,
+      promptCacheHit: cacheInfo.hit,
+      promptCacheHash: cacheInfo.hash,
     });
 
     // 3. Route to provider via chat()
@@ -230,6 +359,11 @@ export async function* streamGateway(
     processedSystemPrompt = await deidentifyTranscriptOrThrow(processedSystemPrompt);
   }
 
+  // Apply cache boundary optimization to system prompt
+  const { processedPrompt: cachedPrompt, cacheInfo } =
+    prepareSystemPromptWithCache(processedSystemPrompt, provider);
+  processedSystemPrompt = cachedPrompt;
+
   // 2. Audit start
   logger.info({
     event: 'ai_stream_gateway_start',
@@ -238,6 +372,8 @@ export async function* streamGateway(
     userId: request.userId,
     messageCount: processedMessages.length,
     deidentified,
+    promptCacheHit: cacheInfo.hit,
+    promptCacheHash: cacheInfo.hash,
   });
 
   // 3. Stream through provider

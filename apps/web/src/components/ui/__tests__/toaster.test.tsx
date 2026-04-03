@@ -1,13 +1,36 @@
 /** @jest-environment jsdom */
-jest.mock('framer-motion', () => ({ motion: new Proxy({}, { get: (_, t: string) => t }), AnimatePresence: ({ children }: any) => children }));
-jest.mock('next-intl', () => ({ useTranslations: () => (k: string) => k }));
-jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...p }: any) => <a {...p}>{children}</a> }));
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/' }));
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+
+// Mocks must be before any imports that use them
+jest.mock('framer-motion', () => ({
+  motion: new Proxy({}, { get: (_, t: string) => t }),
+  AnimatePresence: ({ children }: any) => children
+}));
+
+jest.mock('next-intl', () => ({
+  useTranslations: () => (k: string) => k
+}));
+
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, ...p }: any) => <a {...p}>{children}</a>
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  usePathname: () => '/'
+}));
+
 jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
-jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (k: string) => k }) }));
+
+jest.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({ locale: 'en', t: (k: string) => k })
+}));
 
 jest.mock('@/hooks/use-toast', () => ({
-  useToast: jest.fn().mockReturnValue({ toasts: [] }),
+  useToast: jest.fn(() => ({ toasts: [] })),
+  toast: jest.fn(),
 }));
 
 jest.mock('@/components/ui/Toast', () => ({
@@ -19,18 +42,21 @@ jest.mock('@/components/ui/Toast', () => ({
   ToastViewport: () => <div data-testid="toast-viewport" />,
 }));
 
-import React from 'react';
-import { render, screen } from '@testing-library/react';
 import { Toaster } from '../toaster';
+const { useToast } = require('@/hooks/use-toast');
 
 describe('Toaster', () => {
+  beforeEach(() => {
+    useToast.mockClear();
+    useToast.mockReturnValue({ toasts: [] });
+  });
+
   it('renders without any toasts', () => {
     render(<Toaster />);
     expect(screen.getByTestId('toast-viewport')).toBeInTheDocument();
   });
 
   it('renders toast items when toasts are present', () => {
-    const useToast = require('@/hooks/use-toast').useToast;
     useToast.mockReturnValue({
       toasts: [
         { id: '1', title: 'Test Notification', description: 'This is a test' },
@@ -42,7 +68,6 @@ describe('Toaster', () => {
   });
 
   it('renders multiple toasts', () => {
-    const useToast = require('@/hooks/use-toast').useToast;
     useToast.mockReturnValue({
       toasts: [
         { id: '1', title: 'Toast 1' },

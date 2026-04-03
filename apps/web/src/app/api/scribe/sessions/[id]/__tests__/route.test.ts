@@ -16,10 +16,9 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
+const mockSafeErrorResponse = jest.fn();
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
-  ),
+  safeErrorResponse: (...args: any[]) => mockSafeErrorResponse(...args),
 }));
 
 const { GET } = require('../route');
@@ -40,7 +39,13 @@ const mockSession = {
 };
 
 describe('GET /api/scribe/sessions/[id]', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const { NextResponse } = require('next/server');
+    mockSafeErrorResponse.mockReturnValue(
+      NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    );
+  });
 
   it('returns session with transcription and SOAP note', async () => {
     (prisma.scribeSession.findFirst as jest.Mock).mockResolvedValue(mockSession);

@@ -16,15 +16,33 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
+jest.mock('@upstash/redis', () => ({
+  Redis: jest.fn().mockImplementation(() => ({
+    ping: jest.fn().mockResolvedValue('PONG'),
+  })),
+}));
+
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
 
 describe('GET /api/health/ready', () => {
-  beforeEach(() => jest.clearAllMocks());
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
 
   it('returns healthy when database is connected', async () => {
-    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
-
     const res = await GET();
     const data = await res.json();
 
@@ -45,8 +63,6 @@ describe('GET /api/health/ready', () => {
   });
 
   it('returns degraded when optional services are down', async () => {
-    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
-
     const res = await GET();
     const data = await res.json();
 

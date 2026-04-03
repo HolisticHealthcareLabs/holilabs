@@ -50,7 +50,6 @@ export type {
     WorkflowTemplate,
     WorkflowStep,
     WorkflowResult,
-    WorkflowStepResult,
 } from './workflows';
 
 export {

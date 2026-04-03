@@ -18,10 +18,13 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockSendScreeningReminder = jest.fn().mockResolvedValue(undefined);
+const mockSendScreeningOverdueAlert = jest.fn().mockResolvedValue(undefined);
+
 jest.mock('@/lib/services/prevention-notification.service', () => ({
   getPreventionNotificationService: jest.fn().mockReturnValue({
-    sendScreeningReminder: jest.fn().mockResolvedValue(undefined),
-    sendScreeningOverdueAlert: jest.fn().mockResolvedValue(undefined),
+    sendScreeningReminder: mockSendScreeningReminder,
+    sendScreeningOverdueAlert: mockSendScreeningOverdueAlert,
   }),
 }));
 
@@ -31,23 +34,51 @@ jest.mock('@/lib/api/safe-error-response', () => ({
   ),
 }));
 
-const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
-const { getPreventionNotificationService } = require('@/lib/services/prevention-notification.service');
 
 describe('POST /api/prevention/notifications/cron/send-reminders', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    delete process.env.CRON_SECRET;
     (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue(undefined);
+    mockSendScreeningReminder.mockResolvedValue(undefined);
+    mockSendScreeningOverdueAlert.mockResolvedValue(undefined);
   });
 
   it('processes reminders successfully with no screenings pending', async () => {
+    delete process.env.CRON_SECRET;
+    jest.resetModules();
+
+    jest.mock('@/lib/api/middleware', () => ({
+      createPublicRoute: (handler: any) => handler,
+    }));
+    jest.mock('@/lib/logger', () => ({
+      __esModule: true,
+      default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+    }));
+    jest.mock('@/lib/prisma', () => ({
+      prisma: {
+        screeningOutcome: {
+          findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn().mockResolvedValue(undefined),
+        },
+      },
+    }));
+    jest.mock('@/lib/services/prevention-notification.service', () => ({
+      getPreventionNotificationService: jest.fn().mockReturnValue({
+        sendScreeningReminder: jest.fn().mockResolvedValue(undefined),
+        sendScreeningOverdueAlert: jest.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    jest.mock('@/lib/api/safe-error-response', () => ({
+      safeErrorResponse: jest.fn(),
+    }));
+
+    const { POST: handler } = require('../route');
     const req = new NextRequest('http://localhost:3000/api/prevention/notifications/cron/send-reminders', {
       method: 'POST',
     });
-    const res = await POST(req);
+    const res = await handler(req);
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -58,10 +89,38 @@ describe('POST /api/prevention/notifications/cron/send-reminders', () => {
 
   it('returns 401 when CRON_SECRET is set and token is missing', async () => {
     process.env.CRON_SECRET = 'my-cron-secret';
+    jest.resetModules();
+
+    jest.mock('@/lib/api/middleware', () => ({
+      createPublicRoute: (handler: any) => handler,
+    }));
+    jest.mock('@/lib/logger', () => ({
+      __esModule: true,
+      default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+    }));
+    jest.mock('@/lib/prisma', () => ({
+      prisma: {
+        screeningOutcome: {
+          findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn().mockResolvedValue(undefined),
+        },
+      },
+    }));
+    jest.mock('@/lib/services/prevention-notification.service', () => ({
+      getPreventionNotificationService: jest.fn().mockReturnValue({
+        sendScreeningReminder: jest.fn().mockResolvedValue(undefined),
+        sendScreeningOverdueAlert: jest.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    jest.mock('@/lib/api/safe-error-response', () => ({
+      safeErrorResponse: jest.fn(),
+    }));
+
+    const { POST: handler } = require('../route');
     const req = new NextRequest('http://localhost:3000/api/prevention/notifications/cron/send-reminders', {
       method: 'POST',
     });
-    const res = await POST(req);
+    const res = await handler(req);
     const data = await res.json();
 
     expect(res.status).toBe(401);
@@ -70,16 +129,76 @@ describe('POST /api/prevention/notifications/cron/send-reminders', () => {
 
   it('accepts valid Bearer token when CRON_SECRET is set', async () => {
     process.env.CRON_SECRET = 'my-cron-secret';
+    jest.resetModules();
+
+    jest.mock('@/lib/api/middleware', () => ({
+      createPublicRoute: (handler: any) => handler,
+    }));
+    jest.mock('@/lib/logger', () => ({
+      __esModule: true,
+      default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+    }));
+    jest.mock('@/lib/prisma', () => ({
+      prisma: {
+        screeningOutcome: {
+          findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn().mockResolvedValue(undefined),
+        },
+      },
+    }));
+    jest.mock('@/lib/services/prevention-notification.service', () => ({
+      getPreventionNotificationService: jest.fn().mockReturnValue({
+        sendScreeningReminder: jest.fn().mockResolvedValue(undefined),
+        sendScreeningOverdueAlert: jest.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    jest.mock('@/lib/api/safe-error-response', () => ({
+      safeErrorResponse: jest.fn(),
+    }));
+
+    const { POST: handler } = require('../route');
     const req = new NextRequest('http://localhost:3000/api/prevention/notifications/cron/send-reminders', {
       method: 'POST',
       headers: { Authorization: 'Bearer my-cron-secret' },
     });
-    const res = await POST(req);
+    const res = await handler(req);
 
     expect(res.status).toBe(200);
   });
 
   it('sends 7-day reminders for upcoming screenings', async () => {
+    delete process.env.CRON_SECRET;
+    jest.resetModules();
+
+    const mockReminder = jest.fn().mockResolvedValue(undefined);
+
+    jest.mock('@/lib/api/middleware', () => ({
+      createPublicRoute: (handler: any) => handler,
+    }));
+    jest.mock('@/lib/logger', () => ({
+      __esModule: true,
+      default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+    }));
+
+    const mockFindMany = jest.fn();
+    jest.mock('@/lib/prisma', () => ({
+      prisma: {
+        screeningOutcome: {
+          findMany: mockFindMany,
+          update: jest.fn().mockResolvedValue(undefined),
+        },
+      },
+    }));
+    jest.mock('@/lib/services/prevention-notification.service', () => ({
+      getPreventionNotificationService: jest.fn().mockReturnValue({
+        sendScreeningReminder: mockReminder,
+        sendScreeningOverdueAlert: jest.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    jest.mock('@/lib/api/safe-error-response', () => ({
+      safeErrorResponse: jest.fn(),
+    }));
+
     const mockScreening = {
       id: 'scr-1',
       patientId: 'pat-1',
@@ -93,20 +212,24 @@ describe('POST /api/prevention/notifications/cron/send-reminders', () => {
       patient: { id: 'pat-1', firstName: 'Ana', lastName: 'Lima' },
     };
 
-    (prisma.screeningOutcome.findMany as jest.Mock)
+    mockFindMany
       .mockResolvedValueOnce([mockScreening]) // 7-day
       .mockResolvedValueOnce([])              // 3-day
       .mockResolvedValueOnce([])              // 1-day
       .mockResolvedValueOnce([]);             // overdue
 
-    const service = getPreventionNotificationService();
+    const { POST: handler } = require('../route');
     const req = new NextRequest('http://localhost:3000/api/prevention/notifications/cron/send-reminders', {
       method: 'POST',
     });
-    const res = await POST(req);
+    const res = await handler(req);
     const data = await res.json();
 
     expect(data.data.reminders7Days).toBe(1);
-    expect(service.sendScreeningReminder).toHaveBeenCalledTimes(1);
+    expect(mockReminder).toHaveBeenCalledTimes(1);
+  });
+
+  afterEach(() => {
+    delete process.env.CRON_SECRET;
   });
 });

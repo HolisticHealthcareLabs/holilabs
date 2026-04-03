@@ -5,7 +5,9 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 jest.mock('@/lib/logger', () => ({
-  logger: { error: jest.fn(), info: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  __esModule: true,
+  default: { error: jest.fn(), info: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { error: jest.fn(), info: jest.fn(), warn: jest.fn(), debug: jest.fn() }
 }));
 
 const { LoadingScreen } = require('../LoadingScreen');

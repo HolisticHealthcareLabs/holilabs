@@ -28,22 +28,12 @@ jest.mock('@/lib/clinical/content-registry', () => ({
 }));
 
 jest.mock('@/lib/clinical/governance-policy', () => ({
-  getActiveContentBundle: jest.fn(() => ({
-    contentBundleVersion: '1.0.0',
-    contentChecksum: 'abc123',
-    protocolVersion: '1.0.0',
-    signoffStatus: 'SIGNED_OFF',
-    lifecycleState: 'ACTIVE',
-  })),
-  getRuntimeContentStatus: jest.fn(() => 'ACTIVE_SIGNED_OFF'),
+  getActiveContentBundle: jest.fn(),
+  getRuntimeContentStatus: jest.fn(),
 }));
 
 jest.mock('@/lib/clinical/lab-decision-rules', () => ({
-  assessRenalDataQuality: jest.fn(() => ({
-    isMissingCriticalInput: false,
-    isStale: false,
-    rationale: [],
-  })),
+  assessRenalDataQuality: jest.fn(),
 }));
 
 jest.mock('@/config/clinical-rules', () => ({
@@ -60,6 +50,8 @@ jest.mock('@/config/clinical-rules', () => ({
 }));
 
 const { POST } = require('../route');
+const { getActiveContentBundle, getRuntimeContentStatus } = require('@/lib/clinical/governance-policy');
+const { assessRenalDataQuality } = require('@/lib/clinical/lab-decision-rules');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -69,6 +61,19 @@ const mockContext = {
 describe('POST /api/clinical/primitives/validate-dose', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getActiveContentBundle as jest.Mock).mockReturnValue({
+      contentBundleVersion: '1.0.0',
+      contentChecksum: 'abc123',
+      protocolVersion: '1.0.0',
+      signoffStatus: 'SIGNED_OFF',
+      lifecycleState: 'ACTIVE',
+    });
+    (getRuntimeContentStatus as jest.Mock).mockReturnValue('ACTIVE_SIGNED_OFF');
+    (assessRenalDataQuality as jest.Mock).mockReturnValue({
+      isMissingCriticalInput: false,
+      isStale: false,
+      rationale: [],
+    });
   });
 
   it('returns safe status for a valid metformin dose within range', async () => {

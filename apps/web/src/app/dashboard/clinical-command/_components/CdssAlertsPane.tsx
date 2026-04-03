@@ -725,6 +725,7 @@ export function CdssAlertsPane({
   selectedPatient = null,
   transcript = '',
   resetSignal = 0,
+  onOpenHandout,
 }: CdssAlertsPaneProps) {
   const { data: sessionData } = useSession();
   const t = useTranslations('dashboard.clinicalCommand');
@@ -858,6 +859,13 @@ export function CdssAlertsPane({
   // de-identified context, transcript, and action-type trigger.
   async function handleBubbleClick(bubble: QuickActionBubble) {
     if (isReplying || !syncEnabled || !selectedPatient) return;
+
+    // Special case: handout bubble opens the dedicated modal
+    if (bubble.id === 'handout' && onOpenHandout) {
+      onOpenHandout();
+      incrementClick(bubble.id);
+      return;
+    }
 
     incrementClick(bubble.id);
 

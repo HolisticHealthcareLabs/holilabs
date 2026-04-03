@@ -9,6 +9,7 @@
 
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setupMockAuth } from './helpers/auth';
 
 // ─── Synthetic test data (non-PHI) ──────────────────────────────────────────
 const TEST_USER = {
@@ -65,6 +66,7 @@ function checkA11yViolations(violations: any[]) {
 
 test.describe('Billing Code Validation — AI Auditor', () => {
   test('Console page loads and has no critical a11y violations', async ({ page }) => {
+    await setupMockAuth(page);
     await page.goto('/dashboard/console');
 
     // Skip gracefully if auth is required
@@ -84,6 +86,7 @@ test.describe('Billing Code Validation — AI Auditor', () => {
   });
 
   test('Doctor logs in, selects mismatching CPT/ICD-10, AI Auditor flags it', async ({ page }) => {
+    await setupMockAuth(page);
     // ── Step 1: Navigate to login ──────────────────────────────────────────
     await page.goto('/auth/login');
     await page.waitForLoadState('networkidle');
@@ -204,6 +207,7 @@ test.describe('Billing Code Validation — AI Auditor', () => {
   });
 
   test('Stub: validate-dose returns BILLING_MISMATCH — UI shows danger state', async ({ page }) => {
+    await setupMockAuth(page);
     await page.goto('/dashboard/console');
 
     // Gracefully skip if not reachable (auth required)

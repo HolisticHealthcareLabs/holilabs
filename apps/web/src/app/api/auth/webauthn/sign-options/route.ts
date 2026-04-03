@@ -44,7 +44,7 @@ export const POST = createProtectedRoute(
 
     const options = await generateAuthenticationOptions({
       rpID: RP_ID,
-      userVerification: 'preferred',
+      userVerification: 'required',
       allowCredentials: credentials.map((c) => ({
         id: c.credentialId,
         transports: c.transports as AuthenticatorTransport[],

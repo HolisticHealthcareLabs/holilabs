@@ -1,3 +1,5 @@
+export {};
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (h: any) => h,
 }));

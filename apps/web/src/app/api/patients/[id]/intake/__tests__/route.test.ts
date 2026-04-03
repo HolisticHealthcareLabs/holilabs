@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -9,10 +10,6 @@ jest.mock('@/lib/prisma', () => ({
     patient: { create: jest.fn(), update: jest.fn() },
     consent: { create: jest.fn() },
   },
-}));
-
-jest.mock('@/lib/security/encryption', () => ({
-  encryptPHIWithVersion: jest.fn().mockResolvedValue('enc-value'),
 }));
 
 jest.mock('@/lib/security/audit-chain', () => ({
@@ -26,6 +23,8 @@ jest.mock('@/lib/logger', () => {
 
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { createChainedAuditEntry } = require('@/lib/security/audit-chain');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -41,7 +40,11 @@ const validBody = {
 };
 
 describe('POST /api/patients/[id]/intake', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (createChainedAuditEntry as jest.Mock).mockResolvedValue({ id: 'audit-1' });
+  });
 
   it('updates existing patient and records consents', async () => {
     (prisma.patient.update as jest.Mock).mockResolvedValue({ id: 'patient-1' });

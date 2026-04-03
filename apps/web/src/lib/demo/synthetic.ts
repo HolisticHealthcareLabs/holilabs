@@ -8,8 +8,14 @@
 export const DEMO_CLINICIAN_ID = 'demo-clinician-id' as const;
 export const DEMO_CLINICIAN_EMAIL = 'demo-clinician@holilabs.xyz' as const;
 
+const EPHEMERAL_EMAIL_RE = /^demo-[a-f0-9]+@holilabs\.xyz$/;
+
 export function isDemoClinician(userId?: string | null, email?: string | null) {
-  return userId === DEMO_CLINICIAN_ID || email === DEMO_CLINICIAN_EMAIL;
+  return (
+    userId === DEMO_CLINICIAN_ID ||
+    email === DEMO_CLINICIAN_EMAIL ||
+    (typeof email === 'string' && EPHEMERAL_EMAIL_RE.test(email))
+  );
 }
 
 export type SyntheticPatient = {
@@ -114,6 +120,96 @@ export function getSyntheticPatients(): SyntheticPatient[] {
       isPalliativeCare: false,
       createdAt: isoMinutesAgo(60 * 24 * 45),
       updatedAt: isoMinutesAgo(60 * 24 * 10),
+    },
+  ];
+}
+
+export type SyntheticPrescription = {
+  id: string;
+  medications: Array<{ name: string; dose: string; frequency: string; route?: string }>;
+  instructions: string | null;
+  diagnosis: string | null;
+  status: 'PENDING' | 'SIGNED' | 'SENT' | 'FILLED' | 'CANCELLED';
+  signedAt: string | null;
+  createdAt: string;
+  prescriptionHash: string;
+  patient: { id: string; firstName: string; lastName: string; dateOfBirth?: string };
+  clinician: { id: string; firstName: string; lastName: string; licenseNumber: string };
+};
+
+export function getSyntheticPrescriptions(clinicianId: string): SyntheticPrescription[] {
+  return [
+    {
+      id: 'rx_demo_001',
+      medications: [
+        { name: 'Losartana 50 mg', dose: '50 mg', frequency: '1x/day', route: 'oral' },
+        { name: 'Hidroclorotiazida 25 mg', dose: '25 mg', frequency: '1x/day', route: 'oral' },
+      ],
+      instructions: 'Take in the morning with water. Monitor blood pressure weekly.',
+      diagnosis: 'I10 — Essential hypertension',
+      status: 'SIGNED',
+      signedAt: isoMinutesAgo(60 * 24 * 2),
+      createdAt: isoMinutesAgo(60 * 24 * 2),
+      prescriptionHash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+      patient: { id: 'pt_demo_001', firstName: 'Aline', lastName: 'Santos', dateOfBirth: '1987-04-12T00:00:00.000Z' },
+      clinician: { id: clinicianId, firstName: 'Dr. Demo', lastName: 'Clinician', licenseNumber: 'CRM-SP-000000' },
+    },
+    {
+      id: 'rx_demo_002',
+      medications: [
+        { name: 'Metformina 850 mg', dose: '850 mg', frequency: '2x/day', route: 'oral' },
+      ],
+      instructions: 'Take with meals. Report any gastrointestinal discomfort.',
+      diagnosis: 'E11 — Type 2 diabetes mellitus',
+      status: 'SENT',
+      signedAt: isoMinutesAgo(60 * 24),
+      createdAt: isoMinutesAgo(60 * 24),
+      prescriptionHash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+      patient: { id: 'pt_demo_002', firstName: 'Bruno', lastName: 'Almeida', dateOfBirth: '1975-09-23T00:00:00.000Z' },
+      clinician: { id: clinicianId, firstName: 'Dr. Demo', lastName: 'Clinician', licenseNumber: 'CRM-SP-000000' },
+    },
+    {
+      id: 'rx_demo_003',
+      medications: [
+        { name: 'Amoxicilina 500 mg', dose: '500 mg', frequency: '3x/day (8/8h)', route: 'oral' },
+      ],
+      instructions: 'Complete full 7-day course even if symptoms improve.',
+      diagnosis: 'J06.9 — Upper respiratory infection',
+      status: 'FILLED',
+      signedAt: isoMinutesAgo(60 * 24 * 7),
+      createdAt: isoMinutesAgo(60 * 24 * 7),
+      prescriptionHash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+      patient: { id: 'pt_demo_003', firstName: 'Camila', lastName: 'Rocha', dateOfBirth: '1992-01-05T00:00:00.000Z' },
+      clinician: { id: clinicianId, firstName: 'Dr. Demo', lastName: 'Clinician', licenseNumber: 'CRM-SP-000000' },
+    },
+    {
+      id: 'rx_demo_004',
+      medications: [
+        { name: 'Morfina 10 mg', dose: '10 mg', frequency: '4/4h PRN', route: 'oral' },
+        { name: 'Ondansetrona 4 mg', dose: '4 mg', frequency: 'PRN (nausea)', route: 'sublingual' },
+      ],
+      instructions: 'Palliative care protocol. Assess pain scale before each dose.',
+      diagnosis: 'C34 — Malignant neoplasm of bronchus and lung',
+      status: 'SIGNED',
+      signedAt: isoMinutesAgo(60 * 8),
+      createdAt: isoMinutesAgo(60 * 8),
+      prescriptionHash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+      patient: { id: 'pt_demo_004', firstName: 'Diego', lastName: 'Ferreira', dateOfBirth: '1961-06-30T00:00:00.000Z' },
+      clinician: { id: clinicianId, firstName: 'Dr. Demo', lastName: 'Clinician', licenseNumber: 'CRM-SP-000000' },
+    },
+    {
+      id: 'rx_demo_005',
+      medications: [
+        { name: 'Ibuprofeno 400 mg', dose: '400 mg', frequency: '3x/day', route: 'oral' },
+      ],
+      instructions: 'Take after meals for 5 days. Do not exceed recommended dose.',
+      diagnosis: 'M54.5 — Low back pain',
+      status: 'PENDING',
+      signedAt: null,
+      createdAt: isoMinutesAgo(30),
+      prescriptionHash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6',
+      patient: { id: 'pt_demo_003', firstName: 'Camila', lastName: 'Rocha', dateOfBirth: '1992-01-05T00:00:00.000Z' },
+      clinician: { id: clinicianId, firstName: 'Dr. Demo', lastName: 'Clinician', licenseNumber: 'CRM-SP-000000' },
     },
   ];
 }

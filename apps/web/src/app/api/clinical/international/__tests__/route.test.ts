@@ -20,24 +20,25 @@ jest.mock('@/lib/logger', () => ({
 
 jest.mock('@/lib/clinical', () => ({
   icd11Service: {
-    search: jest.fn().mockReturnValue({ matches: [], totalCount: 0 }),
-    getAllCodes: jest.fn().mockReturnValue([{ code: '5A11', title: 'Type 2 diabetes' }]),
-    mapFromICD10: jest.fn().mockReturnValue({ icd11Code: '5A11', entity: 'Type 2 diabetes' }),
-    validate: jest.fn().mockReturnValue(true),
-    getEntity: jest.fn().mockReturnValue({ code: '5A11', title: 'Type 2 diabetes' }),
+    search: jest.fn(),
+    getAllCodes: jest.fn(),
+    mapFromICD10: jest.fn(),
+    validate: jest.fn(),
+    getEntity: jest.fn(),
   },
   internationalGuidelinesService: {
     WHO_ESSENTIAL_MEDICINES: [{ name: 'Metformin', category: 'Endocrine' }],
     INTERNATIONAL_GUIDELINES: [{ source: 'NICE', condition: 'hypertension' }],
-    getEssentialMedicinesByCategory: jest.fn().mockReturnValue([]),
-    getGuidelinesForCondition: jest.fn().mockReturnValue([]),
-    isEssentialMedicine: jest.fn().mockReturnValue({ name: 'Metformin' }),
-    generateGuidelinesSummary: jest.fn().mockReturnValue({ conditions: [] }),
+    getEssentialMedicinesByCategory: jest.fn(),
+    getGuidelinesForCondition: jest.fn(),
+    isEssentialMedicine: jest.fn(),
+    generateGuidelinesSummary: jest.fn(),
   },
 }));
 
 const { GET, POST } = require('../route');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { icd11Service, internationalGuidelinesService } = require('@/lib/clinical');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -48,6 +49,15 @@ describe('GET /api/clinical/international', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (icd11Service.search as jest.Mock).mockReturnValue({ matches: [], totalCount: 0 });
+    (icd11Service.getAllCodes as jest.Mock).mockReturnValue([{ code: '5A11', title: 'Type 2 diabetes' }]);
+    (icd11Service.mapFromICD10 as jest.Mock).mockReturnValue({ icd11Code: '5A11', entity: 'Type 2 diabetes' });
+    (icd11Service.validate as jest.Mock).mockReturnValue(true);
+    (icd11Service.getEntity as jest.Mock).mockReturnValue({ code: '5A11', title: 'Type 2 diabetes' });
+    (internationalGuidelinesService.getEssentialMedicinesByCategory as jest.Mock).mockReturnValue([]);
+    (internationalGuidelinesService.getGuidelinesForCondition as jest.Mock).mockReturnValue([]);
+    (internationalGuidelinesService.isEssentialMedicine as jest.Mock).mockReturnValue({ name: 'Metformin' });
+    (internationalGuidelinesService.generateGuidelinesSummary as jest.Mock).mockReturnValue({ conditions: [] });
   });
 
   it('returns summary when no type specified', async () => {
@@ -84,6 +94,10 @@ describe('POST /api/clinical/international', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (icd11Service.validate as jest.Mock).mockReturnValue(true);
+    (icd11Service.getEntity as jest.Mock).mockReturnValue({ code: '5A11', title: 'Type 2 diabetes' });
+    (internationalGuidelinesService.isEssentialMedicine as jest.Mock).mockReturnValue({ name: 'Metformin' });
+    (internationalGuidelinesService.generateGuidelinesSummary as jest.Mock).mockReturnValue({ conditions: [] });
   });
 
   it('validates drug against WHO essential medicines', async () => {

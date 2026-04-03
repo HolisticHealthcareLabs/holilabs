@@ -52,12 +52,11 @@ describe('SituationBadges', () => {
         onPaymentNotificationSend={jest.fn()}
       />
     );
-    const removeButtons = screen.getAllByRole('button');
-    // The remove button is nested inside the badge button
-    const innerRemove = removeButtons.find(b => b.querySelector('svg'));
-    if (innerRemove) {
-      fireEvent.click(innerRemove);
-      expect(onChange).toHaveBeenCalled();
-    }
+    const svgEl = document.querySelector('svg');
+    expect(svgEl).not.toBeNull();
+    const innerRemove = svgEl!.closest('button');
+    expect(innerRemove).not.toBeNull();
+    fireEvent.click(innerRemove!);
+    expect(onChange).toHaveBeenCalled();
   });
 });

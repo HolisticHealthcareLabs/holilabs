@@ -25,22 +25,19 @@ export function NotificationBell({ unreadCount, isOpen, onClick }: NotificationB
       aria-label={unreadCount > 0 ? t('bell', { count: unreadCount }) : t('panelTitle')}
       aria-haspopup="true"
       aria-expanded={isOpen}
-      className="relative flex items-center justify-center"
+      className="relative flex items-center justify-center w-full h-full"
       style={{
-        width: 'var(--touch-md)',
-        height: 'var(--touch-md)',
-        borderRadius: 'var(--radius-md)',
         color: 'var(--text-secondary)',
         transition: 'color 0.15s',
       }}
     >
       <svg
-        width="20"
-        height="20"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"

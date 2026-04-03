@@ -399,17 +399,20 @@
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
-  width: auto !important;
-  height: auto !important;
-  border-radius: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
   box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .glass-circle-inner button:hover {
   background: transparent !important;
 }
 .glass-circle-inner button svg {
-  width: 1rem !important;
-  height: 1rem !important;
+  width: 18px !important;
+  height: 18px !important;
 }
 
 /* APPLE-STYLE COMPONENT PATTERNS */
@@ -569,6 +572,11 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Hidden scrollbar utility — scroll works, bar invisible */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Selection Color - Brand Green with dark mode support */

@@ -59,15 +59,44 @@ export interface ToolCallResult {
   toolCallId: string;
   toolName: string;
   success: boolean;
+  /** True when a middleware (RBAC, consent, de-id) blocked execution. */
+  blocked?: boolean;
   result: MCPResult;
 }
 
 /**
+ * Structured denial returned when middleware blocks a tool call.
+ * Fed back to the LLM as a tool_result so the agent adapts behavior.
+ */
+export interface ToolDenial {
+  blocked: true;
+  /** Why the tool was blocked (e.g., "RBAC: NURSE role cannot prescribe"). */
+  reason: string;
+  /** Suggested alternative (e.g., "Request CLINICIAN to perform this action"). */
+  suggestion?: string;
+}
+
+/**
+ * Optional middleware checker that runs before tool execution.
+ * Returns null if the tool call is allowed, or a ToolDenial if blocked.
+ */
+export type MiddlewareChecker = (
+  toolCall: ToolCall,
+  context: MCPContext,
+) => Promise<ToolDenial | null>;
+
+/**
  * Execute tool calls returned by a provider against the MCP registry.
+ *
+ * When a middlewareChecker is provided and blocks a tool call, the denial
+ * reason + suggestion is returned as a structured tool_result so the LLM
+ * sees it and adapts (e.g., NURSE blocked from prescribing → agent
+ * suggests escalation to CLINICIAN).
  *
  * @param toolCalls - ToolCall[] from provider response
  * @param context   - MCPContext for permission checks and audit
  * @param executor  - Function that executes a single tool (default: registry.executeTool)
+ * @param middlewareChecker - Optional pre-execution middleware gate
  */
 export async function executeToolCalls(
   toolCalls: ToolCall[],
@@ -77,10 +106,42 @@ export async function executeToolCalls(
     input: Record<string, unknown>;
     context: MCPContext;
   }) => Promise<{ success: boolean; result: MCPResult }>,
+  middlewareChecker?: MiddlewareChecker,
 ): Promise<ToolCallResult[]> {
   const results: ToolCallResult[] = [];
 
   for (const call of toolCalls) {
+    // ── Pre-execution middleware check ───────────────────────────────
+    if (middlewareChecker) {
+      const denial = await middlewareChecker(call, context);
+      if (denial) {
+        logger.warn({
+          event: 'tool_bridge_blocked',
+          tool: call.name,
+          callId: call.id,
+          reason: denial.reason,
+        });
+
+        results.push({
+          toolCallId: call.id,
+          toolName: call.name,
+          success: false,
+          blocked: true,
+          result: {
+            success: false,
+            data: {
+              blocked: true,
+              reason: denial.reason,
+              suggestion: denial.suggestion,
+            },
+            error: denial.reason,
+          },
+        });
+        continue;
+      }
+    }
+
+    // ── Execute tool ────────────────────────────────────────────────
     try {
       const response = await executor({
         tool: call.name,

@@ -22,10 +22,9 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockSafeErrorResponse = jest.fn();
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
-  ),
+  safeErrorResponse: (...args: any[]) => mockSafeErrorResponse(...args),
 }));
 
 const { GET, PATCH, DELETE } = require('../route');
@@ -42,6 +41,10 @@ describe('GET /api/imaging/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    const { NextResponse } = require('next/server');
+    mockSafeErrorResponse.mockReturnValue(
+      NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    );
   });
 
   it('returns 404 when study not found', async () => {

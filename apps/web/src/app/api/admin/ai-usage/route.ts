@@ -379,12 +379,23 @@ export const POST = createProtectedRoute(
         log.fromCache ? 'Yes' : 'No',
       ]);
 
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const escapeCsvCell = (cell: unknown): string => {
+        const str = String(cell);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+      const csv = [
+        headers.map(escapeCsvCell).join(','),
+        ...rows.map(r => r.map(escapeCsvCell).join(',')),
+      ].join('\n');
+
+      // CVI-006: Sanitize date params for Content-Disposition to prevent header injection
+      const safeStart = String(startDate).replace(/[^0-9A-Za-z_-]/g, '').slice(0, 20);
+      const safeEnd = String(endDate).replace(/[^0-9A-Za-z_-]/g, '').slice(0, 20);
 
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="ai-usage-${startDate}-${endDate}.csv"`,
+          'Content-Disposition': `attachment; filename="ai-usage-${safeStart}-${safeEnd}.csv"`,
         },
       });
     }

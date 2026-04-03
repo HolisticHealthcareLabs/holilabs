@@ -9,12 +9,14 @@ import { prisma } from './prisma';
 import logger from './logger';
 import type { UserType, NotificationType, NotificationPriority } from '@prisma/client';
 import {
+  sendEmail as sendEmailFn,
   sendAppointmentReminderEmail,
   sendNewMessageEmail,
   sendConsultationCompletedEmail,
   sendNewDocumentEmail,
 } from './email';
 import {
+  sendSMS as sendSMSFn,
   sendAppointmentReminderSMS,
   sendNewMessageSMS,
   sendConsultationCompletedSMS,
@@ -96,14 +98,67 @@ export async function createNotification(options: CreateNotificationOptions) {
       type,
     });
 
-    // TODO: Send email if requested
-    if (sendEmail) {
-      // await sendEmailNotification(notification);
+    // Dispatch email if requested (for direct callers; template functions handle their own sends)
+    if (sendEmail && recipientId) {
+      try {
+        const recipient = recipientType === 'PATIENT'
+          ? await prisma.patient.findUnique({
+              where: { id: recipientId },
+              include: { patientUser: { select: { email: true } } },
+            })
+          : await prisma.user.findUnique({
+              where: { id: recipientId },
+              select: { email: true },
+            });
+
+        const email = recipientType === 'PATIENT'
+          ? (recipient as any)?.patientUser?.email
+          : (recipient as any)?.email;
+
+        if (email) {
+          await sendEmailFn({
+            to: email,
+            subject: title,
+            html: `<div style="font-family:Arial,sans-serif;padding:20px"><h2>${title}</h2><p>${message}</p>${actionUrl ? `<p><a href="${actionUrl}" style="background:#10b981;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;display:inline-block">${actionLabel || 'Ver Detalles'}</a></p>` : ''}</div>`,
+            text: `${title}: ${message}`,
+          });
+        }
+      } catch (error) {
+        logger.error({
+          event: 'notification_email_dispatch_error',
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
-    // TODO: Send SMS if requested
-    if (sendSMS) {
-      // await sendSMSNotification(notification);
+    // Dispatch SMS if requested
+    if (sendSMS && recipientId) {
+      try {
+        const recipient = recipientType === 'PATIENT'
+          ? await prisma.patient.findUnique({
+              where: { id: recipientId },
+              include: { patientUser: { select: { phone: true } } },
+            })
+          : await prisma.user.findUnique({
+              where: { id: recipientId },
+              select: { mfaPhoneNumber: true },
+            });
+
+        const phone = recipientType === 'PATIENT'
+          ? (recipient as any)?.patientUser?.phone
+          : (recipient as any)?.mfaPhoneNumber;
+
+        if (phone) {
+          await sendSMSFn({ to: phone, message: `${title}: ${message}` });
+        }
+      } catch (error) {
+        logger.error({
+          event: 'notification_sms_dispatch_error',
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
     return notification;

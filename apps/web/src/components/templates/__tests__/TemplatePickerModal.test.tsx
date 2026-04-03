@@ -10,20 +10,21 @@ jest.mock('@heroicons/react/24/outline', () => new Proxy({}, { get: () => () => 
 jest.mock('@heroicons/react/24/solid', () => new Proxy({}, { get: () => () => null }));
 
 jest.mock('@headlessui/react', () => {
-  const Dialog = ({ open, children }: any) => open ? <div role="dialog">{children}</div> : null;
+  const Dialog = ({ children }: any) => <div role="dialog">{children}</div>;
   Dialog.Panel = ({ children }: any) => <div>{children}</div>;
-  Dialog.Title = ({ children }: any) => <h2>{children}</h2>;
-  const Transition = ({ show, children }: any) => show ? <>{children}</> : null;
+  Dialog.Title = ({ children, className }: any) => <h2 className={className}>{children}</h2>;
+  const Transition = ({ show, children }: any) => show !== false ? <>{children}</> : null;
   Transition.Root = Transition;
   Transition.Child = ({ children }: any) => <>{children}</>;
-  return { Dialog, Transition, Fragment: ({ children }: any) => <>{children}</> };
+  const Fragment = 'div' as any;
+  return { Dialog, Transition, Fragment };
 });
 
 beforeEach(() => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = (() => Promise.resolve({
     ok: true,
-    json: async () => ({ templates: [], total: 0 }),
-  }) as any;
+    json: async () => ({ data: [], total: 0 }),
+  })) as any;
 });
 
 import React from 'react';

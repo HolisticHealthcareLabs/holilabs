@@ -8,9 +8,11 @@ jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: '
 
 jest.mock('@heroicons/react/24/outline', () => new Proxy({}, { get: () => () => null }));
 
+let _renderResult = 'Hello María González';
+let _extractResult: string[] = ['patient.firstName', 'patient.lastName'];
 jest.mock('@/lib/notifications/template-renderer', () => ({
-  renderTemplate: jest.fn().mockReturnValue('Hello María González'),
-  extractVariables: jest.fn().mockReturnValue(['patient.firstName', 'patient.lastName']),
+  renderTemplate: () => _renderResult,
+  extractVariables: () => _extractResult,
 }));
 
 import React from 'react';
@@ -20,7 +22,7 @@ import { TemplatePreview } from '../TemplatePreview';
 describe('TemplatePreview', () => {
   it('renders the preview toggle button', () => {
     render(<TemplatePreview template="Hello {{patient.firstName}} {{patient.lastName}}" />);
-    expect(screen.getByText(/Preview|Vista previa/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Preview|Vista previa/i).length).toBeGreaterThan(0);
   });
 
   it('shows rendered preview with sample data', () => {

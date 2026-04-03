@@ -21,6 +21,7 @@ const { prisma } = require('@/lib/prisma');
 const mockContext = {
   session: { userId: 'pu-1', patientId: 'patient-1', email: 'patient@test.com' },
   requestId: 'req-1',
+  params: {},
 };
 
 describe('GET /api/portal/notifications', () => {
@@ -33,7 +34,10 @@ describe('GET /api/portal/notifications', () => {
     ]);
     (prisma.notification.count as jest.Mock).mockResolvedValue(1);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/notifications'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/notifications?limit=50&type=SYSTEM_ALERT'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -47,7 +51,10 @@ describe('GET /api/portal/notifications', () => {
     (prisma.notification.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.notification.count as jest.Mock).mockResolvedValue(0);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/notifications?unreadOnly=true'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/notifications?unreadOnly=true&limit=50&type=SYSTEM_ALERT'),
+      mockContext
+    );
 
     expect(prisma.notification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -60,7 +67,10 @@ describe('GET /api/portal/notifications', () => {
     (prisma.notification.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.notification.count as jest.Mock).mockResolvedValue(0);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/notifications?type=APPOINTMENT_REMINDER'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/notifications?type=APPOINTMENT_REMINDER&limit=50'),
+      mockContext
+    );
 
     expect(prisma.notification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -73,7 +83,10 @@ describe('GET /api/portal/notifications', () => {
     (prisma.notification.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.notification.count as jest.Mock).mockResolvedValue(0);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/notifications?limit=10'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/notifications?limit=10&type=SYSTEM_ALERT'),
+      mockContext
+    );
 
     expect(prisma.notification.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ take: 10 })
@@ -84,7 +97,10 @@ describe('GET /api/portal/notifications', () => {
     (prisma.notification.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.notification.count as jest.Mock).mockResolvedValue(0);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/notifications'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/notifications?limit=50&type=SYSTEM_ALERT'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);

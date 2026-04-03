@@ -78,7 +78,7 @@ function makeRequest(url: string, opts?: { method?: string; body?: any }): NextR
     init.body = JSON.stringify(opts.body);
     init.headers = { 'Content-Type': 'application/json' };
   }
-  return new NextRequest(new URL(url), init);
+  return new NextRequest(new URL(url), init as any);
 }
 
 const defaultContext = {

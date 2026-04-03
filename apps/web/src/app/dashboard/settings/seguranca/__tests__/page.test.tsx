@@ -63,7 +63,7 @@ describe('SegurancaSettingsPage — skeleton loading', () => {
   it('shows skeleton while credentials are loading', () => {
     globalThis.fetch = jest.fn().mockReturnValue(new Promise(() => {}));
     render(<SegurancaSettingsPage />);
-    expect(screen.getByLabelText('Carregando dispositivos…')).toBeDefined();
+    expect(screen.getByLabelText(/loading devices/i)).toBeDefined();
   });
 
   it('renders credentials after load', async () => {
@@ -78,7 +78,7 @@ describe('SegurancaSettingsPage — skeleton loading', () => {
     mockFetch([{ ok: true, body: { credentials: mockCredentials } }]);
     render(<SegurancaSettingsPage />);
     await waitFor(() => {
-      expect(screen.getByText(/Dispositivo único/)).toBeDefined();
+      expect(screen.getByText(/single device/i)).toBeDefined();
     });
   });
 
@@ -86,7 +86,7 @@ describe('SegurancaSettingsPage — skeleton loading', () => {
     mockFetch([{ ok: true, body: { credentials: [] } }]);
     render(<SegurancaSettingsPage />);
     await waitFor(() => {
-      expect(screen.getByText(/Nenhum dispositivo registrado/)).toBeDefined();
+      expect(screen.getByText(/no devices/i)).toBeDefined();
     });
   });
 });
@@ -94,39 +94,37 @@ describe('SegurancaSettingsPage — skeleton loading', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('SegurancaSettingsPage — inline revoke confirmation', () => {
-  it('clicking Revogar shows inline confirmation, NOT browser confirm()', async () => {
+  it('clicking revoke shows inline confirmation, NOT browser confirm()', async () => {
     const confirmSpy = jest.spyOn(window, 'confirm');
     mockFetch([{ ok: true, body: { credentials: mockCredentials } }]);
     render(<SegurancaSettingsPage />);
     await waitFor(() => screen.getByText('MacBook Touch ID'));
 
-    fireEvent.click(screen.getByLabelText('Revogar MacBook Touch ID'));
+    fireEvent.click(screen.getByLabelText(/revoke MacBook Touch ID/i));
 
     expect(confirmSpy).not.toHaveBeenCalled();
-    expect(screen.getByText('Confirmar')).toBeDefined();
-    expect(screen.getByText('Cancelar')).toBeDefined();
+    expect(screen.getByText('confirm')).toBeDefined();
+    expect(screen.getByText('cancel')).toBeDefined();
 
-    // The credential name appears in both the card row AND the confirmation message.
-    // Use getAllByText to handle the multiple-element case.
-    const nameMatches = screen.getAllByText(/MacBook Touch ID/);
-    expect(nameMatches.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('MacBook Touch ID')).toBeDefined();
+    expect(screen.getByText(/remove device/i)).toBeDefined();
 
     confirmSpy.mockRestore();
   });
 
-  it('Cancelar dismisses inline confirmation', async () => {
+  it('cancel dismisses inline confirmation', async () => {
     mockFetch([{ ok: true, body: { credentials: mockCredentials } }]);
     render(<SegurancaSettingsPage />);
     await waitFor(() => screen.getByText('MacBook Touch ID'));
 
-    fireEvent.click(screen.getByLabelText('Revogar MacBook Touch ID'));
-    expect(screen.getByText('Confirmar')).toBeDefined();
+    fireEvent.click(screen.getByLabelText(/revoke MacBook Touch ID/i));
+    expect(screen.getByText('confirm')).toBeDefined();
 
-    fireEvent.click(screen.getByText('Cancelar'));
-    expect(screen.queryByText('Confirmar')).toBeNull();
+    fireEvent.click(screen.getByText('cancel'));
+    expect(screen.queryByText('confirm')).toBeNull();
   });
 
-  it('Confirmar calls DELETE and reloads credentials', async () => {
+  it('confirm calls DELETE and reloads credentials', async () => {
     mockFetch([
       { ok: true, body: { credentials: mockCredentials } }, // initial
       { ok: true, body: {} },                               // DELETE
@@ -136,8 +134,8 @@ describe('SegurancaSettingsPage — inline revoke confirmation', () => {
     render(<SegurancaSettingsPage />);
     await waitFor(() => screen.getByText('MacBook Touch ID'));
 
-    fireEvent.click(screen.getByLabelText('Revogar MacBook Touch ID'));
-    fireEvent.click(screen.getByText('Confirmar'));
+    fireEvent.click(screen.getByLabelText(/revoke MacBook Touch ID/i));
+    fireEvent.click(screen.getByText('confirm'));
 
     await waitFor(() => {
       const calls = (globalThis.fetch as jest.Mock).mock.calls;
@@ -162,15 +160,15 @@ describe('SegurancaSettingsPage — device registration', () => {
     ]);
 
     render(<SegurancaSettingsPage />);
-    await waitFor(() => screen.getByText(/Nenhum dispositivo/));
+    await waitFor(() => screen.getByText(/no devices/i));
 
-    fireEvent.change(screen.getByLabelText('Nome do dispositivo'), {
+    fireEvent.change(screen.getByLabelText(/device name placeholder/i), {
       target: { value: 'Meu MacBook' },
     });
-    fireEvent.click(screen.getByText('Registrar com biometria'));
+    fireEvent.click(screen.getByText(/register with biometrics/i));
 
     await waitFor(() => {
-      expect(screen.getByText('Dispositivo registrado com sucesso.')).toBeDefined();
+      expect(screen.getByText(/device registered/i)).toBeDefined();
     });
   });
 
@@ -183,18 +181,12 @@ describe('SegurancaSettingsPage — device registration', () => {
     ]);
 
     render(<SegurancaSettingsPage />);
-    await waitFor(() => screen.getByText(/Nenhum dispositivo/));
-    fireEvent.click(screen.getByText('Registrar com biometria'));
+    await waitFor(() => screen.getByText(/no devices/i));
+    fireEvent.click(screen.getByText(/register with biometrics/i));
 
     await waitFor(() => {
-      // Must NOT show raw error message
       expect(screen.queryByText(/not available in this context/)).toBeNull();
-      // Must show clinic-friendly fallback
-      expect(
-        screen.getByText(
-          'Não foi possível registrar o dispositivo. Tente novamente ou contate o suporte.'
-        )
-      ).toBeDefined();
+      expect(screen.getByText(/registration error/i)).toBeDefined();
     });
   });
 
@@ -207,14 +199,12 @@ describe('SegurancaSettingsPage — device registration', () => {
     ]);
 
     render(<SegurancaSettingsPage />);
-    await waitFor(() => screen.getByText(/Nenhum dispositivo/));
-    fireEvent.click(screen.getByText('Registrar com biometria'));
+    await waitFor(() => screen.getByText(/no devices/i));
+    fireEvent.click(screen.getByText(/register with biometrics/i));
 
     await waitFor(() => {
       expect(screen.queryByText(/user cancelled/)).toBeNull();
-      expect(
-        screen.getByText('Registro cancelado. Tente novamente quando estiver pronto.')
-      ).toBeDefined();
+      expect(screen.getByText(/registration cancelled/i)).toBeDefined();
     });
   });
 });

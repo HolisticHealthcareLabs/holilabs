@@ -43,6 +43,12 @@
       ],
       "@holilabs/shared-types/*": [
         "../../packages/shared-types/src/*"
+      ],
+      "@holi/shared-kernel": [
+        "../../packages/shared-kernel/src"
+      ],
+      "@holi/shared-kernel/*": [
+        "../../packages/shared-kernel/src/*"
       ]
     }
   },

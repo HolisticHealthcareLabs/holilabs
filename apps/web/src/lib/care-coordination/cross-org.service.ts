@@ -729,7 +729,7 @@ async function logAgreementAction(
         action,
         resource: 'DataSharingAgreement',
         resourceId: agreementId,
-        details,
+        details: details as any,
         dataHash,
         accessReason: 'CARE_COORDINATION',
         legalBasis: 'LGPD Art. 7, V — contract execution',

@@ -59,7 +59,7 @@ const { POST: reportConflict } = require('../[id]/conflicts/route');
 // --- Helpers ---
 
 function buildRequest(url: string, opts?: RequestInit): NextRequest {
-  return new NextRequest(new URL(url, 'http://localhost:3000'), opts);
+  return new NextRequest(new URL(url, 'http://localhost:3000'), opts as any);
 }
 
 const mockUser = {

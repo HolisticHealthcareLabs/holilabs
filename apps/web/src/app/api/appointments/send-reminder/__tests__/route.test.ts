@@ -31,10 +31,12 @@ const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'ADMIN' },
 };
 
+const VALID_CUID = 'clh1234567890abcdefghijk';
+
 const futureDate = new Date(Date.now() + 86400000);
 
 const mockAppointment = {
-  id: 'apt-1',
+  id: VALID_CUID,
   startTime: futureDate,
   endTime: new Date(futureDate.getTime() + 1800000),
   reminderSent: false,
@@ -57,7 +59,7 @@ describe('POST /api/appointments/send-reminder', () => {
 
     const request = new NextRequest('http://localhost:3000/api/appointments/send-reminder', {
       method: 'POST',
-      body: JSON.stringify({ appointmentId: 'apt-1' }),
+      body: JSON.stringify({ appointmentId: VALID_CUID }),
     });
     const response = await POST(request, mockContext);
     const data = await response.json();
@@ -72,7 +74,7 @@ describe('POST /api/appointments/send-reminder', () => {
 
     const request = new NextRequest('http://localhost:3000/api/appointments/send-reminder', {
       method: 'POST',
-      body: JSON.stringify({ appointmentId: 'nonexistent' }),
+      body: JSON.stringify({ appointmentId: 'clh0000000000000000nonex' }),
     });
     const response = await POST(request, mockContext);
     const data = await response.json();
@@ -90,7 +92,7 @@ describe('POST /api/appointments/send-reminder', () => {
 
     const request = new NextRequest('http://localhost:3000/api/appointments/send-reminder', {
       method: 'POST',
-      body: JSON.stringify({ appointmentId: 'apt-1' }),
+      body: JSON.stringify({ appointmentId: VALID_CUID }),
     });
     const response = await POST(request, mockContext);
     const data = await response.json();
@@ -107,7 +109,7 @@ describe('POST /api/appointments/send-reminder', () => {
 
     const request = new NextRequest('http://localhost:3000/api/appointments/send-reminder', {
       method: 'POST',
-      body: JSON.stringify({ appointmentId: 'apt-1' }),
+      body: JSON.stringify({ appointmentId: VALID_CUID }),
     });
     const response = await POST(request, mockContext);
     const data = await response.json();

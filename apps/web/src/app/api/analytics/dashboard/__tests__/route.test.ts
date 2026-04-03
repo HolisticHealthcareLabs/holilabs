@@ -10,11 +10,13 @@ jest.mock('@/lib/prisma', () => ({
     clinicalNote: { count: jest.fn().mockResolvedValue(200), findMany: jest.fn().mockResolvedValue([]) },
     prescription: { count: jest.fn().mockResolvedValue(75) },
     formInstance: { count: jest.fn().mockResolvedValue(30) },
+    workspaceMember: { findMany: jest.fn().mockResolvedValue([]) },
   },
 }));
 
 jest.mock('@/lib/logger', () => ({
-  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
 const { GET } = require('../route');
@@ -25,6 +27,13 @@ describe('GET /api/analytics/dashboard', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('returns dashboard overview with all metrics', async () => {
+    const { prisma } = require('@/lib/prisma');
+    (prisma.patient.count as jest.Mock).mockResolvedValue(50);
+    (prisma.clinicalNote.count as jest.Mock).mockResolvedValue(200);
+    (prisma.prescription.count as jest.Mock).mockResolvedValue(75);
+    (prisma.formInstance.count as jest.Mock).mockResolvedValue(30);
+    (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
+
     const req = new NextRequest('http://localhost:3000/api/analytics/dashboard?range=30d');
     const res = await GET(req, ctx);
     const json = await res.json();
@@ -38,6 +47,13 @@ describe('GET /api/analytics/dashboard', () => {
   });
 
   it('supports different date ranges', async () => {
+    const { prisma } = require('@/lib/prisma');
+    (prisma.patient.count as jest.Mock).mockResolvedValue(50);
+    (prisma.clinicalNote.count as jest.Mock).mockResolvedValue(200);
+    (prisma.prescription.count as jest.Mock).mockResolvedValue(75);
+    (prisma.formInstance.count as jest.Mock).mockResolvedValue(30);
+    (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
+
     const req = new NextRequest('http://localhost:3000/api/analytics/dashboard?range=7d');
     const res = await GET(req, ctx);
 
@@ -45,6 +61,13 @@ describe('GET /api/analytics/dashboard', () => {
   });
 
   it('defaults to 30d when range is invalid', async () => {
+    const { prisma } = require('@/lib/prisma');
+    (prisma.patient.count as jest.Mock).mockResolvedValue(50);
+    (prisma.clinicalNote.count as jest.Mock).mockResolvedValue(200);
+    (prisma.prescription.count as jest.Mock).mockResolvedValue(75);
+    (prisma.formInstance.count as jest.Mock).mockResolvedValue(30);
+    (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
+
     const req = new NextRequest('http://localhost:3000/api/analytics/dashboard?range=bogus');
     const res = await GET(req, ctx);
 
@@ -52,6 +75,13 @@ describe('GET /api/analytics/dashboard', () => {
   });
 
   it('returns recentActivity array with 14 days', async () => {
+    const { prisma } = require('@/lib/prisma');
+    (prisma.patient.count as jest.Mock).mockResolvedValue(50);
+    (prisma.clinicalNote.count as jest.Mock).mockResolvedValue(200);
+    (prisma.prescription.count as jest.Mock).mockResolvedValue(75);
+    (prisma.formInstance.count as jest.Mock).mockResolvedValue(30);
+    (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
+
     const req = new NextRequest('http://localhost:3000/api/analytics/dashboard');
     const res = await GET(req, ctx);
     const json = await res.json();
