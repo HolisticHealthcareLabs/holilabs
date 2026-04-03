@@ -654,11 +654,11 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
 
           <div className={`relative ${inline ? '' : 'flex-1 max-w-xs'}`} ref={searchPillRef}>
             {selected ? (
-              <div className="flex items-center gap-2 px-3 py-1.5
+              <div className="flex items-center gap-1.5 px-2 py-1
                              bg-cyan-50 dark:bg-cyan-500/[0.08]
                              border border-cyan-200/80 dark:border-cyan-500/20"
                    style={{ borderRadius: 'var(--radius-lg)' }}>
-                <User className="w-3 h-3 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                <User className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                 <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {selected.name}
                 </span>
@@ -681,22 +681,25 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 {/* Single-element morph: magnifying glass circle ↔ search pill */}
                 <m.div
                   className="flex items-center rounded-full cursor-pointer"
-                  style={{ willChange: 'width, background-color' }}
                   initial={false}
                   animate={searchExpanded ? {
-                    width: 260,
+                    width: 320,
                     height: 40,
-                    backgroundColor: 'rgb(17, 24, 39)',
-                    paddingLeft: 12,
-                    paddingRight: 12,
+                    paddingLeft: 14,
+                    paddingRight: 8,
                   } : {
                     width: 36,
                     height: 36,
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
                     paddingLeft: 0,
                     paddingRight: 0,
                   }}
-                  transition={{ duration: 0.15, ease: [0.32, 0.72, 0, 1] }}
+                  style={{
+                    willChange: 'width',
+                    backgroundColor: searchExpanded ? 'var(--surface-primary)' : 'var(--surface-tertiary)',
+                    border: searchExpanded ? '1.5px solid var(--border-default)' : '1px solid transparent',
+                    boxShadow: searchExpanded ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  }}
+                  transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
                   onClick={() => { if (!searchExpanded) setSearchExpanded(true); }}
                 >
                   {/* Collapsed: centered magnifying glass */}
@@ -706,28 +709,45 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                     <Search className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                   </div>
 
-                  {/* Expanded: search icon + input */}
+                  {/* Expanded: search icon + input + add button */}
                   <div className={`flex items-center gap-2 min-w-0 transition-opacity duration-150 ${
                     searchExpanded ? 'opacity-100 flex-1 delay-[60ms]' : 'opacity-0 w-0 overflow-hidden'
                   }`}>
-                    <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                    <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
                     {searchExpanded && (
-                      <input
-                        type="text"
-                        role="combobox"
-                        autoFocus
-                        aria-label="Search patients"
-                        aria-controls="patient-search-results"
-                        aria-expanded={open}
-                        aria-autocomplete="list"
-                        placeholder={t('searchPatients')}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onFocus={() => setOpen(true)}
-                        onBlur={() => setTimeout(() => setOpen(false), 150)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 min-w-0 bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
-                      />
+                      <>
+                        <input
+                          type="text"
+                          role="combobox"
+                          autoFocus
+                          aria-label="Search patients"
+                          aria-controls="patient-search-results"
+                          aria-expanded={open}
+                          aria-autocomplete="list"
+                          placeholder={t('searchPatients')}
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          onFocus={() => setOpen(true)}
+                          onBlur={() => setTimeout(() => setOpen(false), 150)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 min-w-0 bg-transparent text-xs focus:outline-none"
+                          style={{ color: 'var(--text-primary)' }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowNewPatientForm(true);
+                            setSearchExpanded(false);
+                            setQuery('');
+                            setOpen(false);
+                          }}
+                          className="w-6 h-6 min-w-[24px] min-h-[24px] max-w-[24px] max-h-[24px] flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white shrink-0 transition-colors mr-0.5"
+                          aria-label={t('addPatient')}
+                          title={t('addPatient')}
+                        >
+                          <Plus className="w-3 h-3" strokeWidth={2.5} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </m.div>
@@ -785,8 +805,10 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                       "
                       style={{ borderTop: '1px solid var(--border-default)' }}
                     >
-                      <Plus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                      <span className="text-xs font-semibold" style={{ color: 'var(--text-accent)' }}>
+                      <span className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-white flex-shrink-0">
+                        <Plus className="w-3 h-3" strokeWidth={2.5} />
+                      </span>
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                         {t('addPatient')}
                       </span>
                     </li>
@@ -805,7 +827,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 whileTap={{ scale: 0.96 }}
                 aria-label="View patient chart"
                 className="
-                  flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold
+                  flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold
                   text-cyan-700 dark:text-cyan-400
                   bg-cyan-50 dark:bg-cyan-500/10
                   border border-cyan-200 dark:border-cyan-500/25
@@ -830,7 +852,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 whileTap={{ scale: 0.95 }}
                 aria-label="Attach document to patient chart"
                 className="
-                  flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold
+                  flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold
                   bg-transparent
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400

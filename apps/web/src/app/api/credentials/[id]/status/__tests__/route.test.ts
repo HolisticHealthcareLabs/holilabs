@@ -110,7 +110,7 @@ describe('GET /api/credentials/[id]/status', () => {
     const response = await GET(request, mockContext);
     const data = await response.json();
 
-    expect(data.history).toBeInstanceOf(Array);
+    expect(Array.isArray(data.history)).toBe(true);
     expect(data.history[0].status).toBe('VERIFIED');
     expect(data.progress.latestAttempt).toBeDefined();
     expect(data.progress.latestAttempt.matchScore).toBe(0.98);

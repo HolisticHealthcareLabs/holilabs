@@ -25,19 +25,28 @@ jest.mock('@/lib/prisma', () => ({
     },
     workspaceLLMConfig: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
   },
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: {
+  __esModule: true,
+  default: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
   },
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  }
 }));
 
 jest.mock('@/lib/security/encryption', () => ({
@@ -109,9 +118,8 @@ describe('Workspace Admin Tools', () => {
       select: expect.objectContaining({
         id: true,
         name: true,
-        timezone: true,
-        defaultLanguage: true,
-        billingRegion: true,
+        slug: true,
+        metadata: true,
       }),
     });
   });
@@ -151,12 +159,12 @@ describe('Workspace Admin Tools', () => {
     expect(result.success).toBe(true);
     expect(encryptPHIWithVersion).toHaveBeenCalledWith('sk-ant-real-key-12345');
     expect(prisma.workspaceLLMConfig.upsert).toHaveBeenCalledWith({
-      where: { workspaceId: 'clinic-1' },
+      where: { workspaceId_provider: { workspaceId: 'clinic-1', provider: 'anthropic' } },
       update: expect.objectContaining({
-        apiKey: encryptedValue,
+        encryptedKey: encryptedValue,
       }),
       create: expect.objectContaining({
-        apiKey: encryptedValue,
+        encryptedKey: encryptedValue,
       }),
       select: expect.any(Object),
     });
@@ -169,7 +177,7 @@ describe('Workspace Admin Tools', () => {
   it('Test 3: manage with action=delete clears config', async () => {
     const tool = workspaceAdminTools.find(t => t.name === 'manage_workspace_llm_config')!;
 
-    (prisma.workspaceLLMConfig.delete as jest.Mock).mockResolvedValue({});
+    (prisma.workspaceLLMConfig.deleteMany as jest.Mock).mockResolvedValue({});
 
     const result = (await tool.handler(
       {
@@ -181,7 +189,7 @@ describe('Workspace Admin Tools', () => {
 
     expect(result.success).toBe(true);
     expect(result.data.status).toBe('deleted');
-    expect(prisma.workspaceLLMConfig.delete).toHaveBeenCalledWith({
+    expect(prisma.workspaceLLMConfig.deleteMany).toHaveBeenCalledWith({
       where: { workspaceId: 'clinic-1' },
     });
   });
@@ -214,23 +222,23 @@ describe('Workspace Admin Tools', () => {
     const mockConfig = {
       workspaceId: 'clinic-1',
       provider: 'anthropic',
-      modelName: 'claude-3-sonnet',
-      apiKey: 'sk-ant-real-key-12345',
+      encryptedKey: 'v1:encrypted:data:here',
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    (prisma.workspaceLLMConfig.findUnique as jest.Mock).mockResolvedValue(mockConfig);
-    (maskSensitiveString as jest.Mock).mockReturnValue('sk-ant-***2345');
+    (prisma.workspaceLLMConfig.findMany as jest.Mock).mockResolvedValue([mockConfig]);
 
     const result = (await tool.handler({}, mockContext)) as MCPResult;
 
     expect(result.success).toBe(true);
     expect(result.data.configured).toBe(true);
-    expect(result.data.apiKeyMasked).toBe('sk-ant-***2345');
-    // Ensure plaintext apiKey is NOT in response
-    expect(result.data.apiKey).toBeUndefined();
-    expect(maskSensitiveString).toHaveBeenCalledWith(mockConfig.apiKey);
+    expect(result.data.providers).toHaveLength(1);
+    expect(result.data.providers[0].provider).toBe('anthropic');
+    expect(result.data.providers[0].apiKeyMasked).toBe('***encrypted***');
+    // Ensure plaintext key is NOT in response
+    expect(result.data.providers[0].encryptedKey).toBeUndefined();
   });
 
   // =========================================================================
@@ -243,9 +251,8 @@ describe('Workspace Admin Tools', () => {
     const mockUpdated = {
       id: 'clinic-1',
       name: 'Clinic Alpha',
-      timezone: 'America/New_York',
-      defaultLanguage: 'pt-BR',
-      billingRegion: 'BR',
+      slug: 'clinic-alpha',
+      metadata: { timezone: 'America/New_York', defaultLanguage: 'pt-BR', billingRegion: 'BR' },
       updatedAt: new Date(),
     };
 
@@ -260,10 +267,10 @@ describe('Workspace Admin Tools', () => {
     )) as MCPResult;
 
     expect(result.success).toBe(true);
-    expect(result.data.timezone).toBe('America/New_York');
+    expect(result.data.metadata.timezone).toBe('America/New_York');
     expect(prisma.workspace.update).toHaveBeenCalledWith({
       where: { id: 'clinic-1' },
-      data: { timezone: 'America/New_York' },
+      data: { metadata: { timezone: 'America/New_York' } },
       select: expect.any(Object),
     });
   });
@@ -274,9 +281,8 @@ describe('Workspace Admin Tools', () => {
     const mockUpdated = {
       id: 'clinic-1',
       name: 'Clinic Alpha',
-      timezone: 'America/Sao_Paulo',
-      defaultLanguage: 'es',
-      billingRegion: 'BR',
+      slug: 'clinic-alpha',
+      metadata: { timezone: 'America/Sao_Paulo', defaultLanguage: 'es', billingRegion: 'BR' },
       updatedAt: new Date(),
     };
 
@@ -291,7 +297,7 @@ describe('Workspace Admin Tools', () => {
     )) as MCPResult;
 
     expect(result.success).toBe(true);
-    expect(result.data.defaultLanguage).toBe('es');
+    expect(result.data.metadata.defaultLanguage).toBe('es');
   });
 
   it('Test 6c: billingRegion can be updated independently', async () => {
@@ -300,9 +306,8 @@ describe('Workspace Admin Tools', () => {
     const mockUpdated = {
       id: 'clinic-1',
       name: 'Clinic Alpha',
-      timezone: 'America/Sao_Paulo',
-      defaultLanguage: 'pt-BR',
-      billingRegion: 'MX',
+      slug: 'clinic-alpha',
+      metadata: { timezone: 'America/Sao_Paulo', defaultLanguage: 'pt-BR', billingRegion: 'MX' },
       updatedAt: new Date(),
     };
 
@@ -317,6 +322,6 @@ describe('Workspace Admin Tools', () => {
     )) as MCPResult;
 
     expect(result.success).toBe(true);
-    expect(result.data.billingRegion).toBe('MX');
+    expect(result.data.metadata.billingRegion).toBe('MX');
   });
 });

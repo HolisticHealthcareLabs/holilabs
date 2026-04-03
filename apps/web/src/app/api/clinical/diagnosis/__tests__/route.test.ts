@@ -120,7 +120,7 @@ describe('POST /api/clinical/diagnosis', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.diagnosis).toBeDefined();
-    expect(data.diagnosis.differentialDiagnosis).toBeInstanceOf(Array);
+    expect(Array.isArray(data.diagnosis.differentialDiagnosis)).toBe(true);
     expect(data.disclaimer).toBeDefined();
   });
 

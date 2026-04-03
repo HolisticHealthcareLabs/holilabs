@@ -1,19 +1,29 @@
 import { NextRequest } from 'next/server';
 
-jest.mock('@/lib/api/middleware', () => ({
-  createProtectedRoute: (handler: any) => handler,
+jest.mock('@/lib/auth/auth', () => ({
+  auth: jest.fn(),
 }));
 
-jest.mock('@/lib/security/require-secret', () => ({
-  requireSecret: jest.fn().mockReturnValue('test-secret'),
+jest.mock('@/lib/mcp/workflows/prevention-workflow', () => ({
+  preventionScreeningWorkflow: { id: 'prevention-screening', name: 'Prevention', description: '', category: 'clinical', version: '1.0', steps: [] },
 }));
 
+jest.mock('@/lib/mcp/workflows/cds-workflow', () => ({
+  clinicalDecisionWorkflow: { id: 'clinical-decision-support', name: 'CDS', description: '', category: 'clinical', version: '1.0', steps: [] },
+}));
+
+jest.mock('@/lib/mcp/workflows/billing-check-workflow', () => ({
+  billingPreCheckWorkflow: { id: 'billing-pre-check', name: 'Billing', description: '', category: 'billing', version: '1.0', steps: [] },
+}));
+
+const { auth } = require('@/lib/auth/auth');
 const { POST, GET } = require('../route');
-
-const ctx = { user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' } };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (auth as jest.Mock).mockResolvedValue({
+    user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
+  });
   global.fetch = jest.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -33,7 +43,7 @@ describe('POST /api/agent/orchestrate', () => {
         mode: 'parallel',
       }),
     });
-    const res = await POST(req, ctx);
+    const res = await POST(req);
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -48,7 +58,7 @@ describe('POST /api/agent/orchestrate', () => {
       method: 'POST',
       body: JSON.stringify({ tools: [] }),
     });
-    const res = await POST(req, ctx);
+    const res = await POST(req);
     const json = await res.json();
 
     expect(res.status).toBe(400);
@@ -60,7 +70,7 @@ describe('POST /api/agent/orchestrate', () => {
       method: 'POST',
       body: JSON.stringify({ tools: [{ arguments: {} }] }),
     });
-    const res = await POST(req, ctx);
+    const res = await POST(req);
     const json = await res.json();
 
     expect(res.status).toBe(400);
@@ -72,18 +82,30 @@ describe('POST /api/agent/orchestrate', () => {
       method: 'POST',
       body: 'not-json',
     });
-    const res = await POST(req, ctx);
+    const res = await POST(req);
     const json = await res.json();
 
     expect(res.status).toBe(400);
     expect(json.error).toMatch(/invalid json/i);
+  });
+
+  it('returns 401 when not authenticated', async () => {
+    (auth as jest.Mock).mockResolvedValue(null);
+
+    const req = new NextRequest('http://localhost:3000/api/agent/orchestrate', {
+      method: 'POST',
+      body: JSON.stringify({ tools: [{ tool: 'test', arguments: {} }] }),
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(401);
   });
 });
 
 describe('GET /api/agent/orchestrate', () => {
   it('returns orchestration capabilities', async () => {
     const req = new NextRequest('http://localhost:3000/api/agent/orchestrate');
-    const res = await GET(req, ctx);
+    const res = await GET(req);
     const json = await res.json();
 
     expect(res.status).toBe(200);

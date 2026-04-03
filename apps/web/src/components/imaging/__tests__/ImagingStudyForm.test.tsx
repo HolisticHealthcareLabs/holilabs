@@ -20,7 +20,7 @@ describe('ImagingStudyForm', () => {
   it('renders required form sections', () => {
     render(<ImagingStudyForm patientId="p1" />);
     expect(screen.getByText(/Información del Estudio/i)).toBeInTheDocument();
-    expect(screen.getByText(/Estado/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Estado/i).length).toBeGreaterThan(0);
   });
 
   it('shows cancel button and calls onCancel when clicked', () => {

@@ -31,7 +31,7 @@
 import twilio from 'twilio';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { encryptPHI, decryptPHI } from '@/lib/security/encryption';
+import { encryptPHIWithVersion, decryptPHI } from '@/lib/security/encryption';
 import { createAuditLog } from '@/lib/audit';
 import crypto from 'crypto';
 
@@ -257,10 +257,10 @@ export async function verifyMFAEnrollment(
     // Generate backup codes
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
-    // Encrypt backup codes for storage
-    const encryptedBackupCodes = backupCodes
-      .map((code) => encryptPHI(code))
-      .filter((code): code is string => code !== null);
+    // Encrypt backup codes for storage (versioned encryption with key rotation support)
+    const encryptedBackupCodes = (
+      await Promise.all(backupCodes.map((code) => encryptPHIWithVersion(code)))
+    ).filter((code): code is string => code !== null);
 
     // Update user with MFA enabled
     await prisma.user.update({
@@ -776,10 +776,10 @@ export async function regenerateBackupCodes(userId: string): Promise<string[]> {
     // Generate new backup codes
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
-    // Encrypt backup codes
-    const encryptedBackupCodes = backupCodes
-      .map((code) => encryptPHI(code))
-      .filter((code): code is string => code !== null);
+    // Encrypt backup codes (versioned encryption with key rotation support)
+    const encryptedBackupCodes = (
+      await Promise.all(backupCodes.map((code) => encryptPHIWithVersion(code)))
+    ).filter((code): code is string => code !== null);
 
     // Update user
     await prisma.user.update({

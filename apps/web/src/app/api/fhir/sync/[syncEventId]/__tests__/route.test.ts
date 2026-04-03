@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
 
+const mockSyncService = {
+  getSyncStatus: jest.fn(),
+};
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
   verifyPatientAccess: jest.fn().mockResolvedValue(true),
@@ -11,14 +15,10 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/lib/services/sync.service', () => ({
-  createSyncService: jest.fn().mockReturnValue({
-    getSyncStatus: jest.fn(),
-  }),
+  createSyncService: () => mockSyncService,
 }));
 
 const { GET } = require('../route');
-const { createSyncService } = require('@/lib/services/sync.service');
-const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const mockSyncEvent = {
   id: 'sync-1',
@@ -37,9 +37,7 @@ const mockSyncEvent = {
 describe('GET /api/fhir/sync/[syncEventId]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
-    const mockService = createSyncService();
-    (mockService.getSyncStatus as jest.Mock).mockResolvedValue(mockSyncEvent);
+    mockSyncService.getSyncStatus.mockResolvedValue(mockSyncEvent);
   });
 
   it('returns sync event status', async () => {
@@ -58,8 +56,7 @@ describe('GET /api/fhir/sync/[syncEventId]', () => {
   });
 
   it('returns 404 when sync event not found', async () => {
-    const mockService = createSyncService();
-    (mockService.getSyncStatus as jest.Mock).mockResolvedValue(null);
+    mockSyncService.getSyncStatus.mockResolvedValue(null);
 
     const req = new NextRequest('http://localhost:3000/api/fhir/sync/nonexistent');
     const context = {
@@ -87,8 +84,7 @@ describe('GET /api/fhir/sync/[syncEventId]', () => {
   });
 
   it('includes conflictData message for CONFLICT status', async () => {
-    const mockService = createSyncService();
-    (mockService.getSyncStatus as jest.Mock).mockResolvedValue({
+    mockSyncService.getSyncStatus.mockResolvedValue({
       ...mockSyncEvent,
       status: 'CONFLICT',
       conflictData: { local: 'A', remote: 'B' },

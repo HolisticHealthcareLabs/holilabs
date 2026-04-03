@@ -26,7 +26,7 @@ const { aggregateDailyCorrections, aggregateCorrectionsRange } = require('@/lib/
 describe('POST /api/jobs/aggregate-corrections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    delete process.env.CRON_SECRET;
+    process.env.CRON_SECRET = 'test-secret';
     (aggregateDailyCorrections as jest.Mock).mockResolvedValue({
       processed: true,
       results: { aggregated: 15 },
@@ -37,9 +37,14 @@ describe('POST /api/jobs/aggregate-corrections', () => {
     });
   });
 
+  afterEach(() => {
+    delete process.env.CRON_SECRET;
+  });
+
   it('runs daily aggregation when no mode is specified', async () => {
     const req = new NextRequest('http://localhost:3000/api/jobs/aggregate-corrections', {
       method: 'POST',
+      headers: { authorization: 'Bearer test-secret' },
     });
     const res = await POST(req);
     const data = await res.json();
@@ -52,7 +57,7 @@ describe('POST /api/jobs/aggregate-corrections', () => {
   it('runs custom range aggregation when mode=custom with valid dates', async () => {
     const req = new NextRequest(
       'http://localhost:3000/api/jobs/aggregate-corrections?mode=custom&startDate=2025-01-01T00:00:00Z&endDate=2025-01-31T23:59:59Z',
-      { method: 'POST' }
+      { method: 'POST', headers: { authorization: 'Bearer test-secret' } }
     );
     const res = await POST(req);
     const data = await res.json();
@@ -63,7 +68,6 @@ describe('POST /api/jobs/aggregate-corrections', () => {
   });
 
   it('returns 401 when CRON_SECRET is set and token is missing', async () => {
-    process.env.CRON_SECRET = 'my-secret';
     const req = new NextRequest('http://localhost:3000/api/jobs/aggregate-corrections', {
       method: 'POST',
     });
@@ -77,7 +81,7 @@ describe('POST /api/jobs/aggregate-corrections', () => {
   it('returns 400 when mode=custom with invalid date format', async () => {
     const req = new NextRequest(
       'http://localhost:3000/api/jobs/aggregate-corrections?mode=custom&startDate=not-a-date&endDate=also-not-a-date',
-      { method: 'POST' }
+      { method: 'POST', headers: { authorization: 'Bearer test-secret' } }
     );
     const res = await POST(req);
     const data = await res.json();

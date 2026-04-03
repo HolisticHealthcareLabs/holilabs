@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { searchMessages } from '@/lib/search/meilisearch';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
@@ -33,6 +33,15 @@ export const GET = createProtectedRoute(
     }
 
     const queryPatientId = searchParams.get('patientId') || undefined;
+
+    // CYRUS: tenant isolation — clinicians must have access to queried patient (CVI-002)
+    if (queryPatientId && context.user?.role !== 'PATIENT') {
+      const hasAccess = await verifyPatientAccess(context.user.id, queryPatientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+      }
+    }
+
     const isRead = searchParams.get('isRead');
     const hasAttachments = searchParams.get('hasAttachments');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);

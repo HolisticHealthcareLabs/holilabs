@@ -26,11 +26,17 @@ jest.mock('@/lib/prisma', () => ({
 
 // Mock Logger
 jest.mock('@/lib/logger', () => ({
-  logger: {
+  __esModule: true,
+  default: {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
   },
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  }
 }));
 
 // Mock Audit Writer
@@ -71,6 +77,7 @@ const mockPatientTool: MCPTool = {
   category: 'patient',
   inputSchema: {} as any,
   requiredPermissions: ['patient:read'],
+  handler: jest.fn() as any,
 };
 
 const mockScribeTool: MCPTool = {
@@ -79,6 +86,7 @@ const mockScribeTool: MCPTool = {
   category: 'scribe',
   inputSchema: {} as any,
   requiredPermissions: ['scribe:write'],
+  handler: jest.fn() as any,
 };
 
 const mockAnalyticsTool: MCPTool = {
@@ -87,6 +95,7 @@ const mockAnalyticsTool: MCPTool = {
   category: 'analytics',
   inputSchema: {} as any,
   requiredPermissions: ['analytics:read'],
+  handler: jest.fn() as any,
 };
 
 const mockAdminTool: MCPTool = {
@@ -95,6 +104,7 @@ const mockAdminTool: MCPTool = {
   category: 'admin',
   inputSchema: {} as any,
   requiredPermissions: ['admin:read'],
+  handler: jest.fn() as any,
 };
 
 // =============================================================================

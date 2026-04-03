@@ -38,7 +38,7 @@ export const POST = createProtectedRoute(
       })),
       authenticatorSelection: {
         residentKey: 'preferred',
-        userVerification: 'preferred',
+        userVerification: 'required',
       },
     });
 

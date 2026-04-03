@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { z } from 'zod';
 
@@ -29,6 +29,12 @@ export const POST = createProtectedRoute(
           { error: 'Validation error', details: parsed.error.flatten() },
           { status: 422 },
         );
+      }
+
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      const hasAccess = await verifyPatientAccess(context.user.id, parsed.data.patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
       }
 
       const careTeam = await prisma.careTeam.findUnique({
@@ -91,6 +97,14 @@ export const GET = createProtectedRoute(
       const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
       const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)));
       const skip = (page - 1) * limit;
+
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      if (patientId) {
+        const hasAccess = await verifyPatientAccess(_context.user.id, patientId);
+        if (!hasAccess) {
+          return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+        }
+      }
 
       const where: any = {};
       if (careTeamId) where.careTeamId = careTeamId;

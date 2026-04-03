@@ -4,6 +4,10 @@
 
 import { NextRequest } from 'next/server';
 
+const mockGenerateRecurring = jest.fn();
+const mockValidatePattern = jest.fn();
+const mockCalculateStats = jest.fn();
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
 }));
@@ -18,9 +22,9 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/scheduling/recurring-generator', () => ({
-  generateRecurringAppointments: jest.fn().mockReturnValue([]),
-  validateRecurringPattern: jest.fn().mockReturnValue({ valid: true }),
-  calculateRecurringStats: jest.fn().mockReturnValue({ totalOccurrences: 10, estimatedEnd: new Date() }),
+  generateRecurringAppointments: (...args: any[]) => mockGenerateRecurring(...args),
+  validateRecurringPattern: (...args: any[]) => mockValidatePattern(...args),
+  calculateRecurringStats: (...args: any[]) => mockCalculateStats(...args),
 }));
 
 jest.mock('@/lib/logger', () => ({
@@ -30,7 +34,6 @@ jest.mock('@/lib/logger', () => ({
 
 const { GET, POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
-const { validateRecurringPattern } = require('@/lib/scheduling/recurring-generator');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'ADMIN' },
@@ -59,14 +62,21 @@ const mockSeries = {
 };
 
 describe('POST /api/scheduling/recurring', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockValidatePattern.mockReturnValue({ valid: true });
+    mockCalculateStats.mockReturnValue({ totalOccurrences: 10, estimatedEnd: new Date() });
+    mockGenerateRecurring.mockReturnValue([
+      { startTime: new Date('2025-07-01T09:00:00Z'), endTime: new Date('2025-07-01T09:30:00Z') },
+    ]);
+  });
 
   it('creates recurring series (201)', async () => {
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue({ id: 'patient-1', firstName: 'Maria', lastName: 'Silva' });
     (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'clinician-1', role: 'CLINICIAN', firstName: 'Dr', lastName: 'Test' });
-    (validateRecurringPattern as jest.Mock).mockReturnValue({ valid: true });
     (prisma.recurringAppointment.create as jest.Mock).mockResolvedValue(mockSeries);
     (prisma.recurringAppointment.update as jest.Mock).mockResolvedValue(mockSeries);
+    (prisma.appointment.create as jest.Mock).mockResolvedValue({ id: 'apt-gen-1', startTime: new Date(), endTime: new Date(), status: 'SCHEDULED' });
 
     const request = new NextRequest('http://localhost:3000/api/scheduling/recurring', { method: 'POST' });
     const response = await POST(request, mockContext);
@@ -102,7 +112,7 @@ describe('POST /api/scheduling/recurring', () => {
   it('returns 400 when recurring pattern is invalid', async () => {
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue({ id: 'patient-1', firstName: 'Maria', lastName: 'Silva' });
     (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'clinician-1', role: 'CLINICIAN', firstName: 'Dr', lastName: 'Test' });
-    (validateRecurringPattern as jest.Mock).mockReturnValue({ valid: false, errors: ['Invalid pattern'] });
+    mockValidatePattern.mockReturnValue({ valid: false, errors: ['Invalid pattern'] });
 
     const request = new NextRequest('http://localhost:3000/api/scheduling/recurring', { method: 'POST' });
     const response = await POST(request, mockContext);
@@ -114,7 +124,10 @@ describe('POST /api/scheduling/recurring', () => {
 });
 
 describe('GET /api/scheduling/recurring', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCalculateStats.mockReturnValue({ totalOccurrences: 10, estimatedEnd: new Date() });
+  });
 
   it('returns recurring series list (200)', async () => {
     (prisma.recurringAppointment.findMany as jest.Mock).mockResolvedValue([{

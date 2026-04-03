@@ -5,11 +5,11 @@
  * Modular, draggable tile component for the futuristic command center
  */
 
-import { ReactNode } from 'react';
+import { ReactNode, useRef, useState, useEffect, useCallback } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { Bars3Icon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bars3Icon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export type TileSize = 'small' | 'medium' | 'large' | 'full';
 export type TileVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'glass';
@@ -64,6 +64,33 @@ export default function CommandCenterTile({
     disabled: !isDraggable,
     data: { type: 'tile', title, size },
   });
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > 8;
+    setCanScrollDown(hasMore);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = contentRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const observer = new ResizeObserver(checkScroll);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      observer.disconnect();
+    };
+  }, [checkScroll]);
+
+  const scrollDown = () => {
+    contentRef.current?.scrollBy({ top: 120, behavior: 'smooth' });
+  };
 
   const style = transform
     ? {
@@ -155,9 +182,26 @@ export default function CommandCenterTile({
       </div>
 
       {/* Content */}
-      <div className="p-6 h-full overflow-auto">
+      <div ref={contentRef} className="p-6 h-full overflow-auto">
         {children}
       </div>
+
+      {/* Scroll-down indicator */}
+      <AnimatePresence>
+        {canScrollDown && (
+          <motion.button
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+            onClick={scrollDown}
+            aria-label="Scroll down"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+          >
+            <ChevronDownIcon className="w-4 h-4 text-white/70" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Active Indicator */}
       {isActive && (

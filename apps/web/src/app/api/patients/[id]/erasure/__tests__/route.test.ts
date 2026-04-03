@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/prisma', () => {
@@ -24,6 +25,7 @@ jest.mock('@/lib/prisma', () => {
 
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const mockContext = {
   user: { id: 'admin-1', email: 'admin@holilabs.com', role: 'ADMIN' },
@@ -32,7 +34,10 @@ const mockContext = {
 };
 
 describe('POST /api/patients/[id]/erasure', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+  });
 
   it('executes soft delete with valid token', async () => {
     (prisma.deletionRequest.findFirst as jest.Mock).mockResolvedValue({

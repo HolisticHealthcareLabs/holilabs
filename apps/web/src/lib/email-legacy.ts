@@ -841,3 +841,99 @@ Holi Labs - Atención médica digital`,
     ],
   });
 }
+
+/**
+ * Send lab results ready notification email
+ */
+export async function sendLabResultsReadyEmail(
+  patientEmail: string,
+  patientName: string,
+  testNames: string[],
+  portalUrl: string,
+  clinicianName?: string
+) {
+  const testList = testNames.map((t) => `<li style="padding:4px 0">${t}</li>`).join('');
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com';
+
+  return sendEmail({
+    to: patientEmail,
+    subject: 'Tus resultados de laboratorio están listos',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Resultados Disponibles</h1>
+        </div>
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          ${clinicianName ? `El Dr(a). ${clinicianName} ha publicado` : 'Se han publicado'} tus resultados de laboratorio:
+        </p>
+        <div style="background: #f0fdf4; border-left: 4px solid #059669; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <ul style="margin: 0; padding-left: 20px; color: #1f2937;">${testList}</ul>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Resultados
+          </a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${appUrl}" style="color: #059669; text-decoration: none;">Holi Labs</a> — Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},\n\n${clinicianName ? `El Dr(a). ${clinicianName} ha publicado` : 'Se han publicado'} tus resultados de laboratorio:\n\n${testNames.map((t) => `- ${t}`).join('\n')}\n\nVer resultados: ${portalUrl}\n\n--\nHoli Labs — Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'lab_results_ready' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
+
+/**
+ * Send prescription update notification email
+ */
+export async function sendPrescriptionUpdateEmail(
+  patientEmail: string,
+  patientName: string,
+  clinicianName: string,
+  medicationNames: string[],
+  portalUrl: string
+) {
+  const medList = medicationNames.map((m) => `<li style="padding:4px 0">${m}</li>`).join('');
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com';
+
+  return sendEmail({
+    to: patientEmail,
+    subject: 'Actualización de tu receta médica',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Receta Actualizada</h1>
+        </div>
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          El Dr(a). ${clinicianName} ha actualizado tu receta médica con los siguientes medicamentos:
+        </p>
+        <div style="background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <ul style="margin: 0; padding-left: 20px; color: #1f2937;">${medList}</ul>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Receta
+          </a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${appUrl}" style="color: #2563eb; text-decoration: none;">Holi Labs</a> — Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},\n\nEl Dr(a). ${clinicianName} ha actualizado tu receta médica:\n\n${medicationNames.map((m) => `- ${m}`).join('\n')}\n\nVer receta: ${portalUrl}\n\n--\nHoli Labs — Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'prescription_update' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}

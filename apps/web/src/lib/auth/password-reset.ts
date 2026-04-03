@@ -152,7 +152,7 @@ export class PasswordResetService {
       return {
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.',
-        resetUrl, // Only return in development
+        resetUrl: process.env.NODE_ENV !== 'production' ? resetUrl : undefined,
       };
     } catch (error) {
       logger.error({
@@ -281,7 +281,7 @@ export class PasswordResetService {
       return {
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.',
-        resetUrl, // Only return in development
+        resetUrl: process.env.NODE_ENV !== 'production' ? resetUrl : undefined,
       };
     } catch (error) {
       logger.error({

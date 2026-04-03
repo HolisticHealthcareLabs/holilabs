@@ -2,17 +2,29 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
+const motionCache: Record<string, React.FC<any>> = {};
 jest.mock('framer-motion', () => ({
-  motion: new Proxy({}, { get: (_, tag) => tag }),
+  motion: new Proxy({}, {
+    get: (_: any, tag: string) => {
+      if (!motionCache[tag]) {
+        const Comp = React.forwardRef(({ children, ...props }: any, ref: any) =>
+          React.createElement(tag, { ...props, ref }, children)
+        );
+        Comp.displayName = `motion.${tag}`;
+        motionCache[tag] = Comp;
+      }
+      return motionCache[tag];
+    },
+  }),
   AnimatePresence: ({ children }: any) => children,
-  useAnimation: () => ({ start: jest.fn() }),
-  useMotionValue: () => ({ set: jest.fn(), get: () => 0 }),
+  useAnimation: () => ({ start: () => {} }),
+  useMotionValue: () => ({ set: () => {}, get: () => 0 }),
 }));
 jest.mock('@dnd-kit/core', () => ({
   useDraggable: () => ({
     attributes: {},
     listeners: {},
-    setNodeRef: jest.fn(),
+    setNodeRef: () => {},
     transform: null,
     isDragging: false,
   }),
@@ -22,6 +34,7 @@ jest.mock('@dnd-kit/utilities', () => ({
 }));
 jest.mock('@heroicons/react/24/outline', () => ({
   Bars3Icon: (props: any) => <div data-testid="bars-icon" {...props} />,
+  ChevronDownIcon: (props: any) => <div data-testid="chevron-icon" {...props} />,
 }));
 
 import CommandCenterTile from '../CommandCenterTile';

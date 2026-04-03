@@ -24,6 +24,8 @@ const customJestConfig = {
   // Module paths
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@holi/shared-kernel/(.*)$': '<rootDir>/../../packages/shared-kernel/src/$1',
+    '^@holi/shared-kernel$': '<rootDir>/../../packages/shared-kernel/src',
   },
 
   // Coverage configuration
@@ -66,9 +68,9 @@ const customJestConfig = {
 
   // Transform ESM modules in node_modules
   // Pattern handles both regular node_modules and pnpm's .pnpm folder structure
-  // For pnpm, scoped packages use + instead of / (e.g., @auth/prisma-adapter becomes @auth+prisma-adapter)
   transformIgnorePatterns: [
-    'node_modules/(?!(@auth/|next-auth|@prisma/|next-intl|@auth\\+|next-auth\\+|@prisma\\+|uuid))',
+    'node_modules/(?!(uuid|next-auth|@auth|@prisma|@simplewebauthn|next-intl|framer-motion)/)',
+    '\\.pnpm/(?!(uuid|next-auth|@auth|@prisma|@simplewebauthn|next-intl|framer-motion)@)',
   ],
 
   // Transform files with ts-jest

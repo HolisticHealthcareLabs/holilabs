@@ -179,6 +179,7 @@ function evaluateCondition(
             // Basic fallback for simple checks
             if (condition.operator === 'matches' && typeof fieldValue === 'string' && typeof condition.value === 'string') {
                 try {
+                    if (condition.value.length > 200) return false; // CYRUS: ReDoS guard
                     const regex = new RegExp(condition.value, 'i');
                     return regex.test(fieldValue);
                 } catch { return false; }

@@ -59,6 +59,6 @@ describe('LegacyProviderAdapter', () => {
   });
 
   it('does not expose stream()', () => {
-    expect(adapter.stream).toBeUndefined();
+    expect((adapter as any).stream).toBeUndefined();
   });
 });

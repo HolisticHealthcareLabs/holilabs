@@ -41,16 +41,19 @@ const newVersion = {
 describe('VersionDiffViewer', () => {
   it('renders version numbers', () => {
     render(<VersionDiffViewer oldVersion={baseVersion} newVersion={newVersion} />);
-    expect(screen.getByText(/Version 1|v1/i) || screen.getByText(/versión/i)).toBeTruthy();
+    const matches = screen.getAllByText(/Versión/i);
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('renders changed fields labels', () => {
     render(<VersionDiffViewer oldVersion={baseVersion} newVersion={newVersion} />);
-    expect(screen.getByText(/Subjective|Subjetivo/i) || document.querySelector('[class*="diff"]')).toBeTruthy();
+    const matches = screen.getAllByText(/Subjetivo/i);
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('renders author information', () => {
     render(<VersionDiffViewer oldVersion={baseVersion} newVersion={newVersion} />);
-    expect(screen.getByText(/Ana|López/i)).toBeInTheDocument();
+    const matches = screen.getAllByText(/Ana|López/i);
+    expect(matches.length).toBeGreaterThan(0);
   });
 });

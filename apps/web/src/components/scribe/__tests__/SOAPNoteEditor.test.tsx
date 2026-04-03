@@ -29,7 +29,9 @@ jest.mock('@/hooks/useVoiceCommands', () => ({
     error: null,
     startListening: jest.fn(),
     stopListening: jest.fn(),
-    availableCommands: [],
+    clearError: jest.fn(),
+    getAvailableCommands: () => [],
+    isSupported: false,
   }),
 }));
 
@@ -60,18 +62,19 @@ const mockNote = {
 
 describe('SOAPNoteEditor', () => {
   it('renders SOAP note fields', () => {
-    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} patientId="pat-1" />);
-    expect(screen.getByText(/Subjective|S:/i) || document.querySelector('textarea')).toBeTruthy();
+    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} onSign={jest.fn()} patientId="pat-1" />);
+    const matches = screen.getAllByText(/Subjetivo/i);
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('renders the chief complaint', () => {
-    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} patientId="pat-1" />);
-    expect(screen.getByDisplayValue('Chest pain') || screen.getByText('Chest pain')).toBeTruthy();
+    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} onSign={jest.fn()} patientId="pat-1" />);
+    expect(screen.getByText('Chest pain')).toBeTruthy();
   });
 
-  it('renders Save button', () => {
-    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} patientId="pat-1" />);
-    const saveButton = screen.getByText(/Save|Guardar/i);
-    expect(saveButton).toBeInTheDocument();
+  it('renders Editar button in view mode', () => {
+    render(<SOAPNoteEditor note={mockNote as any} onSave={jest.fn()} onSign={jest.fn()} patientId="pat-1" />);
+    const editButton = screen.getByText(/Editar Nota/i);
+    expect(editButton).toBeInTheDocument();
   });
 });

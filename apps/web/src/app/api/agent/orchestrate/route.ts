@@ -40,6 +40,9 @@ function generateInternalToken(): string {
 // Per-tool timeout default (30 seconds)
 const DEFAULT_TIMEOUT = 30000;
 
+// CYRUS: explicit role validation for agent orchestration — CVI-007
+const ALLOWED_ROLES = ['CLINICIAN', 'PHYSICIAN', 'NURSE', 'ADMIN'];
+
 /**
  * Workflow Registry
  */
@@ -275,10 +278,14 @@ async function executeSequential(
 export async function POST(request: NextRequest) {
   const orchestrationStart = Date.now();
 
-  // 1. Verify session
+  // 1. Verify session + role
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const userRole = (session.user as any).role as string;
+  if (!ALLOWED_ROLES.includes(userRole)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // 2. Parse request
@@ -390,6 +397,10 @@ export async function GET(_request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const userRole = (session.user as any).role as string;
+  if (!ALLOWED_ROLES.includes(userRole)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const availableWorkflows = Array.from(WORKFLOW_REGISTRY.values()).map(w => ({

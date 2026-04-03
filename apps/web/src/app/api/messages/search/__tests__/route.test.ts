@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
   createPublicRoute: (handler: any) => handler,
 }));
 

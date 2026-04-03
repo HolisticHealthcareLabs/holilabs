@@ -21,7 +21,7 @@ jest.mock('@/hooks/useKeyboardShortcuts', () => ({
 
 import KeyboardShortcutsOverlay from '../KeyboardShortcutsOverlay';
 
-const mockShortcuts = [
+const mockShortcuts: any[] = [
   { id: 's1', keys: ['Ctrl', 'R'], description: 'Toggle recording', category: 'recording' },
   { id: 's2', keys: ['Ctrl', 'P'], description: 'Search patients', category: 'patient' },
 ];

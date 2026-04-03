@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto, { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess, type ApiContext } from '@/lib/api/middleware';
 import { createChainedAuditEntry } from '@/lib/security/audit-chain';
 import type { ConsentType } from '@prisma/client';
 // NOTE: encryptPHIWithVersion removed — Prisma encryption extension handles
@@ -42,6 +42,12 @@ async function handler(
   context: ApiContext,
 ): Promise<NextResponse> {
   const { id: patientId } = (context.params ?? ({} as any)) as { id: string };
+
+  // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+  const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+  }
 
   // ── Parse body ──────────────────────────────────────────────────────────────
   let body: {

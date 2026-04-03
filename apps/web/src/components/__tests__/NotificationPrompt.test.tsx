@@ -2,28 +2,39 @@
 import React from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({ motion: new Proxy({}, { get: (_, tag: string) => tag }), AnimatePresence: ({ children }: any) => children }));
+jest.mock('framer-motion', () => ({
+  motion: new Proxy({}, { get: (_, tag: string) => tag }),
+  AnimatePresence: ({ children }: any) => children,
+}));
 jest.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...p }: any) => <a {...p}>{children}</a> }));
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/', useSearchParams: () => new URLSearchParams() }));
-jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
-jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (k: string) => k }) }));
-jest.mock('lucide-react', () => new Proxy({}, { get: (_, k) => () => null }));
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: () => {} }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({ data: { user: { id: 'u1', role: 'CLINICIAN' } }, status: 'authenticated' }),
+}));
+jest.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({ locale: 'en', t: (k: string) => k }),
+}));
+jest.mock('lucide-react', () => new Proxy({}, { get: (_, k: string) => () => null }));
+
 jest.mock('@/lib/push-notifications', () => ({
   pushNotifications: {
-    isSupported: jest.fn(() => true),
-    getPermission: jest.fn(() => 'default'),
-    requestPermission: jest.fn(() => Promise.resolve('granted')),
-    init: jest.fn(() => Promise.resolve()),
-    subscribe: jest.fn(() => Promise.resolve()),
-    showNotification: jest.fn(() => Promise.resolve()),
+    isSupported: () => true,
+    getPermission: () => 'default' as NotificationPermission,
+    requestPermission: () => Promise.resolve('granted' as NotificationPermission),
+    init: () => Promise.resolve(),
+    subscribe: () => Promise.resolve(),
+    showNotification: () => Promise.resolve(),
   },
 }));
 
 import NotificationPrompt from '../NotificationPrompt';
 
 beforeEach(() => {
-  jest.clearAllMocks();
   jest.useFakeTimers();
   localStorage.clear();
 });

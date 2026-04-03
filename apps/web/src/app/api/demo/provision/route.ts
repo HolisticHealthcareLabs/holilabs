@@ -1,43 +1,46 @@
 /**
  * Demo Provision Endpoint
  *
- * Returns pre-seeded demo credentials. The full ephemeral workspace
- * provisioning requires Workspace/WorkspaceMember/Discipline/TenantDiscipline
- * models which are not yet in the schema — this lightweight version uses
- * existing seeded users so the demo flow works immediately.
+ * Creates a unique ephemeral User per demo session so that biometric
+ * credentials (WebAuthn) are isolated between visitors. The isEphemeral
+ * flag marks these rows for eventual cleanup.
+ *
+ * POST /api/demo/provision → { success, credentials, user }
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
-const DEMO_CREDENTIALS = {
-  email: 'dr.silva@holilabs.xyz',
-  password: 'Cortex2026!',
-};
+const DEMO_PASSWORD = 'Cortex2026!';
 
-export const POST = createPublicRoute(async (request: NextRequest): Promise<NextResponse> => {
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Demo provision is disabled in production' }, { status: 404 });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: DEMO_CREDENTIALS.email },
-      select: { id: true, firstName: true, lastName: true, role: true },
-    });
+    const slug = crypto.randomBytes(4).toString('hex');
+    const email = `demo-${slug}@holilabs.xyz`;
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Demo user not found. Run prisma db seed.' },
-        { status: 500 }
-      );
-    }
+    const user = await prisma.user.create({
+      data: {
+        email,
+        firstName: 'Dr. Demo',
+        lastName: slug.toUpperCase(),
+        role: 'CLINICIAN',
+        isEphemeral: true,
+        onboardingCompleted: true,
+      },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
 
     return NextResponse.json({
       success: true,
       redirectTo: '/dashboard',
-      credentials: DEMO_CREDENTIALS,
+      credentials: { email, password: DEMO_PASSWORD },
       user: {
         id: user.id,
         name: `${user.firstName} ${user.lastName}`,
@@ -46,7 +49,7 @@ export const POST = createPublicRoute(async (request: NextRequest): Promise<Next
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to provision demo environment' },
-      { status: 500 }
+      { status: 500 },
     );
   }
-});
+}

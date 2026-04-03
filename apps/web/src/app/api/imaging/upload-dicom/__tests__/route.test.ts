@@ -22,31 +22,32 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockUploadFile = jest.fn();
 jest.mock('@/lib/storage', () => ({
-  uploadFile: jest.fn().mockResolvedValue({ url: 'https://storage.example.com/dicom/test.dcm' }),
+  uploadFile: (...args: any[]) => mockUploadFile(...args),
 }));
+
+const mockParseDicomFile = jest.fn();
+const mockIsDicomFile = jest.fn();
+const mockGenerateStudyDescription = jest.fn();
+const mockSanitizeDicomMetadata = jest.fn();
+const mockNormalizeBodyPart = jest.fn();
 
 jest.mock('@/lib/imaging/dicom-parser', () => ({
-  parseDicomFile: jest.fn().mockResolvedValue({
-    study: { studyInstanceUID: '1.2.3.4', studyDate: '20240115', accessionNumber: 'ACC-001', studyDescription: 'Chest CT' },
-    series: { modality: 'CT', bodyPartExamined: 'CHEST', seriesDescription: 'Axial' },
-    equipment: { institutionName: 'Hospital ABC' },
-  }),
-  isDicomFile: jest.fn().mockReturnValue(true),
-  generateStudyDescription: jest.fn().mockReturnValue('CT CHEST'),
-  sanitizeDicomMetadata: jest.fn().mockReturnValue({}),
-  normalizeBodyPart: jest.fn().mockReturnValue('CHEST'),
+  parseDicomFile: (...args: any[]) => mockParseDicomFile(...args),
+  isDicomFile: (...args: any[]) => mockIsDicomFile(...args),
+  generateStudyDescription: (...args: any[]) => mockGenerateStudyDescription(...args),
+  sanitizeDicomMetadata: (...args: any[]) => mockSanitizeDicomMetadata(...args),
+  normalizeBodyPart: (...args: any[]) => mockNormalizeBodyPart(...args),
 }));
 
+const mockSafeErrorResponse = jest.fn();
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
-  ),
+  safeErrorResponse: (...args: any[]) => mockSafeErrorResponse(...args),
 }));
 
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
-const { isDicomFile } = require('@/lib/imaging/dicom-parser');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const mockContext = {
@@ -78,7 +79,20 @@ describe('POST /api/imaging/upload-dicom', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
-    (isDicomFile as jest.Mock).mockReturnValue(true);
+    mockIsDicomFile.mockReturnValue(true);
+    mockParseDicomFile.mockResolvedValue({
+      study: { studyInstanceUID: '1.2.3.4', studyDate: '20240115', accessionNumber: 'ACC-001', studyDescription: 'Chest CT' },
+      series: { modality: 'CT', bodyPartExamined: 'CHEST', seriesDescription: 'Axial' },
+      equipment: { institutionName: 'Hospital ABC' },
+    });
+    mockGenerateStudyDescription.mockReturnValue('CT CHEST');
+    mockSanitizeDicomMetadata.mockReturnValue({});
+    mockNormalizeBodyPart.mockReturnValue('CHEST');
+    mockUploadFile.mockResolvedValue({ url: 'https://storage.example.com/dicom/test.dcm' });
+    const { NextResponse } = require('next/server');
+    mockSafeErrorResponse.mockReturnValue(
+      NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    );
   });
 
   it('returns 400 when no file is provided', async () => {
@@ -100,7 +114,7 @@ describe('POST /api/imaging/upload-dicom', () => {
   });
 
   it('returns 400 for non-DICOM file', async () => {
-    (isDicomFile as jest.Mock).mockReturnValueOnce(false);
+    mockIsDicomFile.mockReturnValueOnce(false);
     const request = createMockFormDataRequest({ file: createMockFile(), patientId: 'p-1' });
     const response = await POST(request, mockContext);
     const data = await response.json();
@@ -123,9 +137,6 @@ describe('POST /api/imaging/upload-dicom', () => {
     const response = await POST(request, mockContext);
     const data = await response.json();
 
-    if (response.status !== 200) {
-      process.stderr.write('DEBUG: ' + JSON.stringify(data) + '\n');
-    }
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.metadata.modality).toBe('CT');

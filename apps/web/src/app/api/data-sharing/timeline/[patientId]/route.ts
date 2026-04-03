@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { getSharedTimeline, canAccessData } from '@/lib/care-coordination/cross-org.service';
 import { DataSharingScope } from '@prisma/client';
@@ -13,6 +13,12 @@ export const GET = createProtectedRoute(
       const patientId = context.params?.patientId;
       if (!patientId) {
         return NextResponse.json({ error: 'Missing patient ID' }, { status: 400 });
+      }
+
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      const hasAccess = await verifyPatientAccess(context.user.id, patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
       }
 
       const patient = await prisma.patient.findUnique({

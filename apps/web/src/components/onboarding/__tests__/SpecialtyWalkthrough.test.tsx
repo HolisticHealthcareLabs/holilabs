@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
@@ -51,7 +51,7 @@ describe('SpecialtyWalkthrough', () => {
         specialty="Cardiology"
       />
     );
-    jest.advanceTimersByTime(500);
+    act(() => { jest.advanceTimersByTime(500); });
     expect(screen.getByTestId('joyride')).toBeInTheDocument();
     jest.useRealTimers();
   });
@@ -67,7 +67,7 @@ describe('SpecialtyWalkthrough', () => {
         language="en"
       />
     );
-    jest.advanceTimersByTime(500);
+    act(() => { jest.advanceTimersByTime(500); });
     expect(screen.getByText('My Day')).toBeInTheDocument();
     jest.useRealTimers();
   });

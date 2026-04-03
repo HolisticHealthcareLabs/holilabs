@@ -8,11 +8,12 @@ jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: '
 
 jest.mock('@heroicons/react/24/outline', () => new Proxy({}, { get: () => () => null }));
 
+let _mockDevices: any[] = [];
 jest.mock('@/lib/qr/permission-manager', () => ({
   permissionManager: {
-    getPairedDevices: jest.fn().mockReturnValue([]),
+    getPairedDevices: () => _mockDevices,
     revokeDevicePermissions: jest.fn(),
-    getDevicePermissions: jest.fn().mockReturnValue([]),
+    getDevicePermissions: () => [],
     updateDevicePermissions: jest.fn(),
   },
 }));

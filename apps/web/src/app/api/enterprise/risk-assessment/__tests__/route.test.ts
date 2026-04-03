@@ -36,13 +36,17 @@ jest.mock('@/lib/enterprise/usage-meter', () => ({
 
 const { POST } = require('../route');
 const { validateEnterpriseKey } = require('@/lib/enterprise/auth');
+const { checkRateLimit } = require('@/lib/enterprise/rate-limiter');
 const { calculateCompositeRisk } = require('@/services/risk-calculator.service');
 const { exportForEnterprise } = require('@/services/enterprise-export.service');
+const { dataFlywheelService } = require('@/services/data-flywheel.service');
 
 describe('POST /api/enterprise/risk-assessment', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (validateEnterpriseKey as jest.Mock).mockReturnValue({ authorized: true });
+    (checkRateLimit as jest.Mock).mockReturnValue({ allowed: true });
+    (dataFlywheelService.ingest as jest.Mock).mockResolvedValue(undefined);
   });
 
   it('returns risk assessment for valid input', async () => {

@@ -58,7 +58,7 @@ describe('GET /api/command-center/api-keys', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data)).toBe(true);
     expect(data.data[0]).toHaveProperty('id');
     expect(data.data[0]).toHaveProperty('name');
     expect(data.data[0]).not.toHaveProperty('tokenHash');

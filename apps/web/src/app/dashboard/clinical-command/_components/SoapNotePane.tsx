@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Save, AlertTriangle, RefreshCw } from 'lucide-react';
+import { FileText, AlertTriangle, RefreshCw } from 'lucide-react';
 import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -278,7 +278,7 @@ export function SoapNotePane({
 
   return (
     <div className="
-      p-4 flex flex-col gap-3 overflow-hidden h-full
+      p-4 flex flex-col gap-3 overflow-hidden
     " style={{ backgroundColor: 'var(--surface-primary)' }}>
       {/* Header */}
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -370,8 +370,8 @@ export function SoapNotePane({
         whileTap={canSign ? { scale: 0.97 } : {}}
         aria-label="Sign and bill this encounter"
         className={`
-          flex-shrink-0 w-full flex items-center justify-center gap-2.5
-          py-2.5 text-sm font-semibold transition-all
+          flex-shrink-0 w-full flex items-center justify-center
+          py-2 text-xs font-semibold transition-all
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
           focus-visible:ring-offset-2
           focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900
@@ -398,7 +398,6 @@ export function SoapNotePane({
           : t('signAndBillEncounter')
         }
       >
-        <Save className="w-4 h-4" />
         {t('signAndBill')}
       </m.button>
     </div>

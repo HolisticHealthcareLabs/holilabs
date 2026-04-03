@@ -37,7 +37,7 @@ export const POST = createProtectedRoute(
       }
 
       const measure = await prisma.qualityMeasure.create({
-        data: parsed.data,
+        data: parsed.data as any,
       });
 
       return NextResponse.json({ success: true, data: measure }, { status: 201 });

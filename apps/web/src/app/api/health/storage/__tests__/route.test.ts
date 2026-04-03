@@ -1,14 +1,15 @@
 import { NextRequest } from 'next/server';
 
+const mockSend = jest.fn();
+const MockS3Client = jest.fn(() => ({ send: mockSend }));
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
   createPublicRoute: (handler: any) => handler,
 }));
 
 jest.mock('@aws-sdk/client-s3', () => ({
-  S3Client: jest.fn().mockImplementation(() => ({
-    send: jest.fn().mockResolvedValue({}),
-  })),
+  S3Client: MockS3Client,
   HeadBucketCommand: jest.fn(),
   PutObjectCommand: jest.fn(),
   DeleteObjectCommand: jest.fn(),
@@ -31,6 +32,8 @@ describe('GET /api/health/storage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
+    MockS3Client.mockImplementation(() => ({ send: mockSend }));
+    mockSend.mockResolvedValue({});
   });
 
   afterAll(() => {

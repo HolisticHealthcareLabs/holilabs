@@ -23,4 +23,6 @@ export {
   sendNewMessageEmail,
   sendConsultationCompletedEmail,
   sendNewDocumentEmail,
+  sendLabResultsReadyEmail,
+  sendPrescriptionUpdateEmail,
 } from '../email-legacy';

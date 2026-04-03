@@ -16,12 +16,19 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: {
+  __esModule: true,
+  default: {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
     debug: jest.fn(),
   },
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  }
 }));
 
 jest.mock('../tools/patient.tools', () => ({ patientTools: [] }));
@@ -48,6 +55,31 @@ jest.mock('../tools/notification.tools', () => ({ notificationTools: [] }));
 jest.mock('../tools/search.tools', () => ({ searchTools: [] }));
 jest.mock('../tools/analytics.tools', () => ({ analyticsTools: [] }));
 jest.mock('../tools/clinical-decision.tools', () => ({ clinicalDecisionTools: [] }));
+jest.mock('../tools/role-admin.tools', () => ({ roleAdminTools: [] }));
+jest.mock('../tools/escalation.tools', () => ({ escalationTools: [] }));
+jest.mock('../tools/workspace-admin.tools', () => ({ workspaceAdminTools: [] }));
+jest.mock('../tools/safety-incident.tools', () => ({ safetyIncidentTools: [] }));
+jest.mock('../tools/discipline-prevention.tools', () => ({ disciplinePreventionTools: [] }));
+jest.mock('../tools/vbc.tools', () => ({ vbcTools: [] }));
+jest.mock('../tools/care-coordination.tools', () => ({ careCoordinationTools: [] }));
+
+jest.mock('@/lib/security/redact-phi', () => ({
+  redactObject: jest.fn((obj: any) => obj),
+}));
+
+jest.mock('@/lib/audit/write-audit-entry', () => ({
+  writeAuditEntry: jest.fn(),
+}));
+
+jest.mock('../agent-event-bus', () => ({
+  agentEventBus: { publish: jest.fn() },
+  deriveAffectedEntities: jest.fn().mockReturnValue([]),
+}));
+
+jest.mock('../middleware/consent-middleware', () => ({
+  wrapWithConsentCheck: jest.fn((_tool: any, handler: any) => handler),
+}));
+
 jest.mock('../workflows', () => ({
   getWorkflowTemplates: jest.fn().mockReturnValue([]),
   getWorkflowById: jest.fn(),
@@ -105,6 +137,9 @@ describe('MCP Registry — Idempotency', () => {
     mockHandler.mockResolvedValue(successResult);
     (prisma.agentIdempotencyLog.findUnique as jest.Mock).mockResolvedValue(null);
     (prisma.agentIdempotencyLog.create as jest.Mock).mockResolvedValue({});
+
+    const { deriveAffectedEntities } = require('../agent-event-bus');
+    (deriveAffectedEntities as jest.Mock).mockReturnValue([]);
 
     // Register test tools on the singleton
     (registry as any).tools.set('create_patient', createPatientTool);

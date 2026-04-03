@@ -1,3 +1,5 @@
+export {};
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     roleAssignment: {
@@ -13,12 +15,19 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: {
+  __esModule: true,
+  default: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
   },
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  }
 }));
 
 const { prisma } = require('@/lib/prisma');

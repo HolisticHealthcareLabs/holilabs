@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
 
+const mockGetProjects = jest.fn();
+const mockClient = { manage: { getProjects: mockGetProjects } };
+const mockCreateClient = jest.fn(() => mockClient);
+
 jest.mock('@/lib/api/middleware', () => ({
   createPublicRoute: (handler: any, _opts?: any) => handler,
 }));
@@ -14,21 +18,17 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 }));
 
 jest.mock('@deepgram/sdk', () => ({
-  createClient: jest.fn().mockReturnValue({
-    manage: {
-      getProjects: jest.fn(),
-    },
-  }),
+  createClient: mockCreateClient,
 }));
 
 const { GET } = require('../route');
-const { createClient } = require('@deepgram/sdk');
 
 describe('GET /api/health/deepgram', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.DEEPGRAM_API_KEY = 'test-dg-key';
-    (createClient().manage.getProjects as jest.Mock).mockResolvedValue({
+    mockCreateClient.mockReturnValue(mockClient);
+    mockGetProjects.mockResolvedValue({
       result: { projects: [{ project_id: 'proj-1', name: 'Test Project' }] },
     });
   });
@@ -38,8 +38,7 @@ describe('GET /api/health/deepgram', () => {
   });
 
   it('returns healthy status when API key is valid', async () => {
-    const req = new NextRequest('http://localhost:3000/api/health/deepgram');
-    const res = await GET(req);
+    const res = await GET();
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -50,8 +49,7 @@ describe('GET /api/health/deepgram', () => {
 
   it('returns 500 when DEEPGRAM_API_KEY is not configured', async () => {
     delete process.env.DEEPGRAM_API_KEY;
-    const req = new NextRequest('http://localhost:3000/api/health/deepgram');
-    const res = await GET(req);
+    const res = await GET();
     const data = await res.json();
 
     expect(res.status).toBe(500);
@@ -59,10 +57,8 @@ describe('GET /api/health/deepgram', () => {
   });
 
   it('returns 500 when Deepgram API throws', async () => {
-    const client = createClient();
-    (client.manage.getProjects as jest.Mock).mockRejectedValue(new Error('API error'));
-    const req = new NextRequest('http://localhost:3000/api/health/deepgram');
-    const res = await GET(req);
+    mockGetProjects.mockRejectedValue(new Error('API error'));
+    const res = await GET();
     const data = await res.json();
 
     expect(res.status).toBe(500);
@@ -70,8 +66,7 @@ describe('GET /api/health/deepgram', () => {
   });
 
   it('includes supported languages list', async () => {
-    const req = new NextRequest('http://localhost:3000/api/health/deepgram');
-    const res = await GET(req);
+    const res = await GET();
     const data = await res.json();
 
     expect(data.languages).toContain('pt');

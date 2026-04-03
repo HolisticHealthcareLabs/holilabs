@@ -32,6 +32,7 @@ jest.mock('@/lib/prisma', () => ({
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
@@ -68,6 +69,7 @@ jest.mock('@/lib/care-coordination/cross-org.service', () => ({
 
 const { prisma } = require('@/lib/prisma');
 const crossOrg = require('@/lib/care-coordination/cross-org.service');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const agreementsRoot = require('../agreements/route');
 const agreementApprove = require('../agreements/[id]/approve/route');
@@ -90,7 +92,7 @@ function makeRequest(url: string, opts?: { method?: string; body?: any }): NextR
     init.body = JSON.stringify(opts.body);
     init.headers = { 'Content-Type': 'application/json' };
   }
-  return new NextRequest(new URL(url), init);
+  return new NextRequest(new URL(url), init as any);
 }
 
 const adminContext = {
@@ -113,6 +115,7 @@ function ctxWith(base: any, overrides: Record<string, any> = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
 });
 
 // ===========================================================================
@@ -505,6 +508,7 @@ describe('GET /data-sharing/timeline/[patientId]', () => {
   });
 
   it('returns 403 when scope filter access is denied', async () => {
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue({ id: 'pat-1' });
     (crossOrg.canAccessData as jest.Mock).mockResolvedValue({
       allowed: false,

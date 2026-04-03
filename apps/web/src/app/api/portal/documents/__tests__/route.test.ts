@@ -25,6 +25,7 @@ const { prisma } = require('@/lib/prisma');
 const mockContext = {
   session: { userId: 'pu-1', patientId: 'patient-1', email: 'patient@test.com' },
   requestId: 'req-1',
+  params: {},
 };
 
 describe('GET /api/portal/documents', () => {
@@ -37,7 +38,10 @@ describe('GET /api/portal/documents', () => {
       { id: 'd-3', documentType: 'PRESCRIPTION', fileSize: 512, createdAt: new Date() },
     ]);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/documents'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/documents?type=LAB_RESULT&limit=50'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -50,7 +54,10 @@ describe('GET /api/portal/documents', () => {
   it('returns empty list when no documents', async () => {
     (prisma.document.findMany as jest.Mock).mockResolvedValue([]);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/documents'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/documents?type=LAB_RESULT&limit=50'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -60,7 +67,10 @@ describe('GET /api/portal/documents', () => {
   it('filters by document type', async () => {
     (prisma.document.findMany as jest.Mock).mockResolvedValue([]);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/documents?type=LAB_RESULT'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/documents?type=LAB_RESULT&limit=50'),
+      mockContext
+    );
 
     expect(prisma.document.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -72,7 +82,10 @@ describe('GET /api/portal/documents', () => {
   it('respects limit parameter', async () => {
     (prisma.document.findMany as jest.Mock).mockResolvedValue([]);
 
-    await GET(new NextRequest('http://localhost:3000/api/portal/documents?limit=10'), mockContext);
+    await GET(
+      new NextRequest('http://localhost:3000/api/portal/documents?type=LAB_RESULT&limit=10'),
+      mockContext
+    );
 
     expect(prisma.document.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ take: 10 })

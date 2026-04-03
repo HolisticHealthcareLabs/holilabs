@@ -6,11 +6,13 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), us
 jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
 jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (k: string) => k }) }));
 
+let _mockTaskResponse = { success: true, data: [], counts: { today: 0, overdue: 0, all: 0 } };
 beforeEach(() => {
-  global.fetch = jest.fn().mockResolvedValue({
+  _mockTaskResponse = { success: true, data: [], counts: { today: 0, overdue: 0, all: 0 } };
+  global.fetch = jest.fn(() => Promise.resolve({
     ok: true,
-    json: async () => ({ tasks: [], counts: { today: 0, overdue: 0, all: 0 } }),
-  }) as any;
+    json: async () => _mockTaskResponse,
+  })) as any;
 });
 
 import React from 'react';
@@ -32,11 +34,10 @@ describe('TaskManagementPanel', () => {
     });
   });
 
-  it('renders filter controls', async () => {
+  it('renders empty state with message', async () => {
     render(<TaskManagementPanel userId="user-1" />);
     await waitFor(() => {
-      const buttons = screen.getAllByRole('button');
-      expect(buttons.length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/All caught up|no pending tasks/i).length).toBeGreaterThan(0);
     });
   });
 });

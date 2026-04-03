@@ -1,0 +1,182 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x]
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Setup environment variables
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env.test
+          else
+            echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" > .env.test
+          fi
+
+      - name: Start dev server
+        run: |
+          pnpm dev &
+          # Wait for dev server to be ready
+          timeout 60 bash -c 'until curl -sf http://localhost:3000 > /dev/null; do sleep 1; done'
+
+      - name: Run E2E tests
+        run: pnpm exec playwright test --project=${{ matrix.browser }} --reporter=html --reporter=json
+        timeout-minutes: 20
+
+      - name: Run smoke tests
+        if: always()
+        run: pnpm exec playwright test agent-smoke-test.spec.ts --project=${{ matrix.browser }} --reporter=html
+        timeout-minutes: 10
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 30
+
+      - name: Parse and comment test results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testResultsPath = 'test-results/index.json';
+
+            let passed = 0;
+            let failed = 0;
+
+            if (fs.existsSync(testResultsPath)) {
+              try {
+                const results = JSON.parse(fs.readFileSync(testResultsPath, 'utf-8'));
+                passed = results.stats?.expected || 0;
+                failed = results.stats?.unexpected || 0;
+              } catch (e) {
+                console.log('Could not parse test results');
+              }
+            }
+
+            const browsers = context.payload.pull_request?.head?.sha || 'unknown';
+            const message = `## E2E Test Results (${{ matrix.browser }})
+
+            - ✓ Passed: ${passed}
+            - ✗ Failed: ${failed}
+
+            [View full report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message,
+            });
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.e2e.result }}" == "success" ]; then
+            echo "✓ All E2E tests passed"
+            exit 0
+          else
+            echo "✗ Some E2E tests failed"
+            exit 1
+          fi
+
+      - name: Comment summary on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ needs.e2e.result }}' === 'success' ? '✓ PASSED' : '✗ FAILED';
+            const message = `## E2E Test Status: ${status}
+
+            All test suites across chromium, firefox, and webkit have ${status.toLowerCase()}.
+
+            [View detailed reports](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message,
+            });

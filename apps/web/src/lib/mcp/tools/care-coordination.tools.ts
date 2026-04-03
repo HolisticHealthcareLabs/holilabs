@@ -58,6 +58,7 @@ async function createTeamHandler(input: z.infer<typeof CreateTeamSchema>, contex
       owningOrgId: input.owningOrgId,
       name: input.name ?? `Team-${input.patientId.slice(0, 8)}`,
       status: 'ACTIVE',
+      createdBy: context.clinicianId,
     },
   });
 
@@ -105,6 +106,7 @@ async function assignTaskHandler(input: z.infer<typeof AssignTaskSchema>, contex
   const task = await prisma.careTeamTask.create({
     data: {
       careTeamId: input.careTeamId,
+      patientId: (input as any).patientId || '',
       title: input.title,
       description: input.description,
       assignedToUserId: input.assignedToUserId,
@@ -113,6 +115,7 @@ async function assignTaskHandler(input: z.infer<typeof AssignTaskSchema>, contex
       slaHours: input.slaHours,
       dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
       status: 'PENDING',
+      createdBy: context.clinicianId,
     },
   });
 
@@ -146,14 +149,14 @@ async function getTimelineHandler(input: z.infer<typeof GetTimelineSchema>, cont
 }
 
 async function scheduleConferenceHandler(input: z.infer<typeof ScheduleConferenceSchema>, context: MCPContext): Promise<MCPResult> {
-  const conference = await prisma.careConference.create({
+  const conference = await (prisma.careConference as any).create({
     data: {
       careTeamId: input.careTeamId,
       patientId: input.patientId,
+      title: `Conference: ${input.agendaItems[0] || 'Care Review'}`,
       scheduledAt: new Date(input.scheduledAt),
       agendaItems: input.agendaItems,
       status: 'SCHEDULED',
-      scheduledBy: context.clinicianId,
     },
   });
 

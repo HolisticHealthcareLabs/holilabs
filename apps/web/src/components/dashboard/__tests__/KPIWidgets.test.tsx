@@ -13,7 +13,7 @@ jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...props
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }), usePathname: () => '/test', useSearchParams: () => new URLSearchParams() }));
 jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', email: 'dr@test.com', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
 jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (key: string) => key }) }));
-jest.mock('./PastelGlassStatCard', () => ({
+jest.mock('../PastelGlassStatCard', () => ({
   PastelGlassStatCard: ({ label, value }: any) => (
     <div data-testid="stat-card">
       <span>{label}</span>

@@ -16,9 +16,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CronMonitor } from '@/lib/cron/monitoring';
 import logger from '@/lib/logger';
-import { getServerSession } from '@/lib/auth';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
-import { createPublicRoute } from '@/lib/api/middleware';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +27,6 @@ export const dynamic = 'force-dynamic';
  */
 async function getCronHealth(request: NextRequest) {
   try {
-    // @todo(cron-auth): Enable auth guard — currently open for monitoring bootstrap
-    // const session = await getServerSession();
-    // if (!session || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
     const monitor = CronMonitor.getInstance();
 
     // Get health for all jobs
@@ -168,4 +161,11 @@ async function postCronHealthDetails(request: NextRequest) {
   }
 }
 
-export const POST = createPublicRoute(postCronHealthDetails);
+export const GET = createProtectedRoute(getCronHealth, {
+  roles: ['ADMIN', 'LICENSE_OWNER'],
+  skipCsrf: true,
+});
+
+export const POST = createProtectedRoute(postCronHealthDetails, {
+  roles: ['ADMIN', 'LICENSE_OWNER'],
+});

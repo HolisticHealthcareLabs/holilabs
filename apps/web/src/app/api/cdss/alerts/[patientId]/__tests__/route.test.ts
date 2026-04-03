@@ -15,10 +15,11 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockGetActionableAlerts = jest.fn();
 jest.mock('@/lib/services/prevention.service', () => ({
-  createPreventionService: jest.fn().mockReturnValue({
-    getActionableAlerts: jest.fn(),
-  }),
+  createPreventionService: jest.fn(() => ({
+    getActionableAlerts: mockGetActionableAlerts,
+  })),
 }));
 
 jest.mock('@/lib/audit', () => ({
@@ -36,6 +37,8 @@ jest.mock('@/lib/logger', () => ({
 
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { wrapInSafetyEnvelope } = require('@/lib/clinical/safety-envelope');
+const { createAuditLog } = require('@/lib/audit');
 const { createPreventionService } = require('@/lib/services/prevention.service');
 
 const mockContext = {
@@ -44,12 +47,19 @@ const mockContext = {
 };
 
 describe('GET /api/cdss/alerts/[patientId]', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (createPreventionService as jest.Mock).mockReturnValue({
+      getActionableAlerts: mockGetActionableAlerts,
+    });
+    (wrapInSafetyEnvelope as jest.Mock).mockImplementation((data: any, meta: any) => ({ data, safetyMetadata: meta }));
+    (createAuditLog as jest.Mock).mockResolvedValue({ id: 'audit-1' });
+  });
 
   it('returns alerts for patient (200)', async () => {
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue({ id: 'patient-1' });
     const mockAlerts = [{ severity: 'critical', message: 'Drug interaction' }];
-    createPreventionService().getActionableAlerts.mockResolvedValue(mockAlerts);
+    mockGetActionableAlerts.mockResolvedValue(mockAlerts);
 
     const request = new NextRequest('http://localhost:3000/api/cdss/alerts/patient-1');
     const response = await GET(request, mockContext);

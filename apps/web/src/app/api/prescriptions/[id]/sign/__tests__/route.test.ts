@@ -39,8 +39,34 @@ jest.mock('@/lib/prisma', () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    user: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
   },
+}));
+
+jest.mock('bcryptjs', () => ({
+  compare: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock('@/lib/auth/webauthn-token', () => ({
+  verifyWebAuthnToken: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('@/lib/auth/icp-brasil-signer', () => ({
+  verifyIcpBrasilSignature: jest.fn().mockResolvedValue({ valid: false, error: 'not used' }),
+  generatePrescriptionSigningHash: jest.fn().mockReturnValue('mock-hash'),
+}));
+
+jest.mock('@/lib/brazil-interop/anvisa-drug-registry', () => ({
+  classifyPrescription: jest.fn().mockReturnValue({
+    prescriptionType: 'BRANCA',
+    controlledSchedule: null,
+  }),
+}));
+
+jest.mock('@/lib/prescriptions/validity-rules', () => ({
+  calculateValidUntil: jest.fn().mockReturnValue(new Date('2026-07-01')),
+  validatePrescription: jest.fn().mockReturnValue([]),
 }));
 
 jest.mock('@/lib/audit', () => ({
@@ -66,6 +92,10 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { prisma } = require('@/lib/prisma');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { trackEvent } = require('@/lib/analytics/server-analytics');
+const { compare } = require('bcryptjs');
+const { classifyPrescription } = require('@/lib/brazil-interop/anvisa-drug-registry');
+const { calculateValidUntil, validatePrescription } = require('@/lib/prescriptions/validity-rules');
 const { POST } = require('../route');
 
 const mockContext = {
@@ -97,12 +127,22 @@ const mockSignedPrescription = {
 beforeEach(() => {
   jest.clearAllMocks();
   (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+  (trackEvent as jest.Mock).mockResolvedValue(undefined);
+  (compare as jest.Mock).mockResolvedValue(true);
+  (classifyPrescription as jest.Mock).mockReturnValue({
+    prescriptionType: 'BRANCA',
+    controlledSchedule: null,
+  });
+  (calculateValidUntil as jest.Mock).mockReturnValue(new Date('2026-07-01'));
+  (validatePrescription as jest.Mock).mockReturnValue([]);
+  (prisma.auditLog.create as jest.Mock).mockResolvedValue(undefined);
 });
 
 describe('POST /api/prescriptions/[id]/sign', () => {
   it('signs a prescription with PIN method', async () => {
     (prisma.prescription.findUnique as jest.Mock).mockResolvedValue(mockPrescription);
     (prisma.prescription.update as jest.Mock).mockResolvedValue(mockSignedPrescription);
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({ signingPinHash: '$2a$10$hashedpin' });
     (prisma.auditLog.create as jest.Mock).mockResolvedValue(undefined);
 
     const request = new NextRequest('http://localhost:3000/api/prescriptions/rx-1/sign', {

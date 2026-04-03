@@ -11,6 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setupMockAuth } from './helpers/auth';
 
 // Helper to check for critical accessibility violations
 function checkA11yViolations(violations: any[]) {
@@ -32,6 +33,7 @@ function checkA11yViolations(violations: any[]) {
 
 test.describe('Accessibility Tests - Light Mode', () => {
   test.beforeEach(async ({ page }) => {
+    await setupMockAuth(page);
     // Ensure we're in light mode
     await page.emulateMedia({ colorScheme: 'light' });
   });
@@ -160,6 +162,7 @@ test.describe('Accessibility Tests - Light Mode', () => {
 
 test.describe('Accessibility Tests - Dark Mode', () => {
   test.beforeEach(async ({ page }) => {
+    await setupMockAuth(page);
     // Set dark mode
     await page.emulateMedia({ colorScheme: 'dark' });
   });
@@ -288,6 +291,7 @@ test.describe('Contrast Ratio Verification', () => {
 
 test.describe('Theme Toggle Functionality', () => {
   test('Theme toggle switches between light and dark modes', async ({ page }) => {
+    await setupMockAuth(page);
     await page.goto('/dashboard');
 
     if (page.url().includes('/login') || page.url().includes('/auth')) {

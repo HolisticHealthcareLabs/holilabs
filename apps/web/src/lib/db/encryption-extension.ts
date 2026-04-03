@@ -120,6 +120,41 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'notes',              // Clinical notes (PHI)
     'cancellationReason', // May contain clinical info
   ],
+  Allergy: [
+    'notes',              // Allergy clinical context (PHI)
+  ],
+  Diagnosis: [
+    'notes',              // Diagnosis clinical context (PHI)
+  ],
+  ImagingStudy: [
+    'findings',           // Radiologist findings (PHI)
+    'impression',         // Radiologist impression (PHI)
+    'notes',              // Study notes (PHI)
+  ],
+  MedicationAdministration: [
+    'notes',              // Administration notes (PHI)
+    'patientResponse',    // Patient tolerance (PHI)
+    'reactionDetails',    // Adverse reaction details (PHI)
+  ],
+  ClinicalEncounter: [
+    'chiefComplaint',     // Primary complaint (PHI)
+  ],
+  Transcription: [
+    'rawText',            // Full spoken transcript (PHI)
+  ],
+  Message: [
+    'body',               // Patient-clinician message content (PHI)
+    'subject',            // Message subject (PHI)
+  ],
+  ClinicalReferral: [
+    'reason',             // Clinical reason for referral (PHI)
+    'clinicalNotes',      // Notes for specialist (PHI)
+  ],
+  FamilyPortalAccess: [
+    'familyMemberName',   // Family member name (PII)
+    'email',              // Family member email (PII)
+    'phone',              // Family member phone (PII)
+  ],
 };
 
 /**

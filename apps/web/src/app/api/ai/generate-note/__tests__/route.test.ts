@@ -12,18 +12,14 @@ jest.mock('@/lib/clinical-notes/soap-generator', () => ({
 
 jest.mock('@/lib/ai/confidence-scoring', () => ({
   confidenceScoringService: {
-    scoreSOAPNote: jest.fn(() => ({
-      overall: 0.88,
-      breakdown: { completeness: 0.9, entityQuality: 0.85, consistency: 0.9, clinicalStandards: 0.87 },
-      flags: [],
-      recommendations: [],
-      requiresReview: false,
-    })),
+    scoreSOAPNote: jest.fn(),
   },
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
@@ -37,6 +33,7 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { POST, GET } = require('../route');
 const { soapGenerator } = require('@/lib/clinical-notes/soap-generator');
+const { confidenceScoringService } = require('@/lib/ai/confidence-scoring');
 
 const ctx = { user: { id: 'doc-1' } };
 
@@ -56,8 +53,19 @@ const validBody = {
   },
 };
 
+const mockConfidenceScore = {
+  overall: 0.88,
+  breakdown: { completeness: 0.9, entityQuality: 0.85, consistency: 0.9, clinicalStandards: 0.87 },
+  flags: [],
+  recommendations: [],
+  requiresReview: false,
+};
+
 describe('POST /api/ai/generate-note', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (confidenceScoringService.scoreSOAPNote as jest.Mock).mockReturnValue(mockConfidenceScore);
+  });
 
   it('generates SOAP note from transcription', async () => {
     (soapGenerator.generateFromTranscription as jest.Mock).mockResolvedValue({

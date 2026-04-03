@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 
 export interface TrendBucket {
@@ -46,29 +47,20 @@ export async function analyzeTrendsByBone(
   dateFrom?: Date,
   dateTo?: Date,
 ): Promise<TrendBucket[]> {
-  const conditions: string[] = [];
-  const params: unknown[] = [];
+  const conditions: Prisma.Sql[] = [];
+  if (dateFrom) conditions.push(Prisma.sql`date_occurred >= ${dateFrom}`);
+  if (dateTo) conditions.push(Prisma.sql`date_occurred <= ${dateTo}`);
 
-  if (dateFrom) {
-    params.push(dateFrom);
-    conditions.push(`date_occurred >= $${params.length}`);
-  }
-  if (dateTo) {
-    params.push(dateTo);
-    conditions.push(`date_occurred <= $${params.length}`);
-  }
+  const whereClause = conditions.length > 0
+    ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+    : Prisma.empty;
 
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-  const rows: { bone: string; count: bigint }[] = await prisma.$queryRawUnsafe(
-    `SELECT unnest(fishbone_bones) AS bone, count(*)::bigint AS count
-     FROM safety_incidents
-     ${whereClause}
-     GROUP BY bone
-     ORDER BY count DESC`,
-    ...params,
-  );
+  const rows = await prisma.$queryRaw<{ bone: string; count: bigint }[]>`
+    SELECT unnest(fishbone_bones) AS bone, count(*)::bigint AS count
+    FROM safety_incidents
+    ${whereClause}
+    GROUP BY bone
+    ORDER BY count DESC`;
 
   return rows.map((r) => ({
     key: r.bone,
@@ -83,14 +75,12 @@ export async function analyzeTrendsByMonth(
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - months);
 
-  const rows: { month: Date; count: bigint }[] = await prisma.$queryRawUnsafe(
-    `SELECT date_trunc('month', date_occurred) AS month, count(*)::bigint AS count
-     FROM safety_incidents
-     WHERE date_occurred >= $1
-     GROUP BY month
-     ORDER BY month ASC`,
-    cutoff,
-  );
+  const rows = await prisma.$queryRaw<{ month: Date; count: bigint }[]>`
+    SELECT date_trunc('month', date_occurred) AS month, count(*)::bigint AS count
+    FROM safety_incidents
+    WHERE date_occurred >= ${cutoff}
+    GROUP BY month
+    ORDER BY month ASC`;
 
   return rows.map((r) => ({
     key: r.month.toISOString().slice(0, 7),
@@ -102,31 +92,25 @@ export async function detectRecurringPatterns(
   prisma: PrismaClient,
   threshold = 3,
 ): Promise<RecurringPattern[]> {
-  const boneRows: { bone: string; count: bigint; incident_ids: string[] }[] =
-    await prisma.$queryRawUnsafe(
-      `SELECT
-         unnest(fishbone_bones) AS bone,
-         count(*)::bigint AS count,
-         array_agg(id) AS incident_ids
-       FROM safety_incidents
-       GROUP BY bone
-       HAVING count(*) >= $1
-       ORDER BY count DESC`,
-      threshold,
-    );
+  const boneRows = await prisma.$queryRaw<{ bone: string; count: bigint; incident_ids: string[] }[]>`
+    SELECT
+      unnest(fishbone_bones) AS bone,
+      count(*)::bigint AS count,
+      array_agg(id) AS incident_ids
+    FROM safety_incidents
+    GROUP BY bone
+    HAVING count(*) >= ${threshold}
+    ORDER BY count DESC`;
 
-  const tagRows: { tag: string; count: bigint; incident_ids: string[] }[] =
-    await prisma.$queryRawUnsafe(
-      `SELECT
-         unnest(tags) AS tag,
-         count(*)::bigint AS count,
-         array_agg(id) AS incident_ids
-       FROM safety_incidents
-       GROUP BY tag
-       HAVING count(*) >= $1
-       ORDER BY count DESC`,
-      threshold,
-    );
+  const tagRows = await prisma.$queryRaw<{ tag: string; count: bigint; incident_ids: string[] }[]>`
+    SELECT
+      unnest(tags) AS tag,
+      count(*)::bigint AS count,
+      array_agg(id) AS incident_ids
+    FROM safety_incidents
+    GROUP BY tag
+    HAVING count(*) >= ${threshold}
+    ORDER BY count DESC`;
 
   const patterns: RecurringPattern[] = [];
 

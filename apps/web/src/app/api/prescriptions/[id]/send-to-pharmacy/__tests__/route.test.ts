@@ -94,7 +94,7 @@ beforeEach(() => {
 });
 
 function createRequestWithUser(url: string, options: RequestInit = {}) {
-  const req = new NextRequest(url, options) as any;
+  const req = new NextRequest(url, options as any) as any;
   req.user = mockContext.user;
   return req;
 }

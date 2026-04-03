@@ -2,7 +2,7 @@
  * GET /api/calendar/status - Calendar integration status tests
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
@@ -22,14 +22,17 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
+  safeErrorResponse: jest.fn((_err: any, _opts: any) =>
+    new (require('next/server').NextResponse)(
+      JSON.stringify({ error: 'Internal error' }),
+      { status: 500 }
+    )
   ),
 }));
 
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
-const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { safeErrorResponse } = require('@/lib/api/safe-error-response');
 
 const mockContext = {
   user: { id: 'user-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -39,7 +42,12 @@ const mockContext = {
 describe('GET /api/calendar/status', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (safeErrorResponse as jest.Mock).mockImplementation((_err: any, _opts: any) =>
+      new (require('next/server').NextResponse)(
+        JSON.stringify({ error: 'Internal error' }),
+        { status: 500 }
+      )
+    );
   });
 
   it('returns all provider statuses', async () => {

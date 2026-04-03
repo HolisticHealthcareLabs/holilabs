@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
@@ -56,13 +56,9 @@ export const POST = createProtectedRoute(
       return NextResponse.json({ success: false, error: 'Lab order not found' }, { status: 404 });
     }
 
-    // CYRUS: org scoping
-    const patient = await prisma.patient.findUnique({
-      where: { id: lr.patientId },
-      select: { organizationId: true },
-    });
-
-    if (patient?.organizationId && patient.organizationId !== context.user.organizationId) {
+    // CYRUS CVI-002: Verify workspace-scoped patient access
+    const hasAccess = await verifyPatientAccess(context.user.id, lr.patientId);
+    if (!hasAccess) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -100,7 +96,7 @@ export const POST = createProtectedRoute(
       data: {
         notes: JSON.stringify(meta),
         status: 'FINAL',
-        resultAt: new Date(),
+        resultDate: new Date(),
       },
     });
 

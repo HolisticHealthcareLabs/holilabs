@@ -51,31 +51,43 @@ export const authConfig: NextAuthConfig = {
 
           const { email, password } = validation.data;
 
-          // Demo users — DB-free login for demos and testing (disabled in production)
+          // Demo users — ephemeral accounts provisioned by /api/demo/provision
           if (process.env.NODE_ENV !== 'production') {
-            if (email === 'dr.silva@holilabs.xyz' && password === 'Cortex2026!') {
-              return {
-                id: 'demo-dr-silva-id',
-                email: 'dr.silva@holilabs.xyz',
-                name: 'Dr. Ricardo Silva',
-                role: 'CLINICIAN',
-                firstName: 'Ricardo',
-                lastName: 'Silva',
-                username: 'dr.silva',
-                onboardingCompleted: true,
-              };
-            }
-            if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
-              return {
-                id: 'demo-clinician-id',
-                email: 'demo-clinician@holilabs.xyz',
-                name: 'Demo Clinician',
-                role: 'CLINICIAN',
-                firstName: 'Demo',
-                lastName: 'Clinician',
-                username: 'democlinician',
-                onboardingCompleted: true,
-              };
+            const isDemoEmail =
+              (email === 'dr.silva@holilabs.xyz' && password === 'Cortex2026!') ||
+              (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') ||
+              (/^demo-[a-f0-9]+@holilabs\.xyz$/.test(email) && password === 'Cortex2026!');
+
+            if (isDemoEmail) {
+              const demoUser = await prisma.user.findUnique({
+                where: { email },
+                select: { id: true, email: true, firstName: true, lastName: true, role: true, username: true },
+              });
+              if (demoUser) {
+                return {
+                  id: demoUser.id,
+                  email: demoUser.email,
+                  name: `${demoUser.firstName} ${demoUser.lastName}`,
+                  role: demoUser.role as string,
+                  firstName: demoUser.firstName,
+                  lastName: demoUser.lastName,
+                  username: demoUser.username ?? undefined,
+                  onboardingCompleted: true,
+                };
+              }
+              // Legacy hardcoded fallback for dr.silva when not seeded
+              if (email === 'dr.silva@holilabs.xyz') {
+                return {
+                  id: 'demo-dr-silva-id',
+                  email,
+                  name: 'Dr. Ricardo Silva',
+                  role: 'CLINICIAN',
+                  firstName: 'Ricardo',
+                  lastName: 'Silva',
+                  username: 'dr.silva',
+                  onboardingCompleted: true,
+                };
+              }
             }
           }
 
@@ -106,7 +118,7 @@ export const authConfig: NextAuthConfig = {
           prisma.user.update({
             where: { id: user.id },
             data: { lastLoginAt: new Date() },
-          }).catch(() => {});
+          }).catch((e) => logger.error('[auth] lastLoginAt update failed', { userId: user.id, error: e }));
 
           return {
             id: user.id,
@@ -181,13 +193,27 @@ export const authConfig: NextAuthConfig = {
     },
 
     async session({ session, token }) {
+      const VALID_ROLES = ['LICENSE_OWNER', 'ADMIN', 'COMPLIANCE_ADMIN', 'PHYSICIAN', 'NURSE', 'RECEPTIONIST', 'LAB_TECH', 'PHARMACIST', 'CLINICIAN', 'STAFF', 'RESEARCHER'];
       if (token && session.user) {
         session.user.id = token.sub!;
-        session.user.role = token.role as string;
+        const role = typeof token.role === 'string' && VALID_ROLES.includes(token.role) ? token.role : 'CLINICIAN';
+        session.user.role = role;
         session.user.username = token.username ?? null;
         session.user.onboardingCompleted = token.onboardingCompleted ?? false;
       }
       return session;
+    },
+
+    async redirect({ url, baseUrl }) {
+      // Prevent open redirect: only allow same-origin or relative URLs
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      try {
+        const target = new URL(url);
+        if (target.origin === baseUrl) return url;
+      } catch {
+        // Invalid URL — fall through to baseUrl
+      }
+      return baseUrl;
     },
 
     async authorized({ auth, request }) {

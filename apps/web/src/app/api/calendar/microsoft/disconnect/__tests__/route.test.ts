@@ -5,7 +5,9 @@ jest.mock('@/lib/api/middleware', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }
 }));
 
 jest.mock('@/lib/prisma', () => ({

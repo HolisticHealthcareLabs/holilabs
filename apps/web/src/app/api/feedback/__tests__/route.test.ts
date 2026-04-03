@@ -4,21 +4,30 @@ jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
 }));
 
-jest.mock('@/lib/prisma', () => ({
-  default: {
+const mockAuditLogCreate = jest.fn().mockResolvedValue({ id: 'audit-1' });
+
+jest.mock('@/lib/prisma', () => {
+  const prismaInstance = {
     auditLog: {
-      create: jest.fn().mockResolvedValue({ id: 'audit-1' }),
+      create: mockAuditLogCreate,
     },
-  },
-}));
+  };
+  return {
+    __esModule: true,
+    default: prismaInstance,
+    prisma: prismaInstance,
+  };
+});
 
 const { POST } = require('../route');
-const prisma = require('@/lib/prisma').default;
 
 const ctx = { user: { id: 'doc-1', email: 'doc@test.com', role: 'CLINICIAN' } };
 
 describe('POST /api/feedback', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuditLogCreate.mockResolvedValue({ id: 'audit-1' });
+  });
 
   it('accepts valid feedback and returns success', async () => {
     const req = new NextRequest('http://localhost:3000/api/feedback', {
@@ -67,7 +76,7 @@ describe('POST /api/feedback', () => {
     });
     await POST(req, ctx);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+    expect(mockAuditLogCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           action: 'CREATE',

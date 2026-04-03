@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { HeartPulse, XCircle, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { XCircle, Shield, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { maskPHI, PHI_TOKEN_REGEX } from '@/lib/deid';
 // useTranscriptAudio removed — TTS playback deleted per MVP session
@@ -182,7 +182,7 @@ export function TranscriptPane({
 
   return (
     <div className="
-      flex flex-col h-full px-4 pt-2.5 pb-4 gap-3 overflow-hidden
+      flex flex-col h-full px-4 pt-2.5 pb-2 gap-2 overflow-hidden
     " style={{ backgroundColor: 'var(--surface-primary)' }}>
       {/* Header row */}
       <div className="flex items-center justify-between flex-shrink-0">
@@ -217,7 +217,12 @@ export function TranscriptPane({
               style={{ backgroundColor: 'var(--surface-warning)', borderRadius: 'var(--radius-full)' }}
               aria-label="Finalizing audio"
             >
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <m.span
+                className="w-1.5 h-1.5 bg-amber-500 dark:bg-amber-400 flex-shrink-0"
+                style={{ borderRadius: 'var(--radius-full)' }}
+                animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+              />
               FINALIZING
             </m.span>
           )}
@@ -389,6 +394,7 @@ export function TranscriptPane({
 
         <div className="flex gap-2">
           <m.button
+            layout
             onClick={onToggleRecord}
             disabled={buttonDisabled}
             whileHover={!buttonDisabled ? { scale: 1.02 } : {}}
@@ -409,6 +415,7 @@ export function TranscriptPane({
               }
             `}
             style={{ borderRadius: 'var(--radius-xl)', ...((!consentMissing || disabled) && !buttonDisabled && !isRecording ? { boxShadow: 'var(--token-shadow-lg)' } : {}) }}
+            transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
             aria-label={
               consentMissing ? t('recordingLocked') :
               isFinalizing   ? t('finalizingAudio') :
@@ -417,33 +424,46 @@ export function TranscriptPane({
             aria-pressed={isRecording}
           >
             {isFinalizing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {t('finalizing')}</>
+              <>
+                <m.span
+                  className="w-2 h-2 bg-amber-500 dark:bg-amber-400"
+                  style={{ borderRadius: 'var(--radius-full)' }}
+                  animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {t('finalizing')}
+              </>
             ) : isRecording ? (
               <><XCircle className="w-4 h-4" /> {t('stopRecording')}</>
             ) : (
-              <><HeartPulse className="w-4 h-4 text-red-500" /> {t('startRecording')}</>
+              <><span className="w-3 h-3 rounded-full bg-red-500" /> {t('startRecording')}</>
             )}
           </m.button>
 
-          {/* Run Demo — simulates a doctor-patient conversation */}
-          {onRunDemo && !isRecording && !isFinalizing && (
-            <m.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onRunDemo}
-              disabled={disabled}
-              className="
-                flex items-center justify-center gap-2 py-2.5
-                text-[13px] font-semibold transition-all flex-1
-                bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20
-                text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30
-                disabled:opacity-40 disabled:cursor-not-allowed
-              "
-              style={{ borderRadius: 'var(--radius-xl)' }}
-              aria-label="Run demo conversation"
-            >
-              <span className="text-base">▶</span> Run Demo
-            </m.button>
-          )}
+          {/* Run Demo — slides out smoothly when recording starts */}
+          <AnimatePresence>
+            {onRunDemo && !isRecording && !isFinalizing && (
+              <m.button
+                initial={{ opacity: 1, width: 'auto', marginLeft: 0 }}
+                exit={{ opacity: 0, width: 0, marginLeft: 0, paddingLeft: 0, paddingRight: 0, overflow: 'hidden' }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onRunDemo}
+                disabled={disabled}
+                className="
+                  flex items-center justify-center gap-2 py-2.5
+                  text-[13px] font-semibold transition-colors flex-1
+                  bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20
+                  text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30
+                  disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap
+                "
+                style={{ borderRadius: 'var(--radius-xl)' }}
+                aria-label="Run demo conversation"
+              >
+                <span className="text-base">▶</span> Run Demo
+              </m.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

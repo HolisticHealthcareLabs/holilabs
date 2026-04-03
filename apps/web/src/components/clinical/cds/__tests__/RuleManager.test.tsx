@@ -23,7 +23,7 @@ describe('RuleManager', () => {
   });
 
   it('renders rule stats with provided rules', () => {
-    const rules = [
+    const rules: any[] = [
       { id: 'r1', name: 'Rule A', description: 'Desc', category: 'drug-interaction', severity: 'critical' as const, priority: 1, enabled: true, triggerHooks: ['patient-view' as const], evidenceStrength: 'A' as const },
     ];
     render(<RuleManager rules={rules} />);

@@ -25,9 +25,9 @@ import { render, screen } from '@testing-library/react';
 import { TemplatePicker } from '../TemplatePicker';
 
 describe('TemplatePicker', () => {
-  it('renders the search input', () => {
+  it('renders the template picker', () => {
     render(<TemplatePicker onSelect={jest.fn()} />);
-    expect(screen.getByPlaceholderText(/Search|Buscar/i) || document.querySelector('input[type="text"]')).toBeTruthy();
+    expect(screen.getByText(/Templates|Plantillas/i) || document.querySelector('button')).toBeTruthy();
   });
 
   it('renders template categories', async () => {

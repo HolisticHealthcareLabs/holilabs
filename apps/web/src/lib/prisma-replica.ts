@@ -4,8 +4,11 @@
  * This module configures Prisma to use read replicas for improved performance.
  */
 
+import { createRequire } from 'node:module';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '@/lib/logger';
+
+const esmRequire = createRequire(import.meta.url);
 
 function getReplicaUrls(): string[] {
   const urls: string[] = [];
@@ -50,9 +53,7 @@ export function createPrismaWithReplicas(basePrisma: PrismaClient): PrismaClient
   const replicaClients = replicaUrls.map(url => new PrismaClient({ datasources: { db: { url } } }));
 
   try {
-    // HARDENED: Use eval('require') to hide from Webpack's static analysis
-    const dynamicRequire = eval('require');
-    const { readReplicas } = dynamicRequire('@prisma/extension-read-replicas');
+    const { readReplicas } = esmRequire('@prisma/extension-read-replicas');
 
     return basePrisma.$extends(
       readReplicas({
@@ -80,8 +81,7 @@ export function createAnalyticsPrisma(basePrisma: PrismaClient): PrismaClient | 
   const analyticsReplicaClient = new PrismaClient({ datasources: { db: { url: analyticsUrl } } });
 
   try {
-    const dynamicRequire = eval('require');
-    const { readReplicas } = dynamicRequire('@prisma/extension-read-replicas');
+    const { readReplicas } = esmRequire('@prisma/extension-read-replicas');
 
     return basePrisma.$extends(
       readReplicas({

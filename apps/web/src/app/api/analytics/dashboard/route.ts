@@ -36,8 +36,23 @@ export const GET = createProtectedRoute(
         startDate.setDate(now.getDate() - 30);
     }
 
+    // Scope by workspace: ADMIN sees all patients in their workspace,
+    // non-ADMIN sees only their assigned patients (CYRUS CVI-002 tenant isolation)
     const isAdmin = context.user?.role === 'ADMIN';
-    const clinicianFilter = isAdmin ? {} : { assignedClinicianId: context.user!.id };
+    let clinicianFilter: Record<string, unknown>;
+
+    if (isAdmin && context.user?.organizationId) {
+      const members = await prisma.workspaceMember.findMany({
+        where: { workspaceId: context.user.organizationId },
+        select: { userId: true },
+      });
+      const memberIds = members.map((m: { userId: string }) => m.userId);
+      clinicianFilter = memberIds.length > 0
+        ? { assignedClinicianId: { in: memberIds } }
+        : { assignedClinicianId: context.user!.id };
+    } else {
+      clinicianFilter = { assignedClinicianId: context.user!.id };
+    }
 
     const [
       totalPatients,

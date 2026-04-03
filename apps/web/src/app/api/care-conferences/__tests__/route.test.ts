@@ -17,6 +17,7 @@ jest.mock('@/lib/prisma', () => ({
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
@@ -38,6 +39,7 @@ jest.mock('@/lib/logger', () => ({
 // --- Require handlers AFTER mocks ---
 
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 const { GET: listConferences, POST: createConference } = require('../route');
 const { GET: getConference, PATCH: updateConference } = require('../[id]/route');
 const { POST: startConference } = require('../[id]/start/route');
@@ -46,7 +48,7 @@ const { POST: completeConference } = require('../[id]/complete/route');
 // --- Helpers ---
 
 function buildRequest(url: string, opts?: RequestInit): NextRequest {
-  return new NextRequest(new URL(url, 'http://localhost:3000'), opts);
+  return new NextRequest(new URL(url, 'http://localhost:3000'), opts as any);
 }
 
 const mockUser = {
@@ -63,6 +65,7 @@ const baseContext = { user: mockUser, params: {} };
 describe('Care Conferences API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
   });
 
   // ================================================================
