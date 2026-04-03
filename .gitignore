@@ -126,3 +126,8 @@ MiroFish/
 p0-bug-fixes/
 p1-ai-validation/
 p1-model-routing/
+
+# Test output artifacts
+test_output.txt
+apps/web/test_output.txt
+apps/web/tests/e2e/screenshots/
