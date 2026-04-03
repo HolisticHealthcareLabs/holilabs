@@ -9,6 +9,9 @@ coverage/
 dast-reports/
 playwright-report/
 test-results/
+tests/results/
+**/tests/results/
+PLAYWRIGHT_FILES_CREATED.txt
 
 # Next.js
 .next/
