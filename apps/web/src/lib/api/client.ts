@@ -163,9 +163,10 @@ async function apiFetch<T = any>(
 
     // Handle error responses
     if (!response.ok) {
-      const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
-      const errorCode = data?.code;
-      const errorDetails = data?.details;
+      const errorData = data as unknown as ApiError;
+      const errorMessage = errorData?.message || errorData?.error || `Request failed with status ${response.status}`;
+      const errorCode = errorData?.code;
+      const errorDetails = errorData?.details;
 
       throw new ApiClientError(
         errorMessage,
