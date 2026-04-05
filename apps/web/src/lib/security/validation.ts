@@ -90,10 +90,15 @@ export function isValidDate(dateString: string): boolean {
 
 /**
  * Validate pagination parameters
+ * 
+ * @param page - Page number (1-based)
+ * @param limit - Number of items per page (1-100)
+ * @returns Parsed page and limit
+ * @throws Error if parameters are invalid
  */
-export function validatePagination(page: any, limit: any): { page: number; limit: number } {
-  const parsedPage = parseInt(page);
-  const parsedLimit = parseInt(limit);
+export function validatePagination(page: string | number, limit: string | number): { page: number; limit: number } {
+  const parsedPage = typeof page === 'string' ? parseInt(page, 10) : page;
+  const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
 
   if (isNaN(parsedPage) || parsedPage < 1) {
     throw new Error('Invalid page number');
@@ -123,9 +128,15 @@ export function sanitizeMedicationName(name: string): string {
 
 /**
  * Validate array input with size limits
+ * 
+ * @param input - Data to validate as an array
+ * @param maxLength - Maximum allowed array length
+ * @param itemValidator - Optional function to validate each item
+ * @returns The validated array
+ * @throws Error if input is not a valid array
  */
 export function validateArray<T>(
-  input: any,
+  input: unknown,
   maxLength: number,
   itemValidator?: (item: T) => boolean
 ): T[] {
@@ -133,23 +144,25 @@ export function validateArray<T>(
     throw new Error('Input must be an array');
   }
 
-  if (input.length === 0) {
+  const arrayInput = input as T[];
+
+  if (arrayInput.length === 0) {
     throw new Error('Array cannot be empty');
   }
 
-  if (input.length > maxLength) {
+  if (arrayInput.length > maxLength) {
     throw new Error(`Array too large (max ${maxLength} items)`);
   }
 
   if (itemValidator) {
-    for (let i = 0; i < input.length; i++) {
-      if (!itemValidator(input[i])) {
+    for (let i = 0; i < arrayInput.length; i++) {
+      if (!itemValidator(arrayInput[i])) {
         throw new Error(`Invalid item at index ${i}`);
       }
     }
   }
 
-  return input;
+  return arrayInput;
 }
 
 /**
@@ -227,24 +240,32 @@ export function sanitizeSQLInput(input: string): string {
 
 /**
  * Validate JSON input with size limit
+ * 
+ * @param jsonString - JSON string to parse and validate
+ * @param maxSizeKB - Maximum allowed size in KB
+ * @returns The parsed JSON object
+ * @throws Error if JSON is invalid or too large
  */
-export function validateJSONSize(jsonString: string, maxSizeKB: number = 100): any {
+export function validateJSONSize<T = unknown>(jsonString: string, maxSizeKB: number = 100): T {
   const sizeKB = new Blob([jsonString]).size / 1024;
   if (sizeKB > maxSizeKB) {
     throw new Error(`JSON payload too large (max ${maxSizeKB}KB)`);
   }
 
   try {
-    return JSON.parse(jsonString);
-  } catch (error) {
+    return JSON.parse(jsonString) as T;
+  } catch {
     throw new Error('Invalid JSON format');
   }
 }
 
 /**
  * Redact sensitive data from logs
+ * 
+ * @param data - Object or value to redact
+ * @returns Redacted copy of the input
  */
-export function redactSensitiveData(data: any): any {
+export function redactSensitiveData<T>(data: T): T {
   if (typeof data !== 'object' || data === null) {
     return data;
   }
@@ -254,7 +275,11 @@ export function redactSensitiveData(data: any): any {
     'authorization', 'cookie', 'session'
   ];
 
-  const redacted = { ...data };
+  if (Array.isArray(data)) {
+    return data.map(item => redactSensitiveData(item)) as unknown as T;
+  }
+
+  const redacted = { ...data } as Record<string, unknown>;
 
   for (const key in redacted) {
     if (sensitiveKeys.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
@@ -264,5 +289,6 @@ export function redactSensitiveData(data: any): any {
     }
   }
 
-  return redacted;
+  return redacted as unknown as T;
 }
+

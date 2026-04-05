@@ -225,8 +225,12 @@ export function validateOverride(params: OverrideSubmissionParams): OverrideVali
 
 /**
  * Check if a reason code is valid and known
+ * 
+ * @param code - The code to check
+ * @returns True if the code is a valid OverrideReasonCode
  */
-export function isValidReasonCode(code: any): code is OverrideReasonCode {
+export function isValidReasonCode(code: unknown): code is OverrideReasonCode {
+  if (typeof code !== 'string') return false;
   return code in OVERRIDE_REASON_CODES;
 }
 

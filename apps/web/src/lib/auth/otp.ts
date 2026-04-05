@@ -14,6 +14,7 @@
 import { createHash, randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import type { PatientUser, Patient } from '@prisma/client';
 
 // Twilio setup
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -276,11 +277,22 @@ export async function generateOTP({
 }
 
 /**
+ * Patient user with patient relation
+ */
+export type PatientUserWithPatient = PatientUser & {
+  patient: Patient;
+};
+
+/**
  * Verify OTP code
+ * 
+ * @param phone - Patient's phone number
+ * @param code - The 6-digit OTP code to verify
+ * @returns Result object with success status and patient user if valid
  */
 export async function verifyOTP(phone: string, code: string): Promise<{
   success: boolean;
-  patientUser?: any;
+  patientUser?: PatientUserWithPatient;
   error?: string;
   attemptsLeft?: number;
 }> {
