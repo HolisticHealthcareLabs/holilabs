@@ -6,36 +6,15 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createPublicRoute } from '@/lib/api/middleware';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { PrismaClient } from '@prisma/client';
 import logger from '@/lib/logger';
 
 const prisma = new PrismaClient();
 
-// Simple admin auth - you can enhance this with proper auth later
-function getAdminKey(): string {
-  const key = process.env.ADMIN_API_KEY;
-  if (!key) {
-    throw new Error('ADMIN_API_KEY environment variable is required for admin authentication');
-  }
-  return key;
-}
-
-function isAdmin(request: Request): boolean {
-  const authHeader = request.headers.get('authorization');
-  return authHeader === `Bearer ${getAdminKey()}`;
-}
-
 // GET - List all invitation codes
-export const GET = createPublicRoute(async (request: Request) => {
+export const GET = createProtectedRoute(async (request: Request) => {
   try {
-    if (!isAdmin(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Fetch all invitation codes
     const codes = await prisma.invitationCode.findMany({
       orderBy: { createdAt: 'desc' },
@@ -97,18 +76,11 @@ export const GET = createPublicRoute(async (request: Request) => {
       { status: 500 }
     );
   }
-});
+}, { roles: ['ADMIN'] });
 
 // POST - Generate new invitation code
-export const POST = createPublicRoute(async (request: Request) => {
+export const POST = createProtectedRoute(async (request: Request) => {
   try {
-    if (!isAdmin(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { email, role, maxUses = 1, expiresInDays = 30, createdBy } = body;
 
@@ -204,18 +176,11 @@ export const POST = createPublicRoute(async (request: Request) => {
       { status: 500 }
     );
   }
-});
+}, { roles: ['ADMIN'] });
 
 // DELETE - Deactivate invitation code
-export const DELETE = createPublicRoute(async (request: Request) => {
+export const DELETE = createProtectedRoute(async (request: Request) => {
   try {
-    if (!isAdmin(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { code } = await request.json();
 
     if (!code) {
@@ -256,5 +221,4 @@ export const DELETE = createPublicRoute(async (request: Request) => {
       { status: 500 }
     );
   }
-});
-
+}, { roles: ['ADMIN'] });

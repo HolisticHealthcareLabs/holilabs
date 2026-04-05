@@ -57,7 +57,7 @@ export interface RateLimitConfig {
  * Verify internal token from agent gateway.
  * Returns true if the request is a trusted internal request.
  */
-function verifyInternalToken(token: string | null): boolean {
+export function verifyInternalToken(token: string | null): boolean {
   if (!token) return false;
 
   const secret = requireSecret('NEXTAUTH_SECRET');

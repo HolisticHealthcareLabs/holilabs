@@ -313,6 +313,13 @@ export const POST = createProtectedRoute(
       );
 
       // STEP 4: Validate AI-generated SOAP note with medical-grade schema
+      // Sanitize AI-generated clinical text before validation and database persistence
+      soapNote.subjective = sanitizeAIOutput(soapNote.subjective);
+      soapNote.objective = sanitizeAIOutput(soapNote.objective);
+      soapNote.assessment = sanitizeAIOutput(soapNote.assessment);
+      soapNote.plan = sanitizeAIOutput(soapNote.plan);
+      soapNote.chiefComplaint = sanitizeAIOutput(soapNote.chiefComplaint || '');
+
       let validatedSOAPData;
       try {
         validatedSOAPData = CreateSOAPNoteSchema.parse({

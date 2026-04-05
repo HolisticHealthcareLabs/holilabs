@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createPublicRoute: (handler: any) => handler,
+  verifyInternalToken: jest.fn(),
 }));
 
 jest.mock('@/lib/logger', () => ({
@@ -22,11 +23,13 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { POST, GET } = require('../route');
 const { aggregateDailyCorrections, aggregateCorrectionsRange } = require('@/lib/jobs/correction-aggregation');
+const { verifyInternalToken } = require('@/lib/api/middleware');
 
 describe('POST /api/jobs/aggregate-corrections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.CRON_SECRET;
+    (verifyInternalToken as jest.Mock).mockReturnValue(true);
     (aggregateDailyCorrections as jest.Mock).mockResolvedValue({
       processed: true,
       results: { aggregated: 15 },
@@ -62,8 +65,8 @@ describe('POST /api/jobs/aggregate-corrections', () => {
     expect(data.success).toBe(true);
   });
 
-  it('returns 401 when CRON_SECRET is set and token is missing', async () => {
-    process.env.CRON_SECRET = 'my-secret';
+  it('returns 401 when verifyInternalToken returns false', async () => {
+    (verifyInternalToken as jest.Mock).mockReturnValue(false);
     const req = new NextRequest('http://localhost:3000/api/jobs/aggregate-corrections', {
       method: 'POST',
     });
