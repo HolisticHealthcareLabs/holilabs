@@ -1,5 +1,11 @@
 FROM node:20-alpine AS base
 
+# OCI metadata labels
+LABEL org.opencontainers.image.title="Holi Labs Healthcare Platform" \
+      org.opencontainers.image.description="HIPAA/LGPD-compliant healthcare SaaS" \
+      org.opencontainers.image.vendor="Holi Labs" \
+      org.opencontainers.image.source="https://github.com/HolisticHealthcareLabs/holilabs"
+
 # Install OpenSSL for Prisma compatibility
 RUN apk add --no-cache openssl libc6-compat
 
@@ -22,37 +28,13 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
-# Declare build arguments for environment validation
-ARG DATABASE_URL
-ARG NODE_ENV
-ARG NEXTAUTH_SECRET
-ARG SESSION_SECRET
-ARG ENCRYPTION_KEY
-ARG ENCRYPTION_MASTER_KEY
-ARG CRON_SECRET
-ARG DEID_SECRET
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXTAUTH_URL
-
-# AI Services (optional at build, required at runtime)
-ARG ANTHROPIC_API_KEY
-ARG GOOGLE_AI_API_KEY
-ARG OPENAI_API_KEY
-
-# Make them available as environment variables during build
-ENV DATABASE_URL=$DATABASE_URL
+# SECURITY: Skip env validation at build time — secrets injected at runtime only.
+# Never pass secrets as Docker build ARGs (visible in image layer history).
+ENV SKIP_ENV_VALIDATION=true
+ARG NODE_ENV=production
 ENV NODE_ENV=$NODE_ENV
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-ENV SESSION_SECRET=$SESSION_SECRET
-ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
-ENV ENCRYPTION_MASTER_KEY=$ENCRYPTION_MASTER_KEY
-ENV CRON_SECRET=$CRON_SECRET
-ENV DEID_SECRET=$DEID_SECRET
+ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-ENV GOOGLE_AI_API_KEY=$GOOGLE_AI_API_KEY
-ENV OPENAI_API_KEY=$OPENAI_API_KEY
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -75,7 +57,9 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm build
 ENV NODE_OPTIONS=""
 
-FROM base AS runner
+# Production runner — clean image, no package managers (corepack/pnpm removed)
+FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -97,5 +81,8 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health/live',(r)=>{process.exit(r.statusCode===200?0:1)})"
 
 CMD ["node", "apps/web/server.js"]

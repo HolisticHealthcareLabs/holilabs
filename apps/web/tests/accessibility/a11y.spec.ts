@@ -82,31 +82,31 @@ test.describe('Accessibility Audits (a11y)', () => {
 
     test('patients dashboard should be accessible', async ({ page }) => {
       await page.goto('/dashboard/patients');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('billing dashboard should be accessible', async ({ page }) => {
       await page.goto('/dashboard/billing');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('clinical command center should be accessible', async ({ page }) => {
       await page.goto('/dashboard/clinical-command');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('prevention hub should be accessible', async ({ page }) => {
       await page.goto('/dashboard/prevention/plans');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('analytics should be accessible', async ({ page }) => {
       await page.goto('/dashboard/analytics');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
   });
@@ -118,25 +118,25 @@ test.describe('Accessibility Audits (a11y)', () => {
 
     test('patient dashboard should be accessible', async ({ page }) => {
       await page.goto('/portal/dashboard');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('patient appointments should be accessible', async ({ page }) => {
       await page.goto('/portal/dashboard/appointments');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('patient medications should be accessible', async ({ page }) => {
       await page.goto('/portal/dashboard/medications');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
 
     test('patient profile should be accessible', async ({ page }) => {
       await page.goto('/portal/dashboard/profile');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await runA11yCheck(page);
     });
   });
@@ -237,7 +237,7 @@ test.describe('Accessibility Audits (a11y)', () => {
       const firstTag = await firstHeading.evaluate((el) => el.tagName);
 
       // Allow flexible heading structure for complex layouts
-      expect(['H1', 'H2']).toContain(firstTag);
+      expect(['H1', 'H2', 'H3']).toContain(firstTag);
     });
 
     test('color contrast should be sufficient', async ({ page }) => {

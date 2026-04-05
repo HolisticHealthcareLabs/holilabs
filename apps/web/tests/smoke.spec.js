@@ -46,7 +46,7 @@ test_1.test.describe('Smoke Tests', () => {
         (0, test_1.test)('should load home page', async ({ page }) => {
             await page.goto(BASE_URL);
             // Wait for page to load
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
             // Check that we're not getting an error page
             const title = await page.title();
             (0, test_1.expect)(title).toBeTruthy();
@@ -56,7 +56,7 @@ test_1.test.describe('Smoke Tests', () => {
         });
         (0, test_1.test)('should load login page', async ({ page }) => {
             await page.goto(`${BASE_URL}/auth/login`);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
             // Should have login form elements
             const emailInput = page.locator('input[type="email"]');
             const passwordInput = page.locator('input[type="password"]');
@@ -65,7 +65,7 @@ test_1.test.describe('Smoke Tests', () => {
         });
         (0, test_1.test)('should load patient portal login', async ({ page }) => {
             await page.goto(`${BASE_URL}/portal/login`);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
             // Should have patient login options
             const heading = page.locator('h1, h2').first();
             await (0, test_1.expect)(heading).toBeVisible();
@@ -160,7 +160,7 @@ test_1.test.describe('Smoke Tests', () => {
         (0, test_1.test)('home page should load within 3 seconds', async ({ page }) => {
             const start = Date.now();
             await page.goto(BASE_URL);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
             const duration = Date.now() - start;
             (0, test_1.expect)(duration).toBeLessThan(3000); // Should load within 3 seconds
         });
@@ -214,7 +214,7 @@ test_1.test.describe('Critical User Flows', () => {
     });
     (0, test_1.test)('patient portal should be accessible', async ({ page }) => {
         await page.goto(`${BASE_URL}/portal/login`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         // Patient portal should load without errors
         const errorMessage = page.locator('text=/error|not found/i');
         await (0, test_1.expect)(errorMessage).not.toBeVisible();

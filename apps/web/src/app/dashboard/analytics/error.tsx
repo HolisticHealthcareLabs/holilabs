@@ -38,19 +38,6 @@ export default function AnalyticsError({
           {t('description')}
         </p>
 
-        {process.env.NODE_ENV === 'development' && (
-          <details className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <summary className="cursor-pointer font-semibold text-red-900 mb-2">
-              {t('technicalDetails')}
-            </summary>
-            <pre className="text-xs text-red-800 overflow-auto">
-              {error.message}
-              {'\n\n'}
-              {error.stack}
-            </pre>
-          </details>
-        )}
-
         <div className="flex flex-col gap-3">
           <button
             onClick={reset}

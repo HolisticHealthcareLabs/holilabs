@@ -40,6 +40,7 @@ import {
 
 const NotificationPrompt = lazy(() => import('@/components/NotificationPrompt'));
 const NotificationCenter = lazy(() => import('@/components/notifications/NotificationCenter'));
+const DemoModeBanner = lazy(() => import('@/components/demo/DemoModeBanner').then(m => ({ default: m.DemoModeBanner })));
 
 const SessionTimeoutWarning = lazy(() => import('@/components/SessionTimeoutWarning').then(m => ({ default: m.SessionTimeoutWarning })));
 const DemoGuidedTour = lazy(() => import('@/components/demo/DemoGuidedTour').then(m => ({ default: m.DemoGuidedTour })));
@@ -707,6 +708,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Main Content */}
         <div className={((sidebarCollapsed && isDesktopViewport) ? 'lg:pl-[52px]' : 'lg:pl-[200px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950 transition-[padding] duration-150 ease-out'}>
+          {/* Demo mode banner — persistent, non-dismissable */}
+          <Suspense fallback={null}><DemoModeBanner /></Suspense>
+
           {/* Top Mobile Header */}
           <header className={`lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/50 sticky top-0 z-30 shadow-sm dark:shadow-none ${isSettingsPage ? 'hidden' : ''}`}>
             <div className="flex items-center justify-between h-16 px-4">

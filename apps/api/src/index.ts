@@ -51,6 +51,50 @@ const server = Fastify({
   },
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ADAPTIVE RATE LIMITING — AI-era probing detection
+// Rule 1: 5+ distinct endpoints in 10s → 5 req/min for 10 minutes
+// Rule 2: 3+ validation errors in 1min → blocked for 5 minutes
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface IPTracker {
+  endpoints: Set<string>;
+  epWindowStart: number;
+  valErrors: number;
+  valWindowStart: number;
+  blockedUntil: number;
+  reducedUntil: number;
+}
+
+const ipTrackers = new Map<string, IPTracker>();
+
+function getTracker(ip: string): IPTracker {
+  let t = ipTrackers.get(ip);
+  if (!t) {
+    const now = Date.now();
+    t = {
+      endpoints: new Set(),
+      epWindowStart: now,
+      valErrors: 0,
+      valWindowStart: now,
+      blockedUntil: 0,
+      reducedUntil: 0,
+    };
+    ipTrackers.set(ip, t);
+  }
+  return t;
+}
+
+// Prune stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, t] of ipTrackers) {
+    if (now > t.blockedUntil && now > t.reducedUntil && now - t.epWindowStart > 900_000) {
+      ipTrackers.delete(ip);
+    }
+  }
+}, 300_000).unref();
+
 async function start() {
   try {
     console.log('🚀 Starting Holi API Server...');
@@ -76,15 +120,42 @@ async function start() {
       credentials: true,
     });
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // SECURITY HEADERS — Defense-in-depth (strict CSP, HSTS preload)
+    // ═══════════════════════════════════════════════════════════════════════
     await server.register(helmet, {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
           imgSrc: ["'self'", 'data:', 'https:'],
+          fontSrc: ["'self'"],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'none'"],
         },
       },
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      dnsPrefetchControl: { allow: false },
+      permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+    });
+
+    // Headers not covered by Helmet
+    server.addHook('onRequest', async (_request, reply) => {
+      reply.header('X-Frame-Options', 'DENY');
+      reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
     });
 
     await server.register(multipart, {
@@ -93,13 +164,81 @@ async function start() {
       },
     });
 
-    // Rate limiting temporarily disabled for local development
-    // TODO: Implement proper Redis client with ioredis
-    // await server.register(rateLimit, {
-    //   max: 100,
-    //   timeWindow: '15 minutes',
-    //   redis: env.REDIS_URL,
-    // });
+    // ═══════════════════════════════════════════════════════════════════════
+    // RATE LIMITING — Adaptive tiered limits with probing detection
+    // Global: 100 req/min | Flagged IPs: 5 req/min | Blocked: 0
+    // ═══════════════════════════════════════════════════════════════════════
+    await server.register(rateLimit, {
+      max: (request: any, _key: string) => {
+        const t = ipTrackers.get(request.ip);
+        if (t && t.reducedUntil > Date.now()) return 5;
+        return 100;
+      },
+      timeWindow: '1 minute',
+      keyGenerator: (request: any) => request.ip,
+      errorResponseBuilder: (_request: any, context: any) => ({
+        statusCode: 429,
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded. Retry after ${Math.ceil(context.ttl / 1000)}s.`,
+      }),
+    });
+
+    // Adaptive probing detection — hooks for endpoint scanning and error tracking
+    server.addHook('onRequest', async (request, reply) => {
+      const ip = request.ip;
+      const now = Date.now();
+      const t = getTracker(ip);
+
+      // Hard block for IPs exceeding validation error threshold
+      if (t.blockedUntil > now) {
+        server.log.warn({ ip, blockedUntil: new Date(t.blockedUntil).toISOString() },
+          'SECURITY: Blocked IP attempted access');
+        return reply.code(429).send({
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Temporarily blocked due to suspicious activity.',
+        });
+      }
+
+      // Endpoint diversity tracking (10-second sliding window)
+      if (now - t.epWindowStart > 10_000) {
+        t.endpoints = new Set();
+        t.epWindowStart = now;
+      }
+      t.endpoints.add(request.routeOptions?.url || request.url);
+
+      // 5+ distinct endpoints in 10s → automated scanning
+      if (t.endpoints.size >= 5) {
+        t.reducedUntil = now + 600_000; // 10 minutes at 5 req/min
+        server.log.warn({ ip, endpoints: t.endpoints.size },
+          'SECURITY: Automated probing detected — rate reduced to 5 req/min for 10min');
+        t.endpoints = new Set();
+        t.epWindowStart = now;
+      }
+    });
+
+    server.addHook('onResponse', async (request, reply) => {
+      if (reply.statusCode === 400 || reply.statusCode === 422) {
+        const ip = request.ip;
+        const now = Date.now();
+        const t = getTracker(ip);
+
+        // 1-minute sliding window for validation errors
+        if (now - t.valWindowStart > 60_000) {
+          t.valErrors = 0;
+          t.valWindowStart = now;
+        }
+        t.valErrors++;
+
+        // 3+ validation errors in 1 minute → block for 5 minutes
+        if (t.valErrors >= 3) {
+          t.blockedUntil = now + 300_000;
+          server.log.warn({ ip, errors: t.valErrors },
+            'SECURITY: Excessive validation errors — IP blocked for 5 minutes');
+          t.valErrors = 0;
+        }
+      }
+    });
 
     // Health check removed - now handled by monitoring routes
     // (More comprehensive health checks in src/routes/monitoring.ts)

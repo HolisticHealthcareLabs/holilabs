@@ -871,6 +871,52 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
 }
 
 // ============================================================================
+// REQUEST BODY SIZE LIMIT (ASVS V13.1.3)
+// ============================================================================
+
+const DEFAULT_MAX_BODY_SIZE = 1_048_576; // 1 MB
+
+/**
+ * Enforce request body size limits to prevent DoS via oversized payloads.
+ * @param maxBytes - Maximum allowed body size in bytes (default 1 MB)
+ */
+export function validateBodySize(maxBytes: number = DEFAULT_MAX_BODY_SIZE) {
+  return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
+      return NextResponse.json(
+        { error: 'Request body too large', maxBytes },
+        { status: 413 }
+      );
+    }
+    return next();
+  };
+}
+
+// ============================================================================
+// CONTENT-TYPE VALIDATION (ASVS V13.1.5)
+// ============================================================================
+
+/**
+ * Enforce Content-Type header on requests with a body.
+ * Prevents content-type confusion attacks.
+ */
+export function validateContentType(allowed: string[] = ['application/json']) {
+  return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
+    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+      const contentType = request.headers.get('content-type')?.split(';')[0]?.trim();
+      if (contentType && !allowed.includes(contentType)) {
+        return NextResponse.json(
+          { error: 'Unsupported Content-Type', allowed },
+          { status: 415 }
+        );
+      }
+    }
+    return next();
+  };
+}
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -1063,7 +1109,11 @@ export function createProtectedRoute(
     }
 
     const authMiddleware = options?.allowPatientAuth ? requireAuthOrPatientSession() : requireAuth();
-    const middlewares: Middleware[] = [authMiddleware];
+    const middlewares: Middleware[] = [
+      validateBodySize(), // ASVS V13.1.3 — reject oversized payloads before auth
+      validateContentType(), // ASVS V13.1.5 — enforce application/json
+      authMiddleware,
+    ];
 
     // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
     if (!options?.skipCsrf) {

@@ -1,27 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useLanguage } from '@/hooks/useLanguage';
 
 export default function NotFound() {
-  const { t } = useLanguage();
-
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
-      <div className="text-center p-8">
-        <h1 className="text-6xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-          {t('errorPages.notFoundCode')}
-        </h1>
-        <h2 className="text-2xl mb-6" style={{ color: 'var(--text-secondary)' }}>
-          {t('errorPages.notFound')}
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center p-8 animate-enter-up">
+        <p className="text-[120px] sm:text-[180px] font-bold leading-none text-muted-foreground/10 select-none">
+          404
+        </p>
+        <h2 className="text-2xl font-semibold text-foreground -mt-6 mb-2">
+          Page not found
         </h2>
+        <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+          The page you are looking for does not exist or has been moved.
+        </p>
         <Link
-          href="/auth/login"
-          className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 inline-block"
-          style={{ borderRadius: 'var(--radius-lg)' }}
-          aria-label={t('errorPages.goToSignIn')}
+          href="/dashboard"
+          className="inline-flex px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {t('errorPages.goToSignIn')}
+          Go to Dashboard
         </Link>
       </div>
     </div>

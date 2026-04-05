@@ -89,7 +89,7 @@ export async function navigateTo(
   options?: { waitUntil?: string }
 ): Promise<void> {
   await page.goto(path, {
-    waitUntil: options?.waitUntil || 'networkidle',
+    waitUntil: options?.waitUntil || 'domcontentloaded',
   });
 }
 

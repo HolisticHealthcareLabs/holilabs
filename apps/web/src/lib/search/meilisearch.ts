@@ -10,6 +10,7 @@
  */
 
 import { MeiliSearch, Index } from 'meilisearch';
+import { logger } from '@/lib/logger';
 
 // Initialize Meilisearch client (lazy initialization)
 let _meiliClient: MeiliSearch | null = null;
@@ -130,10 +131,10 @@ export async function initializeMeilisearch() {
       },
     });
 
-    console.error('[Meilisearch]', { event: 'initialized' });
+    logger.info({ event: 'initialized' }, '[Meilisearch]');
     return true;
   } catch (error) {
-    console.error('❌ Failed to initialize Meilisearch:', error);
+    logger.error({ err: error }, 'Failed to initialize Meilisearch');
     return false;
   }
 }
@@ -149,7 +150,7 @@ export async function indexPatient(patient: PatientSearchDocument) {
     await index.addDocuments([patient]);
     return true;
   } catch (error) {
-    console.error('Failed to index patient:', error);
+    logger.error({ err: error }, 'Failed to index patient');
     return false;
   }
 }
@@ -167,7 +168,7 @@ export async function indexPatients(patients: PatientSearchDocument[]) {
     // The documents will be indexed in the background
     return true;
   } catch (error) {
-    console.error('Failed to index patients:', error);
+    logger.error({ err: error }, 'Failed to index patients');
     return false;
   }
 }
@@ -183,7 +184,7 @@ export async function updatePatient(patient: Partial<PatientSearchDocument> & { 
     await index.updateDocuments([patient]);
     return true;
   } catch (error) {
-    console.error('Failed to update patient:', error);
+    logger.error({ err: error }, 'Failed to update patient');
     return false;
   }
 }
@@ -199,7 +200,7 @@ export async function deletePatient(patientId: string) {
     await index.deleteDocument(patientId);
     return true;
   } catch (error) {
-    console.error('Failed to delete patient:', error);
+    logger.error({ err: error }, 'Failed to delete patient');
     return false;
   }
 }
@@ -215,7 +216,7 @@ export async function deletePatients(patientIds: string[]) {
     await index.deleteDocuments(patientIds);
     return true;
   } catch (error) {
-    console.error('Failed to delete patients:', error);
+    logger.error({ err: error }, 'Failed to delete patients');
     return false;
   }
 }
@@ -278,7 +279,7 @@ export async function searchPatients(options: PatientSearchOptions) {
       processingTimeMs: results.processingTimeMs,
     };
   } catch (error) {
-    console.error('Failed to search patients:', error);
+    logger.error({ err: error }, 'Failed to search patients');
     throw error;
   }
 }
@@ -294,7 +295,7 @@ export async function clearPatientIndex() {
     await index.deleteAllDocuments();
     return true;
   } catch (error) {
-    console.error('Failed to clear patient index:', error);
+    logger.error({ err: error }, 'Failed to clear patient index');
     return false;
   }
 }
@@ -310,7 +311,7 @@ export async function getIndexStats() {
     const stats = await index.getStats();
     return stats;
   } catch (error) {
-    console.error('Failed to get index stats:', error);
+    logger.error({ err: error }, 'Failed to get index stats');
     return null;
   }
 }
@@ -325,7 +326,7 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
   try {
     // Get total count
     const totalPatients = await prisma.patient.count();
-    console.error('[Meilisearch]', { event: 'reindexing_patients', count: totalPatients });
+    logger.info({ event: 'reindexing_patients', count: totalPatients }, '[Meilisearch]');
 
     // Process in batches
     let processed = 0;
@@ -374,13 +375,13 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
       await indexPatients(documents);
 
       processed += patients.length;
-      console.error('[Meilisearch]', { event: 'patient_batch_indexed', processed, total: totalPatients });
+      logger.info({ event: 'patient_batch_indexed', processed, total: totalPatients }, '[Meilisearch]');
     }
 
-    console.error('[Meilisearch]', { event: 'patient_reindex_complete' });
+    logger.info({ event: 'patient_reindex_complete' }, '[Meilisearch]');
     return true;
   } catch (error) {
-    console.error('❌ Failed to reindex patients:', error);
+    logger.error({ err: error }, 'Failed to reindex patients');
     return false;
   }
 }
@@ -480,10 +481,10 @@ export async function initializeMessageIndex() {
       },
     });
 
-    console.error('[Meilisearch]', { event: 'message_index_initialized' });
+    logger.info({ event: 'message_index_initialized' }, '[Meilisearch]');
     return true;
   } catch (error) {
-    console.error('❌ Failed to initialize message search index:', error);
+    logger.error({ err: error }, 'Failed to initialize message search index');
     return false;
   }
 }
@@ -499,7 +500,7 @@ export async function indexMessage(message: MessageSearchDocument) {
     await index.addDocuments([message]);
     return true;
   } catch (error) {
-    console.error('Failed to index message:', error);
+    logger.error({ err: error }, 'Failed to index message');
     return false;
   }
 }
@@ -515,7 +516,7 @@ export async function indexMessages(messages: MessageSearchDocument[]) {
     await index.addDocuments(messages);
     return true;
   } catch (error) {
-    console.error('Failed to index messages:', error);
+    logger.error({ err: error }, 'Failed to index messages');
     return false;
   }
 }
@@ -531,7 +532,7 @@ export async function updateMessageIndex(message: Partial<MessageSearchDocument>
     await index.updateDocuments([message]);
     return true;
   } catch (error) {
-    console.error('Failed to update message index:', error);
+    logger.error({ err: error }, 'Failed to update message index');
     return false;
   }
 }
@@ -547,7 +548,7 @@ export async function deleteMessageFromIndex(messageId: string) {
     await index.deleteDocument(messageId);
     return true;
   } catch (error) {
-    console.error('Failed to delete message from index:', error);
+    logger.error({ err: error }, 'Failed to delete message from index');
     return false;
   }
 }
@@ -615,7 +616,7 @@ export async function searchMessages(options: MessageSearchOptions) {
       processingTimeMs: results.processingTimeMs,
     };
   } catch (error) {
-    console.error('Failed to search messages:', error);
+    logger.error({ err: error }, 'Failed to search messages');
     throw error;
   }
 }

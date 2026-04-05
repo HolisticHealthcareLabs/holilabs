@@ -9,7 +9,6 @@
  * - Accessibility features
  */
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from './Button';
 
@@ -96,10 +95,8 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-12 text-center"
+    <div
+      className="p-12 text-center animate-enter-up"
       style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-xl)' }}
     >
       {icon || illustrations[illustration]}
@@ -120,7 +117,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -195,7 +192,7 @@ export function NoClinicalNotesState({ onCreateNote }: { onCreateNote?: () => vo
     <EmptyState
       illustration="documents"
       title="No hay notas clínicas"
-      description="Comienza a documentar consultas con el asistente AI. Crea notas SOAP completas en segundos."
+      description="Comienza a documentar consultas con el asistente AI. Crea documentación clínica completa en segundos."
       action={
         onCreateNote
           ? { label: 'Crear Primera Nota', onClick: onCreateNote }
@@ -252,10 +249,8 @@ export function ErrorState({
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="border border-error-200 dark:border-error-900/30 p-12 text-center"
+    <div
+      className="border border-error-200 dark:border-error-900/30 p-12 text-center animate-enter-up"
       style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)' }}
     >
       <div className="mx-auto w-24 h-24 bg-error-100 dark:bg-error-900/30 flex items-center justify-center mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
@@ -277,7 +272,7 @@ export function ErrorState({
           </Button>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -291,10 +286,8 @@ export function SuccessState({
   onClose?: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="border border-success-200 dark:border-success-900/30 p-12 text-center"
+    <div
+      className="border border-success-200 dark:border-success-900/30 p-12 text-center animate-enter-scale"
       style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)' }}
     >
       <div className="mx-auto w-24 h-24 bg-success-100 dark:bg-success-900/30 flex items-center justify-center mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
@@ -315,6 +308,6 @@ export function SuccessState({
           </Button>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

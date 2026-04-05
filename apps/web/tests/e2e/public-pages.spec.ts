@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Public Pages', () => {
   test('should load homepage', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const mainContent = page.locator('main, [role="main"]').first();
     await expect(mainContent).toBeVisible();
