@@ -38,7 +38,7 @@ export async function applyTheme(page: Page, theme: Theme): Promise<void> {
 
 /** Wait for network idle + animation settle before screenshotting. */
 export async function waitForStable(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   // Let CSS transitions / skeleton loaders settle
   await page.waitForTimeout(500);
 }

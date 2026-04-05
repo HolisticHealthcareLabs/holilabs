@@ -215,30 +215,87 @@ function LoginContent() {
           Sign in with Google
         </button>
 
-        {/* ── Try Interactive Demo (ghost / outline) ────────────────────────── */}
-        <button
-          type="button"
-          onClick={handleDemo}
-          disabled={isLoading}
-          className="
-            mt-3 w-full flex items-center justify-center gap-2
-            border border-gray-300 dark:border-gray-600 rounded-xl
-            px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300
-            hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-white/10
-            transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
-          "
-        >
-          <>
-            {/* Play icon */}
+        {/* ── Demo Accounts (visible only in demo mode) ──────────────────── */}
+        {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? (
+          <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-2.5 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Demo Accounts
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { label: 'Physician', email: 'demo-physician@holilabs.demo', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+                { label: 'Nurse', email: 'demo-nurse@holilabs.demo', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
+                { label: 'Admin', email: 'demo-admin@holilabs.demo', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
+              ].map(({ label, email, icon }) => (
+                <button
+                  key={email}
+                  type="button"
+                  disabled={isLoading}
+                  onClick={async () => {
+                    setError(null);
+                    setIsLoading(true);
+                    try {
+                      const result = await signIn('credentials', {
+                        email,
+                        password: 'DemoHoli2026!',
+                        redirect: false,
+                      });
+                      if (!result || result.error) {
+                        setError('Demo sign-in failed. Run seed:demo first.');
+                        setIsLoading(false);
+                        return;
+                      }
+                      localStorage.setItem('demo_mode', 'true');
+                      router.push('/dashboard');
+                      router.refresh();
+                    } catch {
+                      setError('Demo sign-in failed.');
+                      setIsLoading(false);
+                    }
+                  }}
+                  className="
+                    w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left
+                    text-sm text-gray-700 dark:text-gray-300
+                    hover:bg-amber-100/60 dark:hover:bg-amber-900/20
+                    active:bg-amber-100 dark:active:bg-amber-900/30
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-colors
+                  "
+                >
+                  <svg className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                  </svg>
+                  <span className="font-medium">{label}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">{email.split('@')[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={isLoading}
+            className="
+              mt-3 w-full flex items-center justify-center gap-2
+              border border-gray-300 dark:border-gray-600 rounded-xl
+              px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300
+              hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-white/10
+              transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
+            "
+          >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Launch Interactive Demo
-          </>
-        </button>
+          </button>
+        )}
 
         {/* Consent line under Google button */}
         <p className="mt-4 text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed">

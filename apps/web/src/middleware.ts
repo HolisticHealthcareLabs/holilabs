@@ -126,7 +126,8 @@ export async function middleware(request: NextRequest) {
     const isReadOperation = request.method === 'GET';
 
     if (isReadOperation && !accessReason) {
-      console.warn(`[LGPD Violation] Missing access reason: ${pathname}`);
+      // ASVS V7.1.1 — structured warning, no raw pathname to avoid PHI in URL segments
+      console.warn(JSON.stringify({ event: 'lgpd_access_reason_missing', path: pathname.split('/').slice(0, 3).join('/') }));
 
       return NextResponse.json(
         {

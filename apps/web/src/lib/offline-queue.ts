@@ -11,6 +11,8 @@
  * Critical for rural LATAM areas with intermittent connectivity
  */
 
+import { logger } from '@/lib/logger';
+
 const DB_NAME = 'HoliLabsOfflineDB';
 const DB_VERSION = 1;
 const QUEUE_STORE = 'syncQueue';
@@ -220,17 +222,17 @@ class OfflineQueue {
         if (response.ok) {
           await this.updateStatus(operation.id, 'completed');
           succeeded++;
-          console.error('[OfflineQueue]', { event: 'synced', operationId: operation.id, type: operation.type });
+          logger.info({ event: 'synced', operationId: operation.id, type: operation.type }, '[OfflineQueue]');
         } else {
           const errorText = await response.text();
           await this.updateStatus(operation.id, 'pending', `HTTP ${response.status}: ${errorText}`);
           failed++;
-          console.error(`❌ Failed to sync operation ${operation.id}: ${errorText}`);
+          logger.error({ operationId: operation.id, errorText }, 'Failed to sync operation');
         }
       } catch (error: any) {
         await this.updateStatus(operation.id, 'pending', error.message);
         failed++;
-        console.error(`❌ Error syncing operation ${operation.id}:`, error);
+        logger.error({ err: error, operationId: operation.id }, 'Error syncing operation');
       }
     }
 
@@ -283,10 +285,10 @@ export async function queueAPICall(
 if (typeof window !== 'undefined') {
   // Process queue when coming online
   window.addEventListener('online', async () => {
-    console.error('[OfflineQueue]', { event: 'connection_restored' });
+    logger.info({ event: 'connection_restored' }, '[OfflineQueue]');
     try {
       const result = await offlineQueue.processQueue();
-      console.error('[OfflineQueue]', { event: 'sync_complete', succeeded: result.succeeded, failed: result.failed });
+      logger.info({ event: 'sync_complete', succeeded: result.succeeded, failed: result.failed }, '[OfflineQueue]');
 
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
@@ -296,13 +298,13 @@ if (typeof window !== 'undefined') {
         });
       }
     } catch (error) {
-      console.error('❌ Error processing queue:', error);
+      logger.error({ err: error }, 'Error processing queue');
     }
   });
 
   // Periodic cleanup (every 24 hours)
   setInterval(async () => {
     const deleted = await offlineQueue.cleanup();
-    console.error('[OfflineQueue]', { event: 'cleanup', deletedCount: deleted });
+    logger.info({ event: 'cleanup', deletedCount: deleted }, '[OfflineQueue]');
   }, 24 * 60 * 60 * 1000);
 }

@@ -1,7 +1,35 @@
 services:
+  # Next.js Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holi-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-holi}:${POSTGRES_PASSWORD:-holi_dev_password}@postgres:5432/${POSTGRES_DB:-holi_protocol}?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    env_file:
+      - .env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health/live',(r)=>{process.exit(r.statusCode===200?0:1)})"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: holi-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-holi}

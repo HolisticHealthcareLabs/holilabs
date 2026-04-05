@@ -7,6 +7,7 @@
  */
 
 import { createClient } from '@deepgram/sdk';
+import logger from '@/lib/logger';
 
 export interface DeepgramTranscriptSegment {
   speaker: string;
@@ -139,7 +140,7 @@ export async function transcribeAudioWithDeepgram(
 
     const processingTimeMs = Date.now() - startTime;
 
-    console.error('[Deepgram]', {
+    logger.info({
       event: 'transcription_complete',
       processingTimeMs,
       language: finalLanguage,
@@ -148,7 +149,7 @@ export async function transcribeAudioWithDeepgram(
       speakerCount,
       wordCount: result.results.channels[0].alternatives[0].words?.length || 0,
       confidence: avgConfidence,
-    });
+    }, '[Deepgram]');
 
     return {
       text: transcriptText,
@@ -160,9 +161,9 @@ export async function transcribeAudioWithDeepgram(
       durationSeconds,
       processingTimeMs,
     };
-  } catch (error: any) {
-    console.error('❌ Deepgram transcription error:', error);
-    throw new Error(`Failed to transcribe with Deepgram: ${error.message}`);
+  } catch (err: any) {
+    logger.error({ err }, '❌ Deepgram transcription error');
+    throw new Error(`Failed to transcribe with Deepgram: ${err.message}`);
   }
 }
 

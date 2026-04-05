@@ -29,6 +29,7 @@ export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
   const checks = [
     { test: password.length >= 8, error: 'At least 8 characters' },
+    { test: password.length <= 128, error: 'At most 128 characters' }, // ASVS V2.1.2
     { test: /[A-Z]/.test(password), error: 'One uppercase letter' },
     { test: /[a-z]/.test(password), error: 'One lowercase letter' },
     { test: /\d/.test(password), error: 'One number' },

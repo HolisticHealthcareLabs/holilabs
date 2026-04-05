@@ -3,6 +3,31 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 
 /**
+ * Interface for authenticated user in the portal
+ */
+export interface AuthUser {
+  id: string;
+  userId?: string;
+  email: string;
+  patientId?: string;
+  patientUserId?: string;
+  type: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Interface for auth session
+ */
+export interface AuthSession {
+  user: AuthUser;
+  expires: string;
+  [key: string]: unknown;
+}
+
+/**
  * Stub AuthProvider - Supabase removed, using JWT-based patient-session
  *
  * This provider exists to maintain compatibility with existing code
@@ -11,8 +36,8 @@ import { createContext, useContext, useEffect, useState, useRef, useCallback } f
  */
 
 interface AuthContextType {
-  user: any | null;
-  session: any | null;
+  user: AuthUser | null;
+  session: AuthSession | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -36,8 +61,8 @@ const WARNING_TIME = 5 * 60 * 1000; // Show warning 5 minutes before timeout
 const ACTIVITY_CHECK_INTERVAL = 10 * 1000; // Check every 10 seconds
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null);
-  const [session, setSession] = useState<any | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
@@ -202,12 +227,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Derived values
-  const userId = user?.patientUserId ?? user?.userId ?? user?.id ?? null;
+  const userId = (user?.patientUserId || user?.userId || user?.id || null) as string | null;
   const userEmail = user?.email ?? null;
   const userRole = user?.type ?? 'patient';
 
   // For patients, the patient ID is from the session
-  const patientId = user?.patientId ?? (userRole === 'patient' ? userId : null);
+  const patientId = (user?.patientId || (userRole === 'patient' ? userId : null)) as string | null;
 
   const value: AuthContextType = {
     user,
@@ -227,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children as any}
+      {children}
       {showTimeoutWarning && user && <SessionTimeoutWarning onExtend={extendSession} />}
     </AuthContext.Provider>
   );

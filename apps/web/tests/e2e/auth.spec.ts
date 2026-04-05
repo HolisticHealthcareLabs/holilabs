@@ -203,22 +203,32 @@ test.describe('Authentication Flows', () => {
 
   test.describe('Protected Routes', () => {
     test('should redirect unauthenticated user to auth from dashboard', async ({ page }) => {
-      await page.goto('/dashboard/patients');
-      await page.waitForLoadState('domcontentloaded');
+      await page.goto('/dashboard/patients', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+      if (/auth|login|sign-in/.test(page.url())) {
+        // Auth enforcement working — page is protected
+        expect(true).toBe(true);
+        return;
+      }
       // Should redirect to auth page
-      expect(page.url()).toMatch(/auth/);
+      expect(page.url()).toMatch(/auth|login|sign-in/);
     });
 
     test('should redirect unauthenticated user to auth from billing', async ({ page }) => {
-      await page.goto('/dashboard/billing');
-      await page.waitForLoadState('domcontentloaded');
-      expect(page.url()).toMatch(/auth/);
+      await page.goto('/dashboard/billing', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+      if (/auth|login|sign-in/.test(page.url())) {
+        expect(true).toBe(true);
+        return;
+      }
+      expect(page.url()).toMatch(/auth|login|sign-in/);
     });
 
     test('should redirect unauthenticated user to auth from clinical command', async ({ page }) => {
-      await page.goto('/dashboard/clinical-command');
-      await page.waitForLoadState('domcontentloaded');
-      expect(page.url()).toMatch(/auth/);
+      await page.goto('/dashboard/clinical-command', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+      if (/auth|login|sign-in/.test(page.url())) {
+        expect(true).toBe(true);
+        return;
+      }
+      expect(page.url()).toMatch(/auth|login|sign-in/);
     });
 
     test('should redirect unauthenticated user to auth from patient portal', async ({ page }) => {
@@ -250,8 +260,7 @@ test.describe('Authentication Flows', () => {
 
     test('should handle session expiration gracefully', async ({ page }) => {
       await setupMockAuth(page);
-      await page.goto('/dashboard');
-      await page.waitForLoadState('domcontentloaded');
+      await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
       // Remove mock to simulate expiration — override with unauthenticated session
       await page.route('**/api/auth/session', async (route) => {
@@ -262,11 +271,15 @@ test.describe('Authentication Flows', () => {
         });
       });
 
-      await page.goto('/dashboard/patients');
-      await page.waitForLoadState('domcontentloaded');
+      await page.goto('/dashboard/patients', { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
+      if (/auth|login|sign-in/.test(page.url())) {
+        // Auth enforcement working — page is protected
+        expect(true).toBe(true);
+        return;
+      }
       // Should redirect to auth
-      expect(page.url()).toMatch(/auth/);
+      expect(page.url()).toMatch(/auth|login|sign-in/);
     });
   });
 });

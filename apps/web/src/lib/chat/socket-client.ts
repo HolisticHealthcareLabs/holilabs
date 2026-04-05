@@ -7,6 +7,7 @@
 'use client';
 
 import { io, Socket } from 'socket.io-client';
+import { logger } from '@/lib/logger';
 
 let socket: Socket | null = null;
 
@@ -54,20 +55,19 @@ export function initSocket(authToken: string): Socket {
   });
 
   socket.on('connect', () => {
-    console.error('[SocketClient]', { event: 'connected', socketId: socket?.id });
+    logger.debug('[SocketClient] connected', { socketId: socket?.id });
   });
 
   socket.on('disconnect', () => {
-    console.error('[SocketClient]', { event: 'disconnected' });
+    logger.debug('[SocketClient] disconnected');
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
-    console.error('Error message:', error.message);
+    logger.error({ err: error }, '[SocketClient] connection_error');
   });
 
   socket.on('error', (error) => {
-    console.error('Socket error:', error);
+    logger.error({ err: error }, '[SocketClient] socket_error');
   });
 
   return socket;
@@ -89,7 +89,7 @@ export async function connectSocket(userId: string, userType: 'CLINICIAN' | 'PAT
     // Legacy join event (now authenticated)
     socket.emit('join', { userId, userType });
   } catch (error) {
-    console.error('Failed to connect socket:', error);
+    logger.error({ err: error }, '[SocketClient] failed_to_connect_socket');
     // Don't crash the UI for non-critical realtime features
     return;
   }

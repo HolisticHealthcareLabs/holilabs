@@ -7,6 +7,7 @@
 import { prisma } from '@/lib/prisma';
 import { queueEmail } from '@/lib/email/email-service';
 import { appointmentReminderTemplate } from '@/lib/email/templates';
+import logger from '@/lib/logger';
 
 /**
  * Find appointments that need reminders
@@ -92,15 +93,13 @@ export async function sendAppointmentReminder(appointmentId: string): Promise<bo
     });
 
     if (!appointment) {
-      console.error(`[Reminder] Appointment ${appointmentId} not found`);
+      logger.error(`[Reminder] Appointment ${appointmentId} not found`);
       return false;
     }
 
     // Check if patient has email
     if (!appointment.patient.email) {
-      console.warn(
-        `[Reminder] Patient ${appointment.patientId} has no email, skipping reminder`
-      );
+      logger.warn(`[Reminder] Patient ${appointment.patientId} has no email, skipping reminder`);
       // Mark as sent to avoid repeated attempts
       await prisma.appointment.update({
         where: { id: appointmentId },
@@ -149,11 +148,11 @@ export async function sendAppointmentReminder(appointmentId: string): Promise<bo
       },
     });
 
-    console.error('[ReminderService]', { event: 'reminder_queued', appointmentId, emailId });
+    logger.info({ event: 'reminder_queued', appointmentId, emailId }, '[ReminderService]');
 
     return true;
-  } catch (error) {
-    console.error(`[Reminder] Failed to send reminder for appointment ${appointmentId}:`, error);
+  } catch (err) {
+    logger.error({ err }, `[Reminder] Failed to send reminder for appointment ${appointmentId}`);
     return false;
   }
 }
@@ -165,11 +164,11 @@ export async function sendAppointmentReminder(appointmentId: string): Promise<bo
 export async function processAppointmentReminders(
   hoursBeforeAppointment = 24
 ): Promise<{ processed: number; failed: number; skipped: number }> {
-  console.error('[ReminderService]', { event: 'processing_start' });
+  logger.info({ event: 'processing_start' }, '[ReminderService]');
 
   const appointments = await findAppointmentsNeedingReminders(hoursBeforeAppointment);
 
-  console.error('[ReminderService]', { event: 'appointments_found', count: appointments.length });
+  logger.info({ event: 'appointments_found', count: appointments.length }, '[ReminderService]');
 
   let processed = 0;
   let failed = 0;
@@ -183,13 +182,13 @@ export async function processAppointmentReminders(
       } else {
         skipped++;
       }
-    } catch (error) {
-      console.error(`[Reminder] Error processing appointment ${appointment.id}:`, error);
+    } catch (err) {
+      logger.error({ err }, `[Reminder] Error processing appointment ${appointment.id}`);
       failed++;
     }
   }
 
-  console.error('[ReminderService]', { event: 'processing_complete', processed, skipped, failed });
+  logger.info({ event: 'processing_complete', processed, skipped, failed }, '[ReminderService]');
 
   return { processed, failed, skipped };
 }

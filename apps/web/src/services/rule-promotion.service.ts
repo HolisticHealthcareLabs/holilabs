@@ -80,7 +80,7 @@ export class RulePromotionService {
 
     private async createReviewPR(rule: SimplifiedRule, clusterId: string): Promise<string> {
         if (!env.GITHUB_TOKEN) {
-            console.warn('GITHUB_TOKEN not set. Skipping PR creation.');
+            logger.warn('[RulePromotion] GITHUB_TOKEN not set. Skipping PR creation.');
             return 'http://localhost/no-token';
         }
 
@@ -118,7 +118,7 @@ Please review and merge to deploy to staging.
             return `https://github.com/${owner}/${repo}/pull/new/${branchName}`;
 
         } catch (error) {
-            console.error('Failed to create PR:', error);
+            logger.error({ err: error }, '[RulePromotion] Failed to create PR');
             return '';
         }
     }

@@ -51,7 +51,7 @@ export async function runOverrideClustering(): Promise<void> {
             embeddingContexts.push({ id: event.id, text });
             vectors.push(vector);
         } catch (err) {
-            console.error(`Failed to generate embedding for event ${event.id}:`, err);
+            logger.error({ err, eventId: event.id }, '[OverrideClustering] Failed to generate embedding');
         }
     }
 

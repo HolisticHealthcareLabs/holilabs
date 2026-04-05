@@ -43,20 +43,6 @@ export default function PortalError({
             {t('message')}
           </p>
 
-          {/* Error details (dev mode only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-              <p className="text-sm font-mono text-red-800 break-all mb-2">
-                {error.message}
-              </p>
-              {error.digest && (
-                <p className="text-xs text-red-600">
-                  Error ID: {error.digest}
-                </p>
-              )}
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex flex-col gap-3">
             <button

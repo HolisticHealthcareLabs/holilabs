@@ -114,8 +114,8 @@ export function applySecurityHeaders(response: NextResponse, nonce?: string): Ne
   // Enable XSS protection
   response.headers.set('X-XSS-Protection', '1; mode=block');
 
-  // Referrer policy - protect privacy (more restrictive)
-  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
+  // Referrer policy - strict for healthcare to prevent PHI leakage in referrer headers // ASVS V14.4.5
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   // Permissions policy - restrict dangerous features
   response.headers.set(

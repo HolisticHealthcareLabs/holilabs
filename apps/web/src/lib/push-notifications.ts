@@ -11,6 +11,8 @@
  * Use cases: Appointment reminders, sync complete, transcription ready
  */
 
+import { logger } from '@/lib/logger';
+
 export type NotificationType =
   | 'APPOINTMENT_REMINDER'
   | 'SYNC_COMPLETE'
@@ -60,12 +62,12 @@ class PushNotificationManager {
    */
   async requestPermission(): Promise<NotificationPermission> {
     if (!this.isSupported()) {
-      console.warn('Push notifications are not supported');
+      logger.warn('Push notifications are not supported');
       return 'denied';
     }
 
     const permission = await Notification.requestPermission();
-    console.error('[PushNotifications]', { event: 'permission_result', permission });
+    logger.info({ event: 'permission_result', permission }, '[PushNotifications]');
     return permission;
   }
 
@@ -74,15 +76,15 @@ class PushNotificationManager {
    */
   async init(): Promise<void> {
     if (!this.isSupported()) {
-      console.warn('Push notifications are not supported');
+      logger.warn('Push notifications are not supported');
       return;
     }
 
     try {
       this.registration = await navigator.serviceWorker.ready;
-      console.error('[PushNotifications]', { event: 'sw_ready' });
+      logger.info({ event: 'sw_ready' }, '[PushNotifications]');
     } catch (error) {
-      console.error('❌ Error initializing push notifications:', error);
+      logger.error({ err: error }, 'Error initializing push notifications');
     }
   }
 
@@ -95,7 +97,7 @@ class PushNotificationManager {
     }
 
     if (!this.registration) {
-      console.error('Service Worker not registered');
+      logger.error('Service Worker not registered');
       return null;
     }
 
@@ -104,7 +106,7 @@ class PushNotificationManager {
       let subscription = await this.registration.pushManager.getSubscription();
 
       if (subscription) {
-        console.error('[PushNotifications]', { event: 'already_subscribed' });
+        logger.info({ event: 'already_subscribed' }, '[PushNotifications]');
         return subscription;
       }
 
@@ -114,7 +116,7 @@ class PushNotificationManager {
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
       if (!vapidPublicKey) {
-        console.warn('VAPID public key not configured');
+        logger.warn('VAPID public key not configured');
         return null;
       }
 
@@ -123,14 +125,14 @@ class PushNotificationManager {
         applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
       });
 
-      console.error('[PushNotifications]', { event: 'subscribed' });
+      logger.info({ event: 'subscribed' }, '[PushNotifications]');
 
       // Send subscription to backend
       await this.sendSubscriptionToBackend(subscription);
 
       return subscription;
     } catch (error) {
-      console.error('❌ Error subscribing to push:', error);
+      logger.error({ err: error }, 'Error subscribing to push');
       return null;
     }
   }
@@ -149,12 +151,12 @@ class PushNotificationManager {
       const subscription = await this.registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
-        console.error('[PushNotifications]', { event: 'unsubscribed' });
+        logger.info({ event: 'unsubscribed' }, '[PushNotifications]');
         return true;
       }
       return false;
     } catch (error) {
-      console.error('❌ Error unsubscribing from push:', error);
+      logger.error({ err: error }, 'Error unsubscribing from push');
       return false;
     }
   }
@@ -164,12 +166,12 @@ class PushNotificationManager {
    */
   async showNotification(options: NotificationOptions): Promise<void> {
     if (!this.isSupported()) {
-      console.warn('Notifications not supported');
+      logger.warn('Notifications not supported');
       return;
     }
 
     if (Notification.permission !== 'granted') {
-      console.warn('Notification permission not granted');
+      logger.warn('Notification permission not granted');
       return;
     }
 
@@ -178,7 +180,7 @@ class PushNotificationManager {
     }
 
     if (!this.registration) {
-      console.error('Service Worker not registered');
+      logger.error('Service Worker not registered');
       return;
     }
 
@@ -203,9 +205,9 @@ class PushNotificationManager {
 
       await this.registration.showNotification(options.title, notificationOpts);
 
-      console.error('[PushNotifications]', { event: 'notification_shown', title: options.title });
+      logger.info({ event: 'notification_shown', title: options.title }, '[PushNotifications]');
     } catch (error) {
-      console.error('❌ Error showing notification:', error);
+      logger.error({ err: error }, 'Error showing notification');
     }
   }
 
@@ -221,9 +223,9 @@ class PushNotificationManager {
         },
         body: JSON.stringify(subscription),
       });
-      console.error('[PushNotifications]', { event: 'subscription_sent' });
+      logger.info({ event: 'subscription_sent' }, '[PushNotifications]');
     } catch (error) {
-      console.error('❌ Error sending subscription to backend:', error);
+      logger.error({ err: error }, 'Error sending subscription to backend');
     }
   }
 

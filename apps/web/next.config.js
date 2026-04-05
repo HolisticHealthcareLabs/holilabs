@@ -12,6 +12,7 @@ const nextConfig = {
   // and produces a self-contained server.js — required by the release pipeline.
   output: 'standalone',
   reactStrictMode: true,
+  poweredByHeader: false,
   transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas', '@prisma/extension-read-replicas'],
   experimental: {
     serverActions: {

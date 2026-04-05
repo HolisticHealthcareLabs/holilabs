@@ -9,8 +9,6 @@
  * - Accessibility support
  */
 
-import { motion } from 'framer-motion';
-
 /**
  * Base Skeleton component with shimmer effect
  */
@@ -252,10 +250,8 @@ export function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
 export function FullPageLoader({ message }: { message?: string }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-50 to-purple-50 dark:from-neutral-950 dark:to-neutral-900">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md px-8 animate-pulse space-y-4"
+      <div
+        className="w-full max-w-md px-8 animate-pulse space-y-4 animate-enter-scale"
       >
         <div className="h-6 w-40 mx-auto" style={{ backgroundColor: 'var(--border-default)', borderRadius: 'var(--radius-md)' }} />
         <div className="h-4 w-56 mx-auto" style={{ backgroundColor: 'var(--border-default)', borderRadius: 'var(--radius-md)' }} />
@@ -265,7 +261,7 @@ export function FullPageLoader({ message }: { message?: string }) {
           <div className="h-12 w-3/4" style={{ backgroundColor: 'var(--border-default)', borderRadius: 'var(--radius-xl)' }} />
         </div>
         {message && <p className="mt-4 text-sm text-center" style={{ color: 'var(--text-muted)' }}>{message}</p>}
-      </motion.div>
+      </div>
     </div>
   );
 }
