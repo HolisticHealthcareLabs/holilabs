@@ -1,547 +1,185 @@
-/**
- * Patient Bulk Import API
- *
- * POST /api/patients/import - Import patients from CSV
- *
- * CSV Format:
- * firstName,lastName,dateOfBirth,gender,email,phone,address,mrn,emergencyContact,emergencyPhone
- *
- * Example:
- * John,Doe,1990-01-15,MALE,john@example.com,+1234567890,"123 Main St",MRN001,Jane Doe,+0987654321
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { checkImportRateLimit } from '@/lib/api/import-rate-limit';
 import { prisma } from '@/lib/prisma';
-import { generatePatientDataHash } from '@/lib/blockchain/hashing';
-import { createAuditLog } from '@/lib/audit';
-import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
-import {
-  sanitizeString,
-  sanitizeCSVField,
-  validateFileSize,
-  isValidEmail,
-  isValidPhone,
-  isValidDate,
-} from '@/lib/security/validation';
-import { logger } from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import Papa from 'papaparse';
+import { z } from 'zod';
+import crypto from 'crypto';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-interface CSVRow {
-  firstName: string;
-  lastName: string;
-  dateOfBirth?: string;
-  gender?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  mrn?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  isPalliativeCare?: string;
+function validateCPF(cpf: string) {
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
+  let split = cpf.split('');
+  let v1 = 0, v2 = 0;
+  for (let i = 0, p = 10; i < 9; i++, p--) v1 += parseInt(split[i]) * p;
+  v1 = ((v1 * 10) % 11) % 10;
+  if (v1 !== parseInt(split[9])) return false;
+  for (let i = 0, p = 11; i < 10; i++, p--) v2 += parseInt(split[i]) * p;
+  v2 = ((v2 * 10) % 11) % 10;
+  if (v2 !== parseInt(split[10])) return false;
+  return true;
 }
 
-/**
- * Parse CSV string to array of objects
- * Handles quoted fields with embedded commas and prevents CSV injection
- */
-function parseCSV(csvText: string): CSVRow[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) {
-    throw new Error('CSV must have header row and at least one data row');
-  }
-
-  // Parse CSV line with RFC 4180 compliance (handles quoted fields)
-  const parseLine = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          // Escaped quote
-          current += '"';
-          i++;
-        } else {
-          // Toggle quote mode
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        // Field separator
-        values.push(sanitizeCSVField(current.trim()));
-        current = '';
-      } else {
-        current += char;
-      }
+const RowSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  dateOfBirth: z.string().refine((val) => {
+    if (!val) return false;
+    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) return !isNaN(Date.parse(val));
+    if (val.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [d, m, y] = val.split('/');
+      return !isNaN(Date.parse(`${y}-${m}-${d}`));
     }
+    return false;
+  }, 'Invalid date format. Use YYYY-MM-DD or DD/MM/YYYY'),
+  cpf: z.string().optional().refine((val) => !val || validateCPF(val), 'Invalid CPF format'),
+  externalMrn: z.string().optional(),
+  gender: z.string().optional(),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  medications: z.string().optional(),
+}).refine(data => data.cpf || data.externalMrn, { message: "Either CPF or externalMrn is required", path: ["cpf"] });
 
-    // Add last field
-    values.push(sanitizeCSVField(current.trim()));
-    return values;
-  };
-
-  const headers = parseLine(lines[0]);
-  const rows: CSVRow[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    // Skip empty lines
-    if (!lines[i].trim()) continue;
-
-    const values = parseLine(lines[i]);
-    const row: any = {};
-
-    headers.forEach((header, index) => {
-      row[header] = values[index] || '';
-    });
-
-    rows.push(row);
+function parseDate(val: string): Date {
+  if (val.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+    const [d, m, y] = val.split('/');
+    return new Date(`${y}-${m}-${d}T00:00:00.000Z`);
   }
-
-  return rows;
+  return new Date(val + 'T00:00:00.000Z');
 }
 
-/**
- * Validate and sanitize CSV row
- */
-function validateRow(row: CSVRow, rowIndex: number): string[] {
-  const errors: string[] = [];
-
-  // Required fields
-  if (!row.firstName || !row.firstName.trim()) {
-    errors.push(`Row ${rowIndex}: firstName is required`);
-  } else if (row.firstName.length > 100) {
-    errors.push(`Row ${rowIndex}: firstName too long (max 100 characters)`);
-  }
-
-  if (!row.lastName || !row.lastName.trim()) {
-    errors.push(`Row ${rowIndex}: lastName is required`);
-  } else if (row.lastName.length > 100) {
-    errors.push(`Row ${rowIndex}: lastName too long (max 100 characters)`);
-  }
-
-  // Validate gender if provided
-  if (row.gender && !['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].includes(row.gender.toUpperCase())) {
-    errors.push(`Row ${rowIndex}: gender must be MALE, FEMALE, OTHER, or UNKNOWN`);
-  }
-
-  // Validate date format if provided
-  if (row.dateOfBirth && !isValidDate(row.dateOfBirth)) {
-    errors.push(`Row ${rowIndex}: invalid dateOfBirth format (use YYYY-MM-DD)`);
-  }
-
-  // Validate email if provided
-  if (row.email && !isValidEmail(row.email)) {
-    errors.push(`Row ${rowIndex}: invalid email format`);
-  }
-
-  // Validate phone if provided
-  if (row.phone && row.phone.trim() && !isValidPhone(row.phone)) {
-    errors.push(`Row ${rowIndex}: invalid phone format (use +1234567890)`);
-  }
-
-  // Validate emergency phone if provided
-  if (row.emergencyPhone && row.emergencyPhone.trim() && !isValidPhone(row.emergencyPhone)) {
-    errors.push(`Row ${rowIndex}: invalid emergencyPhone format (use +1234567890)`);
-  }
-
-  // Validate MRN length if provided
-  if (row.mrn && row.mrn.length > 50) {
-    errors.push(`Row ${rowIndex}: MRN too long (max 50 characters)`);
-  }
-
-  // Validate address length if provided
-  if (row.address && row.address.length > 500) {
-    errors.push(`Row ${rowIndex}: address too long (max 500 characters)`);
-  }
-
-  return errors;
-}
-
-/**
- * POST /api/patients/import
- * Bulk import patients from CSV
- */
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
+    const organizationId = context.user?.organizationId || context.user?.id || 'default';
+    const rateLimit = await checkImportRateLimit(organizationId);
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: 'Rate limit exceeded. 1 import per 5 minutes.' }, { status: 429 });
+    }
+
     try {
       const formData = await request.formData();
-      const file = formData.get('file') as File;
+      const file = formData.get('file') as File | null;
 
       if (!file) {
-        return NextResponse.json(
-          { error: 'No file provided' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
       }
 
-      // Validate file size (max 10MB)
-      try {
-        validateFileSize(file.size, 10);
-      } catch (error) {
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : String(error) },
-          { status: 400 }
-        );
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json({ error: 'File size exceeds 5MB limit' }, { status: 400 });
       }
 
-      // Validate file type
-      if (file.type && !['text/csv', 'application/vnd.ms-excel', 'text/plain'].includes(file.type)) {
-        return NextResponse.json(
-          { error: 'Invalid file type. Only CSV files are allowed.' },
-          { status: 400 }
-        );
-      }
+      const text = await file.text();
+      const parseResult = Papa.parse(text, { header: true, skipEmptyLines: true });
 
-      // Read file content
-      const csvText = await file.text();
+      let imported = 0;
+      let skipped = 0;
+      const errors: Array<{ row: number; field: string; message: string }> = [];
+      const warnings: Array<{ row: number; message: string }> = [];
 
-      // Validate content size
-      if (csvText.length > 10 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: 'File content too large (max 10MB)' },
-          { status: 400 }
-        );
-      }
+      const rows = parseResult.data as any[];
 
-      const rows = parseCSV(csvText);
-
-      // Limit number of rows (prevent DoS)
-      if (rows.length > 1000) {
-        return NextResponse.json(
-          { error: 'Too many rows. Maximum 1000 patients per import.' },
-          { status: 400 }
-        );
-      }
-
-      // Validate all rows
-      const validationErrors: string[] = [];
-      rows.forEach((row, index) => {
-        const errors = validateRow(row, index + 2); // +2 for header and 0-indexing
-        validationErrors.push(...errors);
-      });
-
-      if (validationErrors.length > 0) {
-        // ============================================================================
-        // DATA SUPREMACY: Track validation errors for data quality improvement
-        // ============================================================================
-        try {
-          // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-          await (prisma as any).dataQualityEvent.createMany({
-            data: validationErrors.map(error => ({
-              source: 'CSV_IMPORT',
-              errorType: error.split(':')[1]?.trim() || 'VALIDATION_ERROR',
-              errorMessage: error,
-              userId: context.user.id,
-              metadata: {
-                rowCount: rows.length,
-                errorCount: validationErrors.length,
-                timestamp: new Date().toISOString()
-              },
-            })),
-            skipDuplicates: true,
-          });
-        } catch (trackingError) {
-          logger.error({
-            event: 'data_quality_tracking_failed',
-            error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
-          });
-        }
-
-        return NextResponse.json(
-          {
-            error: 'Validation failed',
-            details: validationErrors,
-          },
-          { status: 400 }
-        );
-      }
-
-      // ===================================================================
-      // OPTIMIZED BATCH IMPORT - Fixes N+1 Query Problem
-      // Performance: 150s → 5s (30x faster for 1,000 patients)
-      // ===================================================================
-
-      const imported: any[] = [];
-      const failed: any[] = [];
-
-      // Step 1: Batch check for existing patients (1 query instead of N)
-      const mrns = rows.map(r => r.mrn).filter((mrn): mrn is string => Boolean(mrn));
-      const existingPatients = await prisma.patient.findMany({
-        where: {
-          mrn: { in: mrns },
-          assignedClinicianId: context.user.id,
-        },
-        select: { mrn: true, id: true },
-      });
-      const existingMrnSet = new Set(existingPatients.map(p => p.mrn));
-
-      // Step 2: Validate and prepare data for batch insert
-      const patientsToCreate: any[] = [];
-      const rowIndexMap = new Map<number, number>(); // Maps row index to patientsToCreate index
-
-      for (let index = 0; index < rows.length; index++) {
-        const row = rows[index];
-
-        // Validation: Check if patient already exists
-        if (row.mrn && existingMrnSet.has(row.mrn)) {
-          failed.push({
-            row: index + 2,
-            data: row,
-            reason: 'Patient with this MRN already exists',
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 2;
+        
+        const validation = RowSchema.safeParse(row);
+        if (!validation.success) {
+          validation.error.errors.forEach(err => {
+            errors.push({ row: rowNum, field: err.path.join('.'), message: err.message });
           });
           continue;
         }
 
-        // Validation: dateOfBirth is required
-        if (!row.dateOfBirth) {
-          failed.push({
-            row: index + 2,
-            data: row,
-            reason: 'dateOfBirth is required',
-          });
+        const data = validation.data;
+
+        let duplicate = null;
+        if (data.cpf) {
+          duplicate = await prisma.patient.findFirst({ where: { cpf: data.cpf } });
+        }
+        if (!duplicate && data.externalMrn) {
+          duplicate = await prisma.patient.findFirst({ where: { externalMrn: data.externalMrn } });
+        }
+
+        if (duplicate) {
+          warnings.push({ row: rowNum, message: "CPF duplicado — paciente já existe" });
+          skipped++;
           continue;
         }
 
-        // Sanitize inputs
-        const sanitizedData = {
-          firstName: sanitizeString(row.firstName, 100),
-          lastName: sanitizeString(row.lastName, 100),
-          dateOfBirth: new Date(row.dateOfBirth),
-          gender: row.gender?.toUpperCase() || 'UNKNOWN',
-          email: row.email ? sanitizeString(row.email, 255) : null,
-          phone: row.phone ? sanitizeString(row.phone, 20) : null,
-          address: row.address ? sanitizeString(row.address, 500) : null,
-          mrn: row.mrn ? sanitizeString(row.mrn, 50) : null,
-          emergencyContact: row.emergencyContact ? sanitizeString(row.emergencyContact, 100) : null,
-          emergencyPhone: row.emergencyPhone ? sanitizeString(row.emergencyPhone, 20) : null,
-          isPalliativeCare: row.isPalliativeCare?.toLowerCase() === 'true',
-        };
-
-        // Generate identifiers
-        const tokenId = generateTokenId();
-        const mrn = sanitizedData.mrn || generateMRN();
-
-        // Generate dataHash upfront (include in initial create)
-        const dataHash = generatePatientDataHash({
-          id: tokenId, // Use tokenId as temporary ID for hash
-          firstName: sanitizedData.firstName,
-          lastName: sanitizedData.lastName,
-          dateOfBirth: row.dateOfBirth,
-          mrn: mrn,
-        });
-
-        patientsToCreate.push({
-          ...sanitizedData,
-          mrn,
-          tokenId,
-          dataHash,
-          lastHashUpdate: new Date(),
-          assignedClinicianId: context.user.id,
-          isActive: true,
-        });
-
-        rowIndexMap.set(index, patientsToCreate.length - 1);
-      }
-
-      // Step 3: Batch insert with transaction (1 transaction instead of N inserts + N updates)
-      if (patientsToCreate.length > 0) {
+        const mrn = `MRN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const tokenId = `PT-${crypto.randomBytes(4).toString('hex')}`;
+        
         try {
-          await prisma.$transaction(async (tx) => {
-            // Batch create patients (uses createMany for bulk insert)
-            const createResult = await tx.patient.createMany({
-              data: patientsToCreate,
-              skipDuplicates: true,
-            });
+          const newPatient = await prisma.patient.create({
+            data: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              dateOfBirth: parseDate(data.dateOfBirth),
+              gender: data.gender || null,
+              cpf: data.cpf || null,
+              externalMrn: data.externalMrn || null,
+              mrn,
+              tokenId,
+              email: data.email || null,
+              phone: data.phone || null,
+              address: data.address || null,
+              city: data.city || null,
+              state: data.state || null,
+              postalCode: data.postalCode || null,
+            }
+          });
 
-            // Get created patient IDs for audit logging
-            const createdPatients = await tx.patient.findMany({
-              where: {
-                tokenId: { in: patientsToCreate.map(p => p.tokenId) },
-              },
-              select: {
-                id: true,
-                tokenId: true,
-                firstName: true,
-                lastName: true,
-              },
-            });
-
-            // Build import results
-            const tokenIdToPatient = new Map(createdPatients.map(p => [p.tokenId, p]));
-
-            for (let index = 0; index < rows.length; index++) {
-              const patientIndex = rowIndexMap.get(index);
-              if (patientIndex !== undefined) {
-                const patientData = patientsToCreate[patientIndex];
-                const createdPatient = tokenIdToPatient.get(patientData.tokenId);
-
-                if (createdPatient) {
-                  imported.push({
-                    row: index + 2,
-                    patientId: createdPatient.id,
-                    name: `${createdPatient.firstName} ${createdPatient.lastName}`,
-                  });
+          if (data.medications) {
+            const meds = data.medications.split(';').map(m => m.trim()).filter(m => m);
+            for (const med of meds) {
+              await prisma.medication.create({
+                data: {
+                  name: med,
+                  dose: '',
+                  frequency: '',
+                  patientId: newPatient.id
                 }
-              }
+              });
             }
+          }
 
-            // Batch create audit logs (1 createMany instead of N inserts)
-            const auditEntries = createdPatients.map(patient => ({
-              userId: context.user.id,
-              userEmail: context.user.email,
-              ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-              userAgent: request.headers.get('user-agent') || 'unknown',
-              action: 'CREATE' as const,
+          await prisma.auditLog.create({
+            data: {
+              action: 'CREATE',
               resource: 'Patient',
-              resourceId: patient.id,
-              details: {
-                method: 'bulk_import',
-                source: 'csv',
-              },
-              success: true,
-            }));
-
-            if (auditEntries.length > 0) {
-              await tx.auditLog.createMany({
-                data: auditEntries,
-              });
+              resourceId: newPatient.id,
+              userId: context.user?.id,
+              userEmail: context.user?.email,
+              ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+              userAgent: request.headers.get('user-agent') || 'unknown',
+              accessReason: 'ADMINISTRATIVE',
+              details: { event: 'patient_imported', tokenId: newPatient.tokenId, action: 'patient_imported' }
             }
           });
 
-          logger.info({
-            event: 'patients_bulk_import_success',
-            importedCount: imported.length,
-            // No patient data for privacy
-          });
-
-          // ============================================================================
-          // DATA SUPREMACY: Track import success metrics
-          // ============================================================================
-          try {
-            // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-            await (prisma as any).userBehaviorEvent.create({
-              data: {
-                userId: context.user.id,
-                eventType: 'BULK_IMPORT_SUCCESS',
-                metadata: {
-                  totalRows: rows.length,
-                  importedCount: imported.length,
-                  failedCount: failed.length,
-                  successRate: ((imported.length / rows.length) * 100).toFixed(2),
-                  hasValidationErrors: failed.length > 0,
-                  timestamp: new Date().toISOString(),
-                },
-              },
-            });
-          } catch (trackingError) {
-            logger.error({
-              event: 'behavior_tracking_failed',
-              eventType: 'BULK_IMPORT_SUCCESS',
-              error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
-            });
-          }
-        } catch (error) {
-          logger.error({
-            event: 'patients_bulk_import_failed',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-          });
-
-          // If batch insert fails, mark all as failed
-          for (let index = 0; index < rows.length; index++) {
-            if (rowIndexMap.has(index)) {
-              failed.push({
-                row: index + 2,
-                data: rows[index],
-                reason: `Batch insert failed: ${(error instanceof Error ? error.message : String(error))}`,
-              });
-            }
-          }
-
-          // ============================================================================
-          // DATA SUPREMACY: Track import failure for reliability monitoring
-          // ============================================================================
-          try {
-            // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-            await (prisma as any).userBehaviorEvent.create({
-              data: {
-                userId: context.user.id,
-                eventType: 'BULK_IMPORT_FAILURE',
-                metadata: {
-                  totalRows: rows.length,
-                  errorMessage: (error instanceof Error ? error.message : String(error)),
-                  errorType: (error as any).code || 'UNKNOWN_ERROR',
-                  timestamp: new Date().toISOString(),
-                },
-              },
-            });
-
-            // Track as data quality event
-            // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-            await (prisma as any).dataQualityEvent.create({
-              data: {
-                source: 'CSV_IMPORT',
-                errorType: 'BATCH_INSERT_FAILED',
-                errorMessage: (error instanceof Error ? error.message : String(error)),
-                userId: context.user.id,
-                metadata: {
-                  totalRows: rows.length,
-                  errorCode: (error as any).code,
-                },
-              },
-            });
-          } catch (trackingError) {
-            logger.error({
-              event: 'behavior_tracking_failed',
-              eventType: 'BULK_IMPORT_FAILURE',
-              error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
-            });
-          }
+          imported++;
+        } catch (dbError: any) {
+          errors.push({ row: rowNum, field: 'database', message: dbError.message || 'Database error' });
         }
       }
-
-      // Audit log for import operation
-      await createAuditLog(
-        {
-          action: 'CREATE',
-          resource: 'Patient',
-          resourceId: 'bulk',
-          details: {
-            operation: 'bulk_import',
-            total: rows.length,
-            imported: imported.length,
-            failed: failed.length,
-          },
-        },
-        request,
-        context.user.id,
-        context.user.email
-      );
 
       return NextResponse.json({
-        success: true,
-        summary: {
-          total: rows.length,
-          imported: imported.length,
-          failed: failed.length,
-        },
         imported,
-        failed,
+        skipped,
+        errors,
+        warnings
       });
-    } catch (error) {
-      return safeErrorResponse(error, { userMessage: 'Failed to import patients' });
+
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
     }
   },
-  {
-    roles: ['ADMIN', 'CLINICIAN'],
-    rateLimit: { windowMs: 60_000, maxRequests: 5 },
-    audit: { action: 'CREATE', resource: 'Patient' },
-  }
+  { roles: ['ADMIN'] }
 );

@@ -15,21 +15,29 @@ fi
 
 # 2. TypeScript type check
 echo "  ├─ Type checking..."
-if pnpm tsc --noEmit 2>&1 | grep -q "error TS"; then
-  echo "  ✗ TypeScript errors found!"
-  echo "  Run 'pnpm tsc --noEmit' to see details"
-  exit 1
+if git diff --cached --name-only | grep -qE "\.tsx?$"; then
+  if pnpm tsc --noEmit 2>&1 | grep -q "error TS"; then
+    echo "  ✗ TypeScript errors found!"
+    echo "  Run 'pnpm tsc --noEmit' to see details"
+    exit 1
+  else
+    echo "  ✓ No TypeScript errors"
+  fi
 else
-  echo "  ✓ No TypeScript errors"
+  echo "  ✓ Skipped Type checking (no TS/TSX files staged)"
 fi
 
 # 3. ESLint check (auto-fixable issues)
 echo "  ├─ Linting code..."
-if pnpm exec eslint "src/**/*.{ts,tsx}" --max-warnings=0 --quiet 2>/dev/null; then
-  echo "  ✓ Code linting passed"
+if git diff --cached --name-only | grep -qE "\.tsx?$"; then
+  if pnpm exec eslint "src/**/*.{ts,tsx}" --max-warnings=0 --quiet 2>/dev/null; then
+    echo "  ✓ Code linting passed"
+  else
+    echo "  ⚠️  Some linting issues found (auto-fixing...)"
+    pnpm exec eslint "src/**/*.{ts,tsx}" --fix --quiet 2>/dev/null || true
+  fi
 else
-  echo "  ⚠️  Some linting issues found (auto-fixing...)"
-  pnpm exec eslint "src/**/*.{ts,tsx}" --fix --quiet 2>/dev/null || true
+  echo "  ✓ Skipped Linting code (no TS/TSX files staged)"
 fi
 
 # 4. Check for common deployment blockers
