@@ -21,7 +21,9 @@ jest.mock('@/components/email/InviteEmail', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn() }
 }));
 
 const { POST } = require('../route');

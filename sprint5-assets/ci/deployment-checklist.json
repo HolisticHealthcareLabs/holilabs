@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "totalItems": 35,
+  "categories": {
+    "code_quality": [
+      { "id": "CQ-01", "item": "TypeScript: 0 errors (pnpm tsc --noEmit)", "severity": "blocking", "automated": true },
+      { "id": "CQ-02", "item": "ESLint: 0 errors (pnpm lint)", "severity": "blocking", "automated": true },
+      { "id": "CQ-03", "item": "Build: pnpm build exits 0", "severity": "blocking", "automated": true },
+      { "id": "CQ-04", "item": "No console.log in production code", "severity": "blocking", "automated": true },
+      { "id": "CQ-05", "item": "Design token compliance: lint-tokens.sh < 50 violations", "severity": "warning", "automated": true },
+      { "id": "CQ-06", "item": "No TODO markers in production code (tests OK)", "severity": "warning", "automated": true }
+    ],
+    "security": [
+      { "id": "SEC-01", "item": "All API routes have createProtectedRoute (except webhooks/health/demo)", "severity": "blocking", "automated": true },
+      { "id": "SEC-02", "item": "Twilio webhook validates X-Twilio-Signature before processing", "severity": "blocking", "automated": false, "cyrusVeto": true },
+      { "id": "SEC-03", "item": "PII fields encrypted: CPF, CNS, RG via encryptPHIWithVersion", "severity": "blocking", "automated": false, "cyrusVeto": true },
+      { "id": "SEC-04", "item": "Cross-tenant isolation: every query includes organizationId filter", "severity": "blocking", "automated": true },
+      { "id": "SEC-05", "item": "X-Access-Reason enforced on all PHI endpoints in production", "severity": "blocking", "automated": true },
+      { "id": "SEC-06", "item": "No hardcoded API keys/secrets in source (secret scan passes)", "severity": "blocking", "automated": true },
+      { "id": "SEC-07", "item": "Deepgram audio token is scoped (not raw API key)", "severity": "blocking", "automated": false },
+      { "id": "SEC-08", "item": "Audit log hash chain integrity verified", "severity": "blocking", "automated": true },
+      { "id": "SEC-09", "item": "Message content encrypted at rest", "severity": "blocking", "automated": false, "cyrusVeto": true }
+    ],
+    "clinical_safety": [
+      { "id": "CLIN-01", "item": "Scoring engine tests pass: PHQ-9, GAD-7, FINDRISC, SCORE2, Framingham", "severity": "blocking", "automated": true, "elenaRequired": true },
+      { "id": "CLIN-02", "item": "INSUFFICIENT_DATA returned for missing screening answers (never imputed as 0)", "severity": "blocking", "automated": true, "elenaRequired": true },
+      { "id": "CLIN-03", "item": "Every AI suggestion includes sourceAuthority + citationUrl", "severity": "blocking", "automated": true, "elenaRequired": true },
+      { "id": "CLIN-04", "item": "SaMD disclaimer on all AI-generated content", "severity": "blocking", "automated": false, "ruthRequired": true },
+      { "id": "CLIN-05", "item": "No forbidden words in patient-facing text (diagnose, detect, prevent, treat, cure)", "severity": "blocking", "automated": true, "ruthRequired": true },
+      { "id": "CLIN-06", "item": "PHQ-9 Q9 suicidal ideation triggers MH-002 rule at any score", "severity": "blocking", "automated": true }
+    ],
+    "compliance": [
+      { "id": "COMP-01", "item": "WhatsApp consent: granular opt-in before sending (LGPD Art. 7)", "severity": "blocking", "ruthRequired": true },
+      { "id": "COMP-02", "item": "Message body never contains PHI (diagnoses, lab values)", "severity": "blocking", "ruthRequired": true },
+      { "id": "COMP-03", "item": "Data export/erasure endpoints functional (LGPD Art. 15/18)", "severity": "warning" },
+      { "id": "COMP-04", "item": "Audit log retention: records never deleted (LGPD Art. 37)", "severity": "blocking", "cyrusVeto": true },
+      { "id": "COMP-05", "item": "Message retention configurable per organization", "severity": "warning" }
+    ],
+    "performance": [
+      { "id": "PERF-01", "item": "Main JS bundle < 200KB gzipped", "severity": "warning", "automated": true },
+      { "id": "PERF-02", "item": "Lighthouse Performance > 90", "severity": "warning", "automated": true },
+      { "id": "PERF-03", "item": "API p95 latency < 500ms (co-pilot excluded)", "severity": "warning" },
+      { "id": "PERF-04", "item": "LCP < 2.5s, FID < 100ms, CLS < 0.1", "severity": "warning", "automated": true }
+    ],
+    "accessibility": [
+      { "id": "A11Y-01", "item": "WCAG 2.2 AA: all text ≥ 4.5:1 contrast ratio", "severity": "blocking", "automated": true },
+      { "id": "A11Y-02", "item": "Critical clinical data ≥ 7:1 contrast (WCAG AAA)", "severity": "blocking" },
+      { "id": "A11Y-03", "item": "All interactive elements ≥ 44px touch target", "severity": "warning", "automated": true },
+      { "id": "A11Y-04", "item": "Every severity indicator uses COLOR + ICON + TEXT (never color alone)", "severity": "blocking" },
+      { "id": "A11Y-05", "item": "accessibility-audit.sh passes with 0 violations", "severity": "warning", "automated": true }
+    ],
+    "i18n": [
+      { "id": "I18N-01", "item": "All keys present in pt-BR.json, es.json, en.json", "severity": "blocking", "automated": true },
+      { "id": "I18N-02", "item": "No hardcoded Portuguese/Spanish/English strings in .tsx files", "severity": "warning" }
+    ]
+  }
+}

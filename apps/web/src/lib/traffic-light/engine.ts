@@ -54,7 +54,7 @@ import {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const COLOR_PRIORITY: Record<TrafficLightColor, number> = {
+const COLOR_PRIORITY: Record<string, number> = {
   RED: 3,
   YELLOW: 2,
   GREEN: 1,

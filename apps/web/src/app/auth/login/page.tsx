@@ -85,9 +85,36 @@ function LoginContent() {
     signIn('google', { callbackUrl });
   }
 
-  // ── Interactive demo → navigate to the setup survey ────────────────────────
-  function handleDemo() {
-    router.push('/demo/setup');
+  // ── Interactive demo → provision unique account, then sign in ──────────────
+  async function handleDemo() {
+    setError(null);
+    setIsLoading(true);
+    try {
+      // Provision a unique ephemeral user so biometric credentials are isolated
+      const provisionRes = await fetch('/api/demo/provision', { method: 'POST' });
+      const provision = provisionRes.ok ? await provisionRes.json() : null;
+
+      const demoEmail = provision?.credentials?.email ?? 'dr.silva@holilabs.xyz';
+      const demoPassword = provision?.credentials?.password ?? 'Cortex2026!';
+
+      const result = await signIn('credentials', {
+        email: demoEmail,
+        password: demoPassword,
+        redirect: false,
+      });
+      if (!result || result.error) {
+        setError('Demo sign-in failed. Ensure the database is seeded.');
+        setIsLoading(false);
+        return;
+      }
+      // Enable demo mode so LockScreen shows quick-unlock button
+      localStorage.setItem('demo_mode', 'true');
+      router.push('/dashboard');
+      router.refresh();
+    } catch {
+      setError('Demo sign-in failed. Please try again.');
+      setIsLoading(false);
+    }
   }
 
   // ── Credentials sign-in ─────────────────────────────────────────────────────

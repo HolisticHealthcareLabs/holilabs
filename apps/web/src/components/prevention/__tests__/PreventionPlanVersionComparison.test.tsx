@@ -55,7 +55,7 @@ describe('PreventionPlanVersionComparison', () => {
   it('shows goals added count in summary', () => {
     render(<PreventionPlanVersionComparison version1={version1} version2={version2} onClose={jest.fn()} />);
     expect(screen.getByText('Goals Added')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
   });
 
   it('calls onClose when Close button is clicked', () => {

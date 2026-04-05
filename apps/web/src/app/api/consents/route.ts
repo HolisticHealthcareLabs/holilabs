@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { checkPatientConsentExpiration, findExpiredConsents, expireConsent } from '@/lib/consent/expiration-checker';
@@ -95,6 +95,14 @@ export const GET = createProtectedRoute(
       return NextResponse.json({ error: 'patientId required' }, { status: 400 });
     }
 
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Access denied: no clinical relationship with this patient' },
+        { status: 403 }
+      );
+    }
+
     // Check for and expire any expired consents for this patient
     const hasExpired = await checkPatientConsentExpiration(patientId);
     if (hasExpired) {
@@ -163,6 +171,14 @@ export const POST = createProtectedRoute(
       return NextResponse.json(
         { error: 'patientId, consentTypeId, and granted are required' },
         { status: 400 }
+      );
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Access denied: no clinical relationship with this patient' },
+        { status: 403 }
       );
     }
 

@@ -7,12 +7,10 @@
 // Audit archival jobs (HIPAA compliance)
 export {
   archiveOldAuditLogs,
-  deleteExpiredAuditLogs,
   archiveAuditLogsByDateRange,
   getArchivalStatistics,
   type ArchiveMetadata,
   type ArchiveResult,
-  type DeletionResult,
 } from './audit-archival';
 
 // Correction aggregation jobs (ML training)

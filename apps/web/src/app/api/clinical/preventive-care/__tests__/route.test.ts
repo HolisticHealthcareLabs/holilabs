@@ -60,7 +60,7 @@ describe('POST /api/clinical/preventive-care', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.reminders).toBeInstanceOf(Array);
+    expect(Array.isArray(data.reminders)).toBe(true);
     expect(data.reminders.length).toBeGreaterThan(0);
     expect(data.reminders[0]).toHaveProperty('screeningType');
     expect(data.reminders[0]).toHaveProperty('guidelineSource');
@@ -134,7 +134,7 @@ describe('GET /api/clinical/preventive-care', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.reminders).toBeInstanceOf(Array);
+    expect(Array.isArray(data.reminders)).toBe(true);
     expect(data.summary).toHaveProperty('due');
     expect(data.summary).toHaveProperty('overdue');
   });

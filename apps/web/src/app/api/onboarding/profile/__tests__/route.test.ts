@@ -20,11 +20,15 @@ jest.mock('@/lib/workspace', () => ({
 
 const { GET, PUT } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { getOrCreateWorkspaceForUser } = require('@/lib/workspace');
 
 const ctx = { user: { id: 'doc-1', role: 'CLINICIAN' } };
 
 describe('GET /api/onboarding/profile', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getOrCreateWorkspaceForUser as jest.Mock).mockResolvedValue({ workspaceId: 'ws-1' });
+  });
 
   it('returns onboarding profile from workspace metadata', async () => {
     (prisma.workspace.findUnique as jest.Mock).mockResolvedValue({
@@ -61,7 +65,10 @@ describe('GET /api/onboarding/profile', () => {
 });
 
 describe('PUT /api/onboarding/profile', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getOrCreateWorkspaceForUser as jest.Mock).mockResolvedValue({ workspaceId: 'ws-1' });
+  });
 
   it('updates workspace onboarding profile', async () => {
     (prisma.workspace.findUnique as jest.Mock).mockResolvedValue({ metadata: {} });

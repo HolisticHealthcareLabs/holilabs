@@ -4,51 +4,36 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: 'div', button: 'button', p: 'p', span: 'span',
+jest.mock('next-intl', () => ({
+  useTranslations: () => (key: string, params?: any) => {
+    if (key === 'bell' && params?.count) return `${params.count} notifications`;
+    return key;
   },
-  AnimatePresence: ({ children }: any) => children,
-}));
-jest.mock('date-fns', () => ({
-  formatDistanceToNow: () => '5 minutes ago',
 }));
 
-const NotificationBell = require('../NotificationBell').default;
-
-const mockNotifications = [
-  {
-    id: 'n1',
-    type: 'appointment' as const,
-    title: 'New Appointment',
-    message: 'Patient scheduled for tomorrow',
-    read: false,
-    createdAt: new Date(),
-  },
-];
+import { NotificationBell } from '../NotificationBell';
 
 describe('NotificationBell', () => {
   it('renders without crashing', () => {
     const { container } = render(
-      <NotificationBell
-        notifications={[]}
-        unreadCount={0}
-        onMarkAsRead={jest.fn()}
-        onMarkAllAsRead={jest.fn()}
-      />
+      <NotificationBell unreadCount={0} isOpen={false} onClick={() => {}} />
     );
     expect(container.firstChild).toBeTruthy();
   });
 
   it('shows unread count badge', () => {
     render(
-      <NotificationBell
-        notifications={mockNotifications}
-        unreadCount={3}
-        onMarkAsRead={jest.fn()}
-        onMarkAllAsRead={jest.fn()}
-      />
+      <NotificationBell unreadCount={3} isOpen={false} onClick={() => {}} />
     );
     expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('calls onClick when button is clicked', () => {
+    const handleClick = jest.fn();
+    render(
+      <NotificationBell unreadCount={0} isOpen={false} onClick={handleClick} />
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });

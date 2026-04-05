@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline';
 import SupportContact from '@/components/SupportContact';
+import * as Sentry from '@sentry/nextjs';
 
 export default function PortalError({
   error,
@@ -20,11 +21,7 @@ export default function PortalError({
 }) {
   const t = useTranslations('portal.error');
   useEffect(() => {
-    // Log error to error reporting service
-    console.error('Portal Error:', error);
-
-    // TODO: Send to Sentry
-    // Sentry.captureException(error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

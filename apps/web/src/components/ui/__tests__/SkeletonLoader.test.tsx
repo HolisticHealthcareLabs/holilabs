@@ -36,14 +36,14 @@ describe('Skeleton', () => {
 });
 
 describe('LoadingSpinner', () => {
-  it('renders a spinning div', () => {
+  it('renders a skeleton pulse loader', () => {
     const { container } = render(<LoadingSpinner />);
-    expect(container.firstChild).toHaveClass('animate-spin');
+    expect(container.firstChild).toHaveClass('animate-pulse');
   });
 
   it('applies size classes for lg', () => {
     const { container } = render(<LoadingSpinner size="lg" />);
-    expect(container.firstChild).toHaveClass('w-12', 'h-12');
+    expect(container.firstChild).toHaveClass('animate-pulse', 'w-48');
   });
 });
 

@@ -145,7 +145,7 @@ export function IntroQuestionnaireModal({
             transition={{ type: 'spring', damping: 28, stiffness: 340 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           >
-            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+            <div className="w-full max-w-lg overflow-hidden" style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', boxShadow: 'var(--token-shadow-xl)' }}>
               {/* Header */}
               <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 px-8 pt-8 pb-6 text-center">
                 <button
@@ -202,7 +202,7 @@ export function IntroQuestionnaireModal({
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <p className="text-base font-semibold text-gray-900 dark:text-white mb-4">
+                      <p className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                         {currentStep.title}
                       </p>
                       <div className="space-y-2">
@@ -211,14 +211,15 @@ export function IntroQuestionnaireModal({
                             key={opt.value}
                             onClick={() => handleSelect(opt.value)}
                             disabled={saving}
-                            className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-left group disabled:opacity-50"
+                            className="w-full flex items-center gap-4 p-4 border hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all text-left group disabled:opacity-50"
+                            style={{ borderRadius: 'var(--radius-xl)', borderColor: 'var(--border-default)' }}
                           >
                             <span className="text-2xl shrink-0">{opt.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                              <p className="text-sm font-semibold group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors" style={{ color: 'var(--text-primary)' }}>
                                 {opt.label}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                                 {opt.desc}
                               </p>
                             </div>
@@ -238,14 +239,15 @@ export function IntroQuestionnaireModal({
                 {step > 0 ? (
                   <button
                     onClick={() => setStep((s) => s - 1)}
-                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    className="text-sm hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
                   >
                     Back
                   </button>
                 ) : (
                   <span />
                 )}
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   Step {step + 1} of {STEPS.length}
                 </p>
               </div>

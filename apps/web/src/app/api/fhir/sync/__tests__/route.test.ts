@@ -1,12 +1,14 @@
-/**
- * Tests for /api/fhir/sync
- *
- * - POST triggers push sync for patient
- * - POST returns 400 for invalid request
- * - GET returns sync statistics
- */
-
 import { NextRequest } from 'next/server';
+
+const mockSyncService = {
+  pushPatient: jest.fn().mockResolvedValue('sync-evt-1'),
+  pullPatient: jest.fn().mockResolvedValue('sync-evt-2'),
+  getSyncStats: jest.fn().mockResolvedValue({
+    totalSynced: 100,
+    conflicts: 2,
+    lastSyncAt: '2026-03-12T00:00:00Z',
+  }),
+};
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
@@ -23,19 +25,13 @@ jest.mock('@/lib/audit', () => ({
 }));
 
 jest.mock('@/lib/services/sync.service', () => ({
-  createSyncService: jest.fn().mockReturnValue({
-    pushPatient: jest.fn().mockResolvedValue('sync-evt-1'),
-    pullPatient: jest.fn().mockResolvedValue('sync-evt-2'),
-    getSyncStats: jest.fn().mockResolvedValue({
-      totalSynced: 100,
-      conflicts: 2,
-      lastSyncAt: '2026-03-12T00:00:00Z',
-    }),
-  }),
+  createSyncService: () => mockSyncService,
 }));
 
 const { POST, GET } = require('../route');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { createAuditLog } = require('@/lib/audit');
+const { createSyncService } = require('@/lib/services/sync.service');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -46,6 +42,14 @@ describe('POST /api/fhir/sync', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (createAuditLog as jest.Mock).mockResolvedValue(undefined);
+    mockSyncService.pushPatient.mockResolvedValue('sync-evt-1');
+    mockSyncService.pullPatient.mockResolvedValue('sync-evt-2');
+    mockSyncService.getSyncStats.mockResolvedValue({
+      totalSynced: 100,
+      conflicts: 2,
+      lastSyncAt: '2026-03-12T00:00:00Z',
+    });
   });
 
   it('triggers push sync for patient', async () => {
@@ -109,6 +113,11 @@ describe('GET /api/fhir/sync', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    mockSyncService.getSyncStats.mockResolvedValue({
+      totalSynced: 100,
+      conflicts: 2,
+      lastSyncAt: '2026-03-12T00:00:00Z',
+    });
   });
 
   it('returns sync statistics', async () => {

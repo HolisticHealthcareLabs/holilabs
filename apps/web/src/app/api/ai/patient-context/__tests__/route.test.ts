@@ -9,10 +9,10 @@ jest.mock('@/lib/ai/patient-data-fetcher', () => ({
 }));
 
 jest.mock('@/lib/ai/patient-context-formatter', () => ({
-  formatPatientContext: jest.fn(() => ({ formatted: 'full context' })),
-  formatPatientContextForSOAP: jest.fn(() => ({ formatted: 'soap context' })),
-  formatPatientContextForScribe: jest.fn(() => ({ formatted: 'scribe context' })),
-  formatPatientSummary: jest.fn(() => ({ formatted: 'summary' })),
+  formatPatientContext: jest.fn(),
+  formatPatientContextForSOAP: jest.fn(),
+  formatPatientContextForScribe: jest.fn(),
+  formatPatientSummary: jest.fn(),
 }));
 
 jest.mock('@/lib/audit', () => ({
@@ -20,7 +20,9 @@ jest.mock('@/lib/audit', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
@@ -34,6 +36,12 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { GET } = require('../route');
 const { fetchPatientWithContext } = require('@/lib/ai/patient-data-fetcher');
+const {
+  formatPatientContext,
+  formatPatientContextForSOAP,
+  formatPatientContextForScribe,
+  formatPatientSummary,
+} = require('@/lib/ai/patient-context-formatter');
 
 const mockPatient = {
   id: 'p1',
@@ -45,7 +53,13 @@ const mockPatient = {
 const ctx = { user: { id: 'doc-1' } };
 
 describe('GET /api/ai/patient-context', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (formatPatientContext as jest.Mock).mockReturnValue({ formatted: 'full context' });
+    (formatPatientContextForSOAP as jest.Mock).mockReturnValue({ formatted: 'soap context' });
+    (formatPatientContextForScribe as jest.Mock).mockReturnValue({ formatted: 'scribe context' });
+    (formatPatientSummary as jest.Mock).mockReturnValue({ formatted: 'summary' });
+  });
 
   it('returns full patient context by default', async () => {
     (fetchPatientWithContext as jest.Mock).mockResolvedValue(mockPatient);

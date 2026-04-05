@@ -125,44 +125,8 @@ export async function scheduleDailyAuditArchival(): Promise<void> {
   }
 }
 
-/**
- * Schedule annual audit log deletion job
- * Runs once per year on January 1st at 3:00 AM
- * Deletes logs older than 6 years (HIPAA retention requirement)
- */
-export async function scheduleAnnualAuditDeletion(): Promise<void> {
-  const queue = getAuditArchivalQueue();
-
-  try {
-    // Add repeatable job with cron expression
-    await queue.add(
-      'annual-audit-deletion',
-      {
-        type: 'delete' as const,
-      },
-      {
-        repeat: {
-          pattern: '0 3 1 1 *', // January 1st at 3:00 AM every year
-        },
-        removeOnComplete: true,
-        removeOnFail: false,
-      }
-    );
-
-    logger.info({
-      event: 'annual_job_scheduled',
-      job: 'audit_deletion',
-      schedule: '0 3 1 1 * (3:00 AM on January 1st)',
-    });
-  } catch (error) {
-    logger.error({
-      event: 'annual_job_schedule_error',
-      job: 'audit_deletion',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
-  }
-}
+// REMOVED: scheduleAnnualAuditDeletion — audit log deletion is prohibited
+// per CYRUS CVI-004/005 and LGPD Art. 37. Logs are immutable; only soft-archival is allowed.
 
 /**
  * Trigger immediate audit archival for testing or manual runs
@@ -204,40 +168,8 @@ export async function triggerImmediateAuditArchival(
   }
 }
 
-/**
- * Trigger immediate audit deletion for testing or manual runs
- */
-export async function triggerImmediateAuditDeletion(): Promise<string> {
-  const queue = getAuditArchivalQueue();
-
-  try {
-    const job = await queue.add(
-      'immediate-audit-deletion',
-      {
-        type: 'delete' as const,
-      },
-      {
-        priority: 1, // High priority
-      }
-    );
-
-    logger.warn({
-      event: 'immediate_job_triggered',
-      job: 'audit_deletion',
-      jobId: job.id,
-      message: 'Manual audit log deletion triggered - logs older than 6 years will be permanently deleted',
-    });
-
-    return job.id!;
-  } catch (error) {
-    logger.error({
-      event: 'immediate_job_trigger_error',
-      job: 'audit_deletion',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
-  }
-}
+// REMOVED: triggerImmediateAuditDeletion — audit log deletion is prohibited
+// per CYRUS CVI-004/005 and LGPD Art. 37.
 
 /**
  * Initialize all scheduled jobs
@@ -252,8 +184,7 @@ export async function initializeScheduledJobs(): Promise<void> {
     // Schedule daily audit archival (HIPAA compliance)
     await scheduleDailyAuditArchival();
 
-    // Schedule annual audit deletion (HIPAA 6-year retention)
-    await scheduleAnnualAuditDeletion();
+    // NOTE: Annual audit deletion removed — CYRUS CVI-004/005 prohibits audit log deletion
 
     // TODO: Add more scheduled jobs here
     // await scheduleDailyPatientReminders();

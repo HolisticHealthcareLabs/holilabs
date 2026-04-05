@@ -21,7 +21,7 @@ type SafetyAlertVariant = 'BLOCK' | 'SOFT_NUDGE' | 'INFO';
 // =============================================================================
 
 const safetySignalVariants = cva(
-  'relative rounded-lg border p-4',
+  'relative border p-4',
   {
     variants: {
       variant: {
@@ -130,7 +130,8 @@ function SafetySignalContent({
             id={`override-${ruleId}`}
             value={overrideReason}
             onChange={(e) => setOverrideReason(e.target.value)}
-            className="w-full rounded-md border bg-white/50 dark:bg-black/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="w-full border bg-white/50 dark:bg-black/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            style={{ borderRadius: 'var(--radius-md)' }}
             rows={2}
             placeholder="Enter clinical justification for override..."
           />
@@ -139,7 +140,8 @@ function SafetySignalContent({
               type="button"
               onClick={handleOverrideSubmit}
               disabled={!overrideReason.trim()}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderRadius: 'var(--radius-md)' }}
             >
               Submit Override
             </button>
@@ -149,7 +151,8 @@ function SafetySignalContent({
                 setShowOverrideInput(false);
                 setOverrideReason('');
               }}
-              className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5"
+              className="border px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ borderRadius: 'var(--radius-md)' }}
             >
               Cancel
             </button>
@@ -166,7 +169,8 @@ function SafetySignalContent({
                 <button
                   type="button"
                   onClick={onAcknowledge}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                  className="bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                  style={{ borderRadius: 'var(--radius-md)' }}
                 >
                   I Acknowledge Risk
                 </button>
@@ -175,7 +179,8 @@ function SafetySignalContent({
                 <button
                   type="button"
                   onClick={() => setShowOverrideInput(true)}
-                  className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
+                  className="border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
+                  style={{ borderRadius: 'var(--radius-md)' }}
                 >
                   Override with Reason
                 </button>
@@ -186,7 +191,8 @@ function SafetySignalContent({
             <button
               type="button"
               onClick={onAcknowledge}
-              className="rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+              className="bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+              style={{ borderRadius: 'var(--radius-md)' }}
             >
               Acknowledge
             </button>
@@ -220,7 +226,7 @@ function SafetySignalBlock(props: SafetySignalProps) {
             This action has been blocked by a clinical safety rule. Review the details below.
           </DialogDescription>
         </DialogHeader>
-        <div className={cn(safetySignalVariants({ variant: 'BLOCK' }))}>
+        <div className={cn(safetySignalVariants({ variant: 'BLOCK' }))} style={{ borderRadius: 'var(--radius-lg)' }}>
           <SafetySignalContent {...props} />
         </div>
         <DialogFooter />
@@ -244,6 +250,7 @@ function SafetySignalInline(props: SafetySignalProps) {
       role="alert"
       aria-live={severity === 'INFO' ? 'polite' : undefined}
       className={cn(safetySignalVariants({ variant: severity }), className)}
+      style={{ borderRadius: 'var(--radius-lg)' }}
     >
       {severity === 'INFO' && (
         <button
@@ -252,7 +259,8 @@ function SafetySignalInline(props: SafetySignalProps) {
             setDismissed(true);
             onAcknowledge?.();
           }}
-          className="absolute top-2 right-2 rounded-sm opacity-70 hover:opacity-100"
+          className="absolute top-2 right-2 opacity-70 hover:opacity-100"
+          style={{ borderRadius: 'var(--radius-sm)' }}
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />

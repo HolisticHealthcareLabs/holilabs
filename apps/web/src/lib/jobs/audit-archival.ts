@@ -50,15 +50,6 @@ export interface ArchiveResult {
 }
 
 /**
- * Deletion result interface
- */
-export interface DeletionResult {
-  success: boolean;
-  deletedCount?: number;
-  error?: string;
-}
-
-/**
  * Daily job: Archive audit logs older than 1 year
  *
  * Process:
@@ -176,16 +167,16 @@ export async function archiveOldAuditLogs(): Promise<ArchiveResult> {
       compressionRatio: `${((compressedSize / Buffer.byteLength(jsonContent)) * 100).toFixed(1)}%`,
     });
 
-    // Delete archived logs from database (atomic transaction)
-    const deletedCount = await prisma.$transaction(async (tx) => {
-      const result = await tx.auditLog.deleteMany({
-        where: {
-          timestamp: {
-            lt: archivalThreshold,
-          },
-        },
-      });
-      return result.count;
+    // Soft-archive logs (CYRUS CVI-004/005: audit records are immutable per LGPD Art. 37)
+    const archivedCount = await prisma.auditLog.updateMany({
+      where: {
+        timestamp: { lt: archivalThreshold },
+        archived: false,
+      },
+      data: {
+        archived: true,
+        archivedAt: new Date(),
+      },
     });
 
     const duration = Date.now() - startTime;
@@ -194,7 +185,7 @@ export async function archiveOldAuditLogs(): Promise<ArchiveResult> {
       event: 'audit_archival_complete',
       archiveFile: archiveFilePath,
       recordCount: allLogs.length,
-      deletedCount,
+      archivedCount: archivedCount.count,
       compressedSize,
       durationMs: duration,
       durationSeconds: (duration / 1000).toFixed(2),
@@ -209,93 +200,6 @@ export async function archiveOldAuditLogs(): Promise<ArchiveResult> {
   } catch (error) {
     logger.error({
       event: 'audit_archival_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Annual job: Delete audit logs older than 6 years
- *
- * HIPAA allows deletion after 6 years from the date of creation or last use.
- * This job should run less frequently (annually) and delete very old logs.
- */
-export async function deleteExpiredAuditLogs(): Promise<DeletionResult> {
-  const startTime = Date.now();
-
-  try {
-    // Calculate deletion threshold (logs older than 6 years)
-    const deletionThreshold = new Date();
-    deletionThreshold.setDate(deletionThreshold.getDate() - DELETION_AGE_DAYS);
-
-    logger.info({
-      event: 'audit_deletion_start',
-      threshold: deletionThreshold.toISOString(),
-      deletionAgeDays: DELETION_AGE_DAYS,
-    });
-
-    // Count logs to be deleted
-    const logsToDeleteCount = await prisma.auditLog.count({
-      where: {
-        timestamp: {
-          lt: deletionThreshold,
-        },
-      },
-    });
-
-    if (logsToDeleteCount === 0) {
-      logger.info({
-        event: 'audit_deletion_skipped',
-        reason: 'no_logs_to_delete',
-      });
-      return {
-        success: true,
-        deletedCount: 0,
-      };
-    }
-
-    logger.warn({
-      event: 'audit_deletion_logs_found',
-      count: logsToDeleteCount,
-      threshold: deletionThreshold.toISOString(),
-      message: 'Logs older than 6 years will be permanently deleted',
-    });
-
-    // Delete logs in a transaction
-    const deletedCount = await prisma.$transaction(async (tx) => {
-      const result = await tx.auditLog.deleteMany({
-        where: {
-          timestamp: {
-            lt: deletionThreshold,
-          },
-        },
-      });
-      return result.count;
-    });
-
-    const duration = Date.now() - startTime;
-
-    logger.warn({
-      event: 'audit_deletion_complete',
-      deletedCount,
-      durationMs: duration,
-      durationSeconds: (duration / 1000).toFixed(2),
-      message: 'Audit logs permanently deleted per HIPAA 6-year retention policy',
-    });
-
-    return {
-      success: true,
-      deletedCount,
-    };
-  } catch (error) {
-    logger.error({
-      event: 'audit_deletion_error',
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

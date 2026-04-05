@@ -36,6 +36,7 @@ jest.mock('fs', () => ({
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
 }));
 

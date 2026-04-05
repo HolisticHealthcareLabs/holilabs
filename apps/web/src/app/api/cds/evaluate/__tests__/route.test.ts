@@ -9,7 +9,7 @@ jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
 }));
 
-jest.mock('uuid');
+jest.mock('uuid', () => ({ v4: jest.fn(() => 'test-uuid-1234') }));
 jest.mock('@/lib/clinical/safety/doac-evaluator');
 jest.mock('@/lib/cds/engines/cds-engine');
 jest.mock('@/lib/clinical/safety/governance-events');
@@ -50,7 +50,6 @@ describe('POST /api/cds/evaluate', () => {
   };
 
   beforeEach(() => {
-    (uuidv4 as jest.Mock).mockReturnValue('test-uuid-1234');
     (cdsEngine.evaluate as jest.Mock).mockResolvedValue(emptyEngineResult);
     (cdsEngine.getRules as jest.Mock).mockReturnValue([]);
     (getGovernanceMetadata as jest.Mock).mockReturnValue(GOVERNANCE_META);

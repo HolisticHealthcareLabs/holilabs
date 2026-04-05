@@ -1,137 +1,227 @@
 'use client';
 
 /**
- * Toast Notification Component
- * Real-time popup notifications with auto-dismiss
- * FREE - No external toast library needed
+ * ToastProvider + useToast — Step 4
  *
- * Features:
- * - Auto-dismiss after 5 seconds
- * - Different types: success, info, warning, error
- * - Slide-in animation
- * - Click to navigate
- * - Stacked notifications
+ * Context-aware toast system:
+ * - Only renders toasts when useNotificationMode() === 'active'
+ * - Suppressed entirely on clinical-command and encounter pages
+ * - Position: bottom-right desktop, bottom-center mobile
+ * - Stack max 3, newest on top
+ * - Auto-dismiss: 8s default, 0 = sticky (error/warning)
+ * - Reduced motion: instant show/hide
+ * - aria-live="polite" (assertive for errors)
+ * - Design-token-only styling.
  */
 
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useNotificationMode } from '@/hooks/useNotificationMode';
 
-export interface Toast {
+/* ── Types ──────────────────────────────────────────────────────── */
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastMessage {
   id: string;
-  type: 'success' | 'info' | 'warning' | 'error';
-  title: string;
+  type: ToastType;
+  title?: string;
   message: string;
-  action?: {
-    label: string;
-    href: string;
-  };
   duration?: number;
 }
 
-interface NotificationToastProps {
-  toasts: Toast[];
-  onDismiss: (id: string) => void;
+interface ToastAPI {
+  success: (message: string, duration?: number) => void;
+  error: (message: string) => void;
+  warning: (message: string) => void;
+  info: (message: string, duration?: number) => void;
 }
 
-export default function NotificationToast({ toasts, onDismiss }: NotificationToastProps) {
-  // Auto-dismiss toasts
-  useEffect(() => {
-    toasts.forEach((toast) => {
-      const duration = toast.duration || 5000;
-      const timer = setTimeout(() => {
-        onDismiss(toast.id);
-      }, duration);
+interface ToastContextValue {
+  toast: ToastAPI;
+}
 
-      return () => clearTimeout(timer);
-    });
-  }, [toasts, onDismiss]);
+/* ── Context ────────────────────────────────────────────────────── */
 
-  const getIcon = (type: Toast['type']) => {
-    switch (type) {
-      case 'success':
-        return (
-          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
-      case 'info':
-        return (
-          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
-      case 'warning':
-        return (
-          <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        );
-      case 'error':
-        return (
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
-    }
-  };
+const ToastContext = createContext<ToastContextValue | null>(null);
 
-  const getColors = (type: Toast['type']) => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'info':
-        return 'bg-blue-50 border-blue-200';
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-    }
+export function useToast(): ToastAPI {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
+  return ctx.toast;
+}
+
+/* ── Config ─────────────────────────────────────────────────────── */
+
+const TYPE_STYLES: Record<ToastType, { icon: string; bg: string; fg: string; ariaLive: 'polite' | 'assertive' }> = {
+  success: {
+    icon: '✓',
+    bg: 'color-mix(in srgb, var(--severity-minimal) 15%, var(--surface-elevated))',
+    fg: 'var(--severity-minimal)',
+    ariaLive: 'polite',
+  },
+  error: {
+    icon: '✕',
+    bg: 'color-mix(in srgb, var(--severity-critical) 15%, var(--surface-elevated))',
+    fg: 'var(--severity-critical)',
+    ariaLive: 'assertive',
+  },
+  warning: {
+    icon: '⚠',
+    bg: 'color-mix(in srgb, var(--severity-mild) 15%, var(--surface-elevated))',
+    fg: 'var(--severity-mild)',
+    ariaLive: 'assertive',
+  },
+  info: {
+    icon: 'ℹ',
+    bg: 'color-mix(in srgb, var(--channel-sms) 15%, var(--surface-elevated))',
+    fg: 'var(--channel-sms)',
+    ariaLive: 'polite',
+  },
+};
+
+const DEFAULT_DURATIONS: Record<ToastType, number> = {
+  success: 5000,
+  info: 5000,
+  warning: 0,
+  error: 0,
+};
+
+/* ── Animations ─────────────────────────────────────────────────── */
+
+const TOAST_ANIM = {
+  hidden: { opacity: 0, y: 16, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 22, stiffness: 300 } },
+  exit: { opacity: 0, x: 60, transition: { duration: 0.15 } },
+};
+
+/* ── Provider ───────────────────────────────────────────────────── */
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const idRef = useRef(0);
+  const mode = useNotificationMode();
+  const prefersReduced = usePrefersReducedMotion();
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const addToast = useCallback(
+    (type: ToastType, message: string, duration?: number) => {
+      const id = `toast-${++idRef.current}`;
+      const finalDuration = duration ?? DEFAULT_DURATIONS[type];
+
+      setToasts((prev) => {
+        const next = [...prev, { id, type, message, duration: finalDuration }];
+        return next.length > 3 ? next.slice(-3) : next;
+      });
+
+      if (finalDuration > 0) {
+        setTimeout(() => removeToast(id), finalDuration);
+      }
+    },
+    [removeToast]
+  );
+
+  const toastAPI: ToastAPI = {
+    success: (msg, dur) => addToast('success', msg, dur),
+    error: (msg) => addToast('error', msg),
+    warning: (msg) => addToast('warning', msg),
+    info: (msg, dur) => addToast('info', msg, dur),
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-md">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, x: 100, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className={`${getColors(toast.type)} border-2 rounded-xl shadow-lg p-4 cursor-pointer hover:shadow-xl transition-shadow`}
-            onClick={() => {
-              if (toast.action?.href) {
-                window.location.href = toast.action.href;
-              }
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">{getIcon(toast.type)}</div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-gray-900 text-sm mb-1">{toast.title}</h4>
-                <p className="text-sm text-gray-700">{toast.message}</p>
-                {toast.action && (
-                  <button className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-                    {toast.action.label} →
+    <ToastContext.Provider value={{ toast: toastAPI }}>
+      {children}
+
+      {/* Only render toasts in active mode */}
+      {mode === 'active' && (
+        <div
+          className="fixed z-50 flex flex-col gap-2 pointer-events-none"
+          style={{
+            bottom: 'var(--space-lg)',
+            right: 'var(--space-lg)',
+            maxWidth: '380px',
+            width: '100%',
+          }}
+          aria-label="Notifications"
+        >
+          <AnimatePresence>
+            {toasts.map((toast) => {
+              const config = TYPE_STYLES[toast.type];
+              return (
+                <motion.div
+                  key={toast.id}
+                  layout
+                  variants={prefersReduced ? undefined : TOAST_ANIM}
+                  initial={prefersReduced ? undefined : 'hidden'}
+                  animate={prefersReduced ? undefined : 'visible'}
+                  exit={prefersReduced ? undefined : 'exit'}
+                  role="status"
+                  aria-live={config.ariaLive}
+                  aria-atomic="true"
+                  className="pointer-events-auto flex items-start gap-3"
+                  style={{
+                    padding: 'var(--space-md)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: config.bg,
+                    border: `1px solid color-mix(in srgb, ${config.fg} 25%, transparent)`,
+                    boxShadow: 'var(--token-shadow-md)',
+                  }}
+                >
+                  {/* Icon */}
+                  <span
+                    className="shrink-0 flex items-center justify-center rounded-full font-bold"
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      fontSize: '13px',
+                      background: `color-mix(in srgb, ${config.fg} 20%, transparent)`,
+                      color: config.fg,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {config.icon}
+                  </span>
+
+                  {/* Content */}
+                  <p
+                    className="flex-1 min-w-0"
+                    style={{
+                      fontSize: 'var(--text-body)',
+                      color: 'var(--text-primary)',
+                      lineHeight: 'var(--leading-normal)',
+                    }}
+                  >
+                    {toast.message}
+                  </p>
+
+                  {/* Dismiss */}
+                  <button
+                    onClick={() => removeToast(toast.id)}
+                    className="shrink-0 flex items-center justify-center"
+                    style={{
+                      width: 'var(--touch-sm)',
+                      height: 'var(--touch-sm)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--text-tertiary)',
+                    }}
+                    aria-label="Dismiss"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
                   </button>
-                )}
-              </div>
-              {/* Decorative - low contrast intentional for close button icon */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDismiss(toast.id);
-                }}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+    </ToastContext.Provider>
   );
 }
+
+export default ToastProvider;

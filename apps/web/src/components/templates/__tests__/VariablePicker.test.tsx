@@ -15,14 +15,14 @@ import { VariablePicker } from '../VariablePicker';
 describe('VariablePicker', () => {
   it('renders the variable picker toggle button', () => {
     render(<VariablePicker onVariableSelect={jest.fn()} />);
-    expect(screen.getByText(/Variables|variables/i)).toBeInTheDocument();
+    expect(screen.getByText(/Insertar Variable|Variables|variables/i)).toBeInTheDocument();
   });
 
   it('expands to show variable categories when clicked', () => {
     render(<VariablePicker onVariableSelect={jest.fn()} />);
     const toggle = screen.getByRole('button');
     fireEvent.click(toggle);
-    expect(screen.getByText(/Paciente|Patient/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Paciente|Patient/i).length).toBeGreaterThan(0);
   });
 
   it('calls onVariableSelect when a variable is clicked', () => {

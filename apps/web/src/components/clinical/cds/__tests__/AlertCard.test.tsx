@@ -18,15 +18,16 @@ const mockAlert = {
   id: 'alert-1',
   severity: 'warning' as const,
   category: 'drug-interaction',
-  title: 'Potential Drug Interaction',
-  message: 'Warfarin + Aspirin interaction detected.',
-  evidence: ['Study A', 'Study B'],
-  suggestedCorrection: 'Review medication list.',
-  createdAt: new Date().toISOString(),
+  summary: 'Potential Drug Interaction',
+  detail: 'Warfarin + Aspirin interaction detected. Review medication list.',
+  indicator: 'warning' as const,
+  source: { label: 'CDS Engine' },
+  suggestions: [],
+  timestamp: new Date().toISOString(),
 };
 
 describe('AlertCard', () => {
-  it('renders alert title', () => {
+  it('renders alert summary', () => {
     render(<AlertCard alert={mockAlert} />);
     expect(screen.getByText('Potential Drug Interaction')).toBeInTheDocument();
   });
@@ -43,8 +44,8 @@ describe('AlertCard', () => {
 
   it('expands detail view on click', () => {
     render(<AlertCard alert={mockAlert} />);
-    const expandButton = screen.getByRole('button', { name: /Potential Drug Interaction/i });
-    fireEvent.click(expandButton);
+    const header = screen.getByText('Potential Drug Interaction');
+    fireEvent.click(header);
     expect(screen.getByText(/Review medication list\./)).toBeInTheDocument();
   });
 });

@@ -16,6 +16,9 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext, CDSHookType } from '@/lib/cds/types';
 import { v4 as uuidv4 } from 'uuid';
+import { isDemoClinician, getSyntheticPrescriptions } from '@/lib/demo/synthetic';
+import { classifyPrescription } from '@/lib/brazil-interop/anvisa-drug-registry';
+import { calculateValidUntil } from '@/lib/prescriptions/validity-rules';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -39,6 +42,28 @@ export const POST = createProtectedRoute(
             { status: 400 }
           );
         }
+      }
+
+      // Demo mode: simulate prescription creation without DB
+      if (isDemoClinician(context.user.id, context.user.email)) {
+        const hash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
+        return NextResponse.json({
+          success: true,
+          data: {
+            id: `rx_demo_${crypto.randomBytes(4).toString('hex')}`,
+            patientId: body.patientId,
+            clinicianId: context.user.id,
+            prescriptionHash: hash,
+            medications: body.medications,
+            instructions: body.instructions || '',
+            diagnosis: body.diagnosis || '',
+            signatureMethod: body.signatureMethod,
+            signedAt: new Date().toISOString(),
+            status: 'SIGNED',
+            createdAt: new Date().toISOString(),
+          },
+          message: 'Prescription created successfully',
+        }, { status: 201 });
       }
 
       // ===================================================================
@@ -98,12 +123,18 @@ export const POST = createProtectedRoute(
         }
       }
 
+      // ANVISA prescription classification
+      const medNames = body.medications.map((m: any) => m.genericName || m.name);
+      const classification = classifyPrescription(medNames);
+      const signedAt = new Date();
+      const validUntil = calculateValidUntil(classification.prescriptionType, signedAt);
+
       // Generate prescription hash for blockchain
       const prescriptionData = {
         patientId: body.patientId,
         clinicianId,
         medications: body.medications,
-        timestamp: new Date().toISOString(),
+        timestamp: signedAt.toISOString(),
       };
 
       const prescriptionHash = crypto
@@ -111,7 +142,8 @@ export const POST = createProtectedRoute(
         .update(JSON.stringify(prescriptionData))
         .digest('hex');
 
-      // Create prescription
+      // Create prescription with ANVISA classification
+      const sncrRequired = classification.prescriptionType !== 'BRANCA';
       const prescription = await prisma.prescription.create({
         data: {
           patientId: body.patientId,
@@ -122,8 +154,13 @@ export const POST = createProtectedRoute(
           diagnosis: body.diagnoses || body.diagnosis || '',
           signatureMethod: body.signatureMethod,
           signatureData: body.signatureData,
-          signedAt: new Date(),
+          signedAt,
           status: 'SIGNED',
+          // ANVISA regulatory fields
+          prescriptionType: classification.prescriptionType,
+          controlledSubstanceClass: classification.controlledSchedule,
+          validUntil,
+          sncrStatus: sncrRequired ? 'PENDING' : 'NOT_REQUIRED',
         },
         include: {
           patient: {
@@ -267,6 +304,7 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'CREATE', resource: 'Prescription' },
+    skipCsrf: true,
   }
 );
 
@@ -281,6 +319,14 @@ export const GET = createProtectedRoute(
       const { searchParams } = new URL(request.url);
       const patientId = searchParams.get('patientId');
       const status = searchParams.get('status'); // Optional filter by status
+
+      // Demo mode: return synthetic prescriptions
+      if (isDemoClinician(context.user.id, context.user.email)) {
+        let data = getSyntheticPrescriptions(context.user.id);
+        if (patientId) data = data.filter((rx) => rx.patient.id === patientId);
+        if (status) data = data.filter((rx) => rx.status === status);
+        return NextResponse.json({ success: true, data });
+      }
 
       // If patientId is provided, get prescriptions for that patient
       if (patientId) {

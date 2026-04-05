@@ -1,0 +1,406 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "timezone": "America/Sao_Paulo",
+  "currency": "BRL",
+  "note": "Consumable by prisma/seed.ts — each key maps to a Prisma model. Use prisma.model.createMany() or loop with prisma.model.create().",
+
+  "organizations": [
+    {
+      "id": "org_holilabs_demo",
+      "name": "Clínica HoliLabs São Paulo",
+      "slug": "holilabs-sp",
+      "cnpj": "12.345.678/0001-90",
+      "cnes": "2345678",
+      "address": "Av. Paulista, 1000, Sala 301, São Paulo - SP, 01310-100",
+      "phone": "+551134567890",
+      "timezone": "America/Sao_Paulo"
+    }
+  ],
+
+  "users": [
+    {
+      "id": "user_dr_ricardo",
+      "name": "Dr. Ricardo Augusto Mendes",
+      "email": "ricardo@holilabs.demo",
+      "role": "CLINICIAN",
+      "crm": "CRM/SP 123456",
+      "specialty": "Clínica Médica",
+      "organizationId": "org_holilabs_demo",
+      "preferredAiModel": "claude-sonnet-4-20250514",
+      "firstRunCompleted": false
+    },
+    {
+      "id": "user_billing_ana",
+      "name": "Ana Cristina Figueiredo",
+      "email": "ana.billing@holilabs.demo",
+      "role": "BILLING",
+      "organizationId": "org_holilabs_demo",
+      "firstRunCompleted": true
+    },
+    {
+      "id": "user_admin_marcos",
+      "name": "Marcos Eduardo Tavares",
+      "email": "marcos.admin@holilabs.demo",
+      "role": "ORG_ADMIN",
+      "organizationId": "org_holilabs_demo",
+      "firstRunCompleted": true
+    }
+  ],
+
+  "patients": [
+    { "id": "pat_01", "firstName": "João Carlos", "lastName": "da Silva", "cpf": "12345678909", "cns": "700501234567890", "dateOfBirth": "1959-04-15", "sex": "M", "phone": "+5511987654321", "email": "joao.silva@email.com", "address": "Rua Augusta, 1234, Apto 56, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_02", "firstName": "Maria Aparecida", "lastName": "Santos", "cpf": "23456789012", "cns": "700502345678901", "dateOfBirth": "1974-08-22", "sex": "F", "phone": "+5511976543210", "email": "maria.santos@email.com", "address": "Rua Oscar Freire, 567, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_03", "firstName": "Carlos Eduardo", "lastName": "Oliveira", "cpf": "34567890123", "cns": "700503456789012", "dateOfBirth": "1981-01-10", "sex": "M", "phone": "+5511965432109", "email": "carlos.oliveira@email.com", "address": "Rua Consolação, 890, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_04", "firstName": "Ana Paula", "lastName": "Ferreira", "cpf": "45678901234", "cns": "700504567890123", "dateOfBirth": "1988-05-30", "sex": "F", "phone": "+5511954321098", "email": "ana.ferreira@email.com", "address": "Av. Rebouças, 234, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_05", "firstName": "Roberto", "lastName": "Almeida Neto", "cpf": "56789012345", "cns": "700505678901234", "dateOfBirth": "1955-11-03", "sex": "M", "phone": "+5511943210987", "email": "roberto.almeida@email.com", "address": "Rua Haddock Lobo, 456, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_06", "firstName": "Luciana Barbosa", "lastName": "Costa", "cpf": "67890123456", "cns": "700506789012345", "dateOfBirth": "1997-03-18", "sex": "F", "phone": "+5511932109876", "email": "luciana.costa@email.com", "address": "Rua Bela Cintra, 789, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_07", "firstName": "Fernando Henrique", "lastName": "Souza", "cpf": "78901234567", "cns": "700507890123456", "dateOfBirth": "1971-09-25", "sex": "M", "phone": "+5511921098765", "email": "fernando.souza@email.com", "address": "Rua da Consolação, 1200, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_08", "firstName": "Juliana Moreira", "lastName": "Lima", "cpf": "89012345678", "cns": "700508901234567", "dateOfBirth": "1983-07-14", "sex": "F", "phone": "+5511910987654", "email": "juliana.lima@email.com", "address": "Av. Brigadeiro Faria Lima, 345, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_09", "firstName": "Pedro Augusto", "lastName": "Mendes", "cpf": "90123456789", "cns": "700509012345678", "dateOfBirth": "1964-02-28", "sex": "M", "phone": "+5511909876543", "email": "pedro.mendes@email.com", "address": "Rua Pamplona, 678, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_10", "firstName": "Camila Rocha", "lastName": "Pereira", "cpf": "01234567890", "cns": "700500123456789", "dateOfBirth": "1991-12-05", "sex": "F", "phone": "+5511998765432", "email": "camila.pereira@email.com", "address": "Rua Alameda Santos, 901, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_11", "firstName": "Marcos Vinícius", "lastName": "Gomes", "cpf": "11122233344", "cns": "700511122233344", "dateOfBirth": "1978-06-20", "sex": "M", "phone": "+5511988776655", "email": "marcos.gomes@email.com", "address": "Rua Itapeva, 111, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_12", "firstName": "Beatriz Helena", "lastName": "Martins", "cpf": "22233344455", "cns": "700522233344455", "dateOfBirth": "1969-10-12", "sex": "F", "phone": "+5511977665544", "email": "beatriz.martins@email.com", "address": "Av. Angélica, 222, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_13", "firstName": "Thiago", "lastName": "Nascimento", "cpf": "33344455566", "cns": "700533344455566", "dateOfBirth": "1993-04-08", "sex": "M", "phone": "+5511966554433", "email": "thiago.nascimento@email.com", "address": "Rua Maria Figueiredo, 333, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_14", "firstName": "Patrícia", "lastName": "de Andrade", "cpf": "44455566677", "cns": "700544455566677", "dateOfBirth": "1985-11-27", "sex": "F", "phone": "+5511955443322", "email": "patricia.andrade@email.com", "address": "Rua Bela Vista, 444, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_15", "firstName": "Ricardo José", "lastName": "Pinto", "cpf": "55566677788", "cns": "700555566677788", "dateOfBirth": "1967-08-19", "sex": "M", "phone": "+5511944332211", "email": "ricardo.pinto@email.com", "address": "Rua Cardeal Arcoverde, 555, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_16", "firstName": "Adriana Cunha", "lastName": "Ribeiro", "cpf": "66677788899", "cns": "700566677788899", "dateOfBirth": "2000-01-15", "sex": "F", "phone": "+5511933221100", "email": "adriana.ribeiro@email.com", "address": "Rua dos Pinheiros, 666, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_17", "firstName": "Daniel Freitas", "lastName": "Araújo", "cpf": "77788899900", "cns": "700577788899900", "dateOfBirth": "1976-05-11", "sex": "M", "phone": "+5511922110099", "email": "daniel.araujo@email.com", "address": "Av. Nove de Julho, 777, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_18", "firstName": "Fernanda Lopes", "lastName": "Carvalho", "cpf": "88899900011", "cns": "700588899900011", "dateOfBirth": "1962-03-23", "sex": "F", "phone": "+5511911009988", "email": "fernanda.carvalho@email.com", "address": "Rua Vergueiro, 888, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_19", "firstName": "Gabriel Santos", "lastName": "Machado", "cpf": "99900011122", "cns": "700599900011122", "dateOfBirth": "1989-09-07", "sex": "M", "phone": "+5511900998877", "email": "gabriel.machado@email.com", "address": "Rua Tutóia, 999, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_20", "firstName": "Isabela Duarte", "lastName": "Correia", "cpf": "10011122233", "cns": "700510011122233", "dateOfBirth": "1982-07-30", "sex": "F", "phone": "+5511899887766", "email": "isabela.correia@email.com", "address": "Rua Cardoso de Almeida, 100, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_21", "firstName": "Antônio Marcos", "lastName": "Teixeira", "cpf": "20022233344", "cns": "700520022233344", "dateOfBirth": "1953-12-01", "sex": "M", "phone": "+5511888776655", "email": "antonio.teixeira@email.com", "address": "Rua Alves Guimarães, 200, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_22", "firstName": "Renata Vieira", "lastName": "Campos", "cpf": "30033344455", "cns": "700530033344455", "dateOfBirth": "1995-06-14", "sex": "F", "phone": "+5511877665544", "email": "renata.campos@email.com", "address": "Rua Harmonia, 300, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_23", "firstName": "Luís Felipe", "lastName": "Batista", "cpf": "40044455566", "cns": "700540044455566", "dateOfBirth": "1970-10-09", "sex": "M", "phone": "+5511866554433", "email": "luis.batista@email.com", "address": "Rua Purpurina, 400, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_24", "firstName": "Vanessa Cardoso", "lastName": "Dias", "cpf": "50055566677", "cns": "700550055566677", "dateOfBirth": "1979-04-22", "sex": "F", "phone": "+5511855443322", "email": "vanessa.dias@email.com", "address": "Rua Mourato Coelho, 500, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_25", "firstName": "Henrique", "lastName": "Monteiro", "cpf": "60066677788", "cns": "700560066677788", "dateOfBirth": "1987-08-03", "sex": "M", "phone": "+5511844332211", "email": "henrique.monteiro@email.com", "address": "Rua Fidalga, 600, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_26", "firstName": "Cristiane", "lastName": "Ramos", "cpf": "70077788899", "cns": "700570077788899", "dateOfBirth": "1973-01-28", "sex": "F", "phone": "+5511833221100", "email": "cristiane.ramos@email.com", "address": "Rua Aspicuelta, 700, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_27", "firstName": "Marcelo", "lastName": "Azevedo", "cpf": "80088899900", "cns": "700580088899900", "dateOfBirth": "1958-06-17", "sex": "M", "phone": "+5511822110099", "email": "marcelo.azevedo@email.com", "address": "Rua Girassol, 800, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_28", "firstName": "Carolina", "lastName": "Fonseca", "cpf": "90099900011", "cns": "700590099900011", "dateOfBirth": "1984-11-11", "sex": "F", "phone": "+5511811009988", "email": "carolina.fonseca@email.com", "address": "Rua Wisard, 900, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_29", "firstName": "Eduardo", "lastName": "Barros", "cpf": "11010011122", "cns": "700511010011122", "dateOfBirth": "1966-02-14", "sex": "M", "phone": "+5511800998877", "email": "eduardo.barros@email.com", "address": "Rua Sumidouro, 110, São Paulo - SP", "organizationId": "org_holilabs_demo" },
+    { "id": "pat_30", "firstName": "Amanda Pires", "lastName": "Sampaio", "cpf": "12020022233", "cns": "700512020022233", "dateOfBirth": "2024-03-10", "sex": "F", "phone": "+5511799887766", "email": "pires.familia@email.com", "address": "Rua Artur de Azevedo, 120, São Paulo - SP", "organizationId": "org_holilabs_demo" }
+  ],
+
+  "billingCodes": {
+    "icd10": [
+      { "code": "I10", "description": "Hipertensão essencial (primária)", "category": "IX", "chapter": "Doenças do aparelho circulatório" },
+      { "code": "I50.0", "description": "Insuficiência cardíaca congestiva", "category": "IX", "chapter": "Doenças do aparelho circulatório" },
+      { "code": "I50.9", "description": "Insuficiência cardíaca não especificada", "category": "IX", "chapter": "Doenças do aparelho circulatório" },
+      { "code": "I25.1", "description": "Doença aterosclerótica do coração", "category": "IX", "chapter": "Doenças do aparelho circulatório" },
+      { "code": "I20.0", "description": "Angina instável", "category": "IX", "chapter": "Doenças do aparelho circulatório" },
+      { "code": "E11.9", "description": "Diabetes mellitus tipo 2 sem complicações", "category": "IV", "chapter": "Doenças endócrinas" },
+      { "code": "E11.6", "description": "Diabetes mellitus tipo 2 com complicações múltiplas", "category": "IV", "chapter": "Doenças endócrinas" },
+      { "code": "E78.5", "description": "Hiperlipidemia não especificada", "category": "IV", "chapter": "Doenças endócrinas" },
+      { "code": "E78.0", "description": "Hipercolesterolemia pura", "category": "IV", "chapter": "Doenças endócrinas" },
+      { "code": "E55.9", "description": "Deficiência de vitamina D não especificada", "category": "IV", "chapter": "Doenças endócrinas" },
+      { "code": "J06.9", "description": "Infecção aguda das vias aéreas superiores", "category": "X", "chapter": "Doenças do aparelho respiratório" },
+      { "code": "D50.9", "description": "Anemia por deficiência de ferro não especificada", "category": "III", "chapter": "Doenças do sangue" },
+      { "code": "M54.5", "description": "Dor lombar baixa", "category": "XIII", "chapter": "Doenças do sistema osteomuscular" },
+      { "code": "M81.0", "description": "Osteoporose pós-menopáusica", "category": "XIII", "chapter": "Doenças do sistema osteomuscular" },
+      { "code": "F41.1", "description": "Transtorno de ansiedade generalizada", "category": "V", "chapter": "Transtornos mentais" },
+      { "code": "F32.1", "description": "Episódio depressivo moderado", "category": "V", "chapter": "Transtornos mentais" },
+      { "code": "N39.0", "description": "Infecção do trato urinário, local não especificado", "category": "XIV", "chapter": "Doenças do aparelho geniturinário" },
+      { "code": "Z00.0", "description": "Exame médico geral", "category": "XXI", "chapter": "Fatores que influenciam o estado de saúde" },
+      { "code": "Z12.3", "description": "Rastreamento especial de neoplasia de mama", "category": "XXI", "chapter": "Fatores que influenciam o estado de saúde" },
+      { "code": "Z30.0", "description": "Aconselhamento geral sobre contracepção", "category": "XXI", "chapter": "Fatores que influenciam o estado de saúde" }
+    ],
+    "loinc": [
+      { "code": "58410-2", "component": "Complete blood count", "system": "Blood", "method": "Automated count" },
+      { "code": "57698-3", "component": "Lipid panel", "system": "Serum/Plasma", "method": "Calculated" },
+      { "code": "4548-4", "component": "Hemoglobin A1c", "system": "Blood", "method": "HPLC" },
+      { "code": "1558-6", "component": "Fasting glucose", "system": "Serum/Plasma", "method": "Enzymatic" },
+      { "code": "3016-3", "component": "TSH", "system": "Serum/Plasma", "method": "Immunoassay" },
+      { "code": "2160-0", "component": "Creatinine", "system": "Serum/Plasma", "method": "Jaffe" },
+      { "code": "85354-9", "component": "Blood pressure panel", "system": "Arterial", "method": "Auscultation" },
+      { "code": "2823-3", "component": "Potassium", "system": "Serum/Plasma", "method": "ISE" },
+      { "code": "10839-9", "component": "Troponin I", "system": "Serum/Plasma", "method": "Immunoassay" },
+      { "code": "24606-6", "component": "Mammography", "system": "Breast", "method": "X-ray" }
+    ],
+    "snomed": [
+      { "conceptId": "185349003", "term": "Encounter for check up", "semanticTag": "procedure" },
+      { "conceptId": "390906007", "term": "Follow-up encounter", "semanticTag": "procedure" },
+      { "conceptId": "26604007", "term": "Complete blood count", "semanticTag": "procedure" },
+      { "conceptId": "271245006", "term": "Serum lipids measurement", "semanticTag": "procedure" },
+      { "conceptId": "43396009", "term": "Hemoglobin A1c measurement", "semanticTag": "procedure" },
+      { "conceptId": "29303009", "term": "Electrocardiographic procedure", "semanticTag": "procedure" },
+      { "conceptId": "71651007", "term": "Mammography", "semanticTag": "procedure" },
+      { "conceptId": "42343007", "term": "Congestive heart failure", "semanticTag": "disorder" },
+      { "conceptId": "44054006", "term": "Type 2 diabetes mellitus", "semanticTag": "disorder" },
+      { "conceptId": "38341003", "term": "Hypertensive disorder", "semanticTag": "disorder" }
+    ]
+  },
+
+  "encounters": [
+    {
+      "id": "enc_01",
+      "patientId": "pat_01",
+      "clinicianId": "user_dr_ricardo",
+      "organizationId": "org_holilabs_demo",
+      "status": "COMPLETED",
+      "startTime": "2026-03-28T10:00:00-03:00",
+      "endTime": "2026-03-28T10:30:00-03:00",
+      "reasonCode": "I10",
+      "soapNote": {
+        "subjective": "Paciente de 67 anos, masculino, comparece para consulta de rotina. Refere cefaleia occipital leve há 3 dias, sem outros sintomas associados. Nega dor torácica, dispneia ou palpitações. Em uso regular de Enalapril 10mg 2x/dia e Hidroclorotiazida 25mg 1x/dia.",
+        "objective": "PA: 162/95 mmHg (braço esquerdo, sentado). FC: 78 bpm. Peso: 86 kg. Altura: 1,72m. IMC: 29,1. Ausculta cardíaca: BNF em 2T, sem sopros. Ausculta pulmonar: MV presente bilateralmente, sem RA. Extremidades: sem edema.",
+        "assessment": "1. Hipertensão arterial sistêmica mal controlada (I10) — PA alvo <140/90 mmHg não atingida.\n2. Sobrepeso (IMC 29,1).\n3. Cefaleia possivelmente secundária à hipertensão.",
+        "plan": "1. Aumentar Enalapril para 20mg 2x/dia.\n2. Manter Hidroclorotiazida 25mg.\n3. Orientar dieta hipossódica e atividade física 150 min/semana.\n4. Solicitar: hemograma, perfil lipídico, creatinina, potássio, glicemia de jejum.\n5. Retorno em 30 dias com exames."
+      }
+    },
+    {
+      "id": "enc_02",
+      "patientId": "pat_02",
+      "clinicianId": "user_dr_ricardo",
+      "organizationId": "org_holilabs_demo",
+      "status": "COMPLETED",
+      "startTime": "2026-03-27T14:00:00-03:00",
+      "endTime": "2026-03-27T14:25:00-03:00",
+      "reasonCode": "E11.9",
+      "soapNote": {
+        "subjective": "Paciente de 52 anos, feminina, retorno para avaliação de diabetes tipo 2 diagnosticada há 2 anos. Refere boa adesão à Metformina 850mg 2x/dia. Nega poliúria, polidipsia ou perda de peso. Relata episódios de desconforto gástrico após a medicação.",
+        "objective": "PA: 128/82 mmHg. FC: 72 bpm. Peso: 78 kg. Altura: 1,60m. IMC: 30,5. HbA1c: 7,2% (meta <7%). Glicemia de jejum: 132 mg/dL. Creatinina: 0,9 mg/dL (TFGe 72 mL/min). UACR: 18 mg/g (normal).",
+        "assessment": "1. Diabetes mellitus tipo 2 com controle subótimo (HbA1c 7,2%, meta <7%).\n2. Obesidade grau I (IMC 30,5).\n3. Função renal preservada (TFGe 72, UACR normal).",
+        "plan": "1. Manter Metformina 850mg 2x/dia — tomar junto com as refeições para reduzir desconforto gástrico.\n2. Considerar adicionar SGLT2i (Dapagliflozina 10mg) dado IMC >30 e benefício cardiorrenal.\n3. Reforçar orientações dietéticas e atividade física.\n4. Solicitar: perfil lipídico, hemograma, TSH.\n5. Retorno em 3 meses com nova HbA1c."
+      }
+    },
+    {
+      "id": "enc_03",
+      "patientId": "pat_07",
+      "clinicianId": "user_dr_ricardo",
+      "organizationId": "org_holilabs_demo",
+      "status": "COMPLETED",
+      "startTime": "2026-03-26T09:00:00-03:00",
+      "endTime": "2026-03-26T09:40:00-03:00",
+      "reasonCode": "I20.0",
+      "soapNote": {
+        "subjective": "Paciente de 55 anos, masculino, relata episódio de dor torácica em aperto ontem à noite, duração de 5 minutos, irradiação para braço esquerdo, acompanhada de sudorese. Passou espontaneamente. Antecedentes: HAS, dislipidemia, ex-tabagista (parou há 2 anos, fumou 20 anos).",
+        "objective": "PA: 148/92 mmHg. FC: 88 bpm. SpO2: 96%. Afebril. Ausculta cardíaca: BNF em 2T, sem sopros. ECG: ritmo sinusal, sem alterações agudas de ST. Troponina I: 0,02 ng/mL (normal <0,04).",
+        "assessment": "1. Dor torácica sugestiva de angina instável (I20.0) — alto risco cardiovascular (HAS + dislipidemia + ex-tabagista).\n2. ECG e troponina normais — não exclui SCA de baixo risco.\n3. Hipertensão não controlada.",
+        "plan": "1. Encaminhar para cardiologia com urgência.\n2. Solicitar: ecocardiograma, teste ergométrico, troponina seriada (6h).\n3. Iniciar AAS 100mg/dia + Atorvastatina 40mg/dia.\n4. Orientar: procurar emergência se dor recorrer.\n5. Retorno em 1 semana ou antes se piora."
+      }
+    },
+    {
+      "id": "enc_04",
+      "patientId": "pat_09",
+      "clinicianId": "user_dr_ricardo",
+      "organizationId": "org_holilabs_demo",
+      "status": "COMPLETED",
+      "startTime": "2026-03-25T11:00:00-03:00",
+      "endTime": "2026-03-25T11:20:00-03:00",
+      "reasonCode": "F32.1",
+      "soapNote": {
+        "subjective": "Paciente de 62 anos, masculino, retorno após 1 mês de Sertralina 50mg/dia para depressão moderada. Relata melhora parcial do humor, ainda com insônia inicial e falta de energia pela manhã. Nega ideação suicida. PHQ-9 atual: 12 (era 18 há 1 mês).",
+        "objective": "Aparência: higiene adequada, contato visual presente. Humor: levemente deprimido. Afeto: restrito mas reativo. Pensamento: lógico, sem ideação suicida. Sono: relata insônia inicial. Apetite: melhorou.",
+        "assessment": "1. Episódio depressivo moderado (F32.1) em tratamento — resposta parcial à Sertralina (PHQ-9 18→12 em 4 semanas).\n2. Insônia residual.",
+        "plan": "1. Aumentar Sertralina para 100mg/dia.\n2. Adicionar higiene do sono (sem telas 1h antes de dormir, horário fixo).\n3. Encaminhar para psicoterapia (TCC) — solicitar ao CAPS de referência.\n4. Retorno em 4 semanas com novo PHQ-9.\n5. Se PHQ-9 não melhorar para <10 em 8 semanas, considerar associação medicamentosa."
+      }
+    },
+    {
+      "id": "enc_05",
+      "patientId": "pat_04",
+      "clinicianId": "user_dr_ricardo",
+      "organizationId": "org_holilabs_demo",
+      "status": "IN_PROGRESS",
+      "startTime": "2026-03-30T09:00:00-03:00",
+      "endTime": null,
+      "reasonCode": "J06.9",
+      "soapNote": {
+        "subjective": "Paciente de 38 anos, feminina, queixa de dor de garganta, coriza e tosse seca há 3 dias. Nega febre, dispneia ou dor torácica. Sem comorbidades. Vacinação contra gripe em dia.",
+        "objective": "T: 37,2°C. PA: 118/74 mmHg. FC: 76 bpm. Orofaringe: hiperemia leve, sem exsudato. Otoscopia: normal bilateral. Ausculta pulmonar: limpa bilateral.",
+        "assessment": "1. IVAS (infecção viral aguda das vias aéreas superiores) — quadro autolimitado.",
+        "plan": "Em elaboração..."
+      }
+    }
+  ],
+
+  "invoices": [
+    {
+      "id": "inv_01", "patientId": "pat_01", "encounterId": "enc_01", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0001", "status": "PAID", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-04-10", "paidAt": "2026-03-29T14:00:00-03:00",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "I10", "quantity": 1, "unitAmount": 250.00, "amount": 250.00 }
+      ]
+    },
+    {
+      "id": "inv_02", "patientId": "pat_01", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0002", "status": "PENDING", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-04-15",
+      "lineItems": [
+        { "description": "Hemograma completo", "tussCode": "40302040", "cbhpmCode": "4.03.02.04-0", "icd10Code": "I10", "quantity": 1, "unitAmount": 45.00, "amount": 45.00 },
+        { "description": "Perfil lipídico", "tussCode": "40301630", "cbhpmCode": "4.03.01.63-0", "icd10Code": "E78.5", "quantity": 1, "unitAmount": 85.00, "amount": 85.00 },
+        { "description": "Creatinina sérica", "tussCode": "40301370", "cbhpmCode": "4.03.01.37-0", "icd10Code": "I10", "quantity": 1, "unitAmount": 25.00, "amount": 25.00 },
+        { "description": "Potássio sérico", "tussCode": "40301591", "cbhpmCode": "4.03.01.59-1", "icd10Code": "I10", "quantity": 1, "unitAmount": 20.00, "amount": 20.00 },
+        { "description": "Glicemia de jejum", "tussCode": "40301397", "cbhpmCode": "4.03.01.39-7", "icd10Code": "E11.9", "quantity": 1, "unitAmount": 15.00, "amount": 15.00 }
+      ]
+    },
+    {
+      "id": "inv_03", "patientId": "pat_02", "encounterId": "enc_02", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0003", "status": "PAID", "paymentMethod": "CARD",
+      "dueDate": "2026-04-05", "paidAt": "2026-03-27T15:00:00-03:00",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "E11.9", "quantity": 1, "unitAmount": 300.00, "amount": 300.00 }
+      ]
+    },
+    {
+      "id": "inv_04", "patientId": "pat_07", "encounterId": "enc_03", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0004", "status": "PENDING", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-04-10",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "I20.0", "quantity": 1, "unitAmount": 250.00, "amount": 250.00 },
+        { "description": "ECG de repouso", "tussCode": "20101155", "cbhpmCode": "2.01.01.15-5", "icd10Code": "I20.0", "quantity": 1, "unitAmount": 180.00, "amount": 180.00 },
+        { "description": "Troponina I", "tussCode": "40304361", "cbhpmCode": "4.03.04.36-1", "icd10Code": "I20.0", "quantity": 2, "unitAmount": 120.00, "amount": 240.00 }
+      ]
+    },
+    {
+      "id": "inv_05", "patientId": "pat_05", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0005", "status": "OVERDUE", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-03-15",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "I10", "quantity": 1, "unitAmount": 250.00, "amount": 250.00 },
+        { "description": "ECG de repouso", "tussCode": "20101155", "cbhpmCode": "2.01.01.15-5", "icd10Code": "I10", "quantity": 1, "unitAmount": 180.00, "amount": 180.00 }
+      ]
+    },
+    {
+      "id": "inv_06", "patientId": "pat_04", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0006", "status": "PAID", "paymentMethod": "CASH",
+      "dueDate": "2026-03-30", "paidAt": "2026-03-30T09:30:00-03:00",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "J06.9", "quantity": 1, "unitAmount": 200.00, "amount": 200.00 }
+      ]
+    },
+    {
+      "id": "inv_07", "patientId": "pat_09", "encounterId": "enc_04", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0007", "status": "PAID", "paymentMethod": "CARD",
+      "dueDate": "2026-04-01", "paidAt": "2026-03-25T12:00:00-03:00",
+      "lineItems": [
+        { "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "F32.1", "quantity": 1, "unitAmount": 300.00, "amount": 300.00 }
+      ]
+    },
+    {
+      "id": "inv_08", "patientId": "pat_08", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0008", "status": "PAID", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-04-05", "paidAt": "2026-03-22T10:00:00-03:00",
+      "lineItems": [
+        { "description": "Mamografia bilateral", "tussCode": "40901114", "cbhpmCode": "4.09.01.11-4", "icd10Code": "Z12.3", "quantity": 1, "unitAmount": 220.00, "amount": 220.00 }
+      ]
+    },
+    {
+      "id": "inv_09", "patientId": "pat_15", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0009", "status": "PAID", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-03-28", "paidAt": "2026-03-20T16:00:00-03:00",
+      "lineItems": [
+        { "description": "Ecocardiograma transtorácico", "tussCode": "20101015", "cbhpmCode": "2.01.01.01-5", "icd10Code": "I25.1", "quantity": 1, "unitAmount": 450.00, "amount": 450.00 }
+      ]
+    },
+    {
+      "id": "inv_10", "patientId": "pat_18", "organizationId": "org_holilabs_demo", "createdById": "user_billing_ana",
+      "invoiceNumber": "HLB-2026-0010", "status": "PENDING", "paymentMethod": "INSURANCE",
+      "dueDate": "2026-04-15",
+      "lineItems": [
+        { "description": "Densitometria óssea", "tussCode": "40901254", "cbhpmCode": "4.09.01.25-4", "icd10Code": "M81.0", "quantity": 1, "unitAmount": 380.00, "amount": 380.00 }
+      ]
+    }
+  ],
+
+  "conversations": [
+    {
+      "id": "conv_01", "patientId": "pat_01", "organizationId": "org_holilabs_demo",
+      "channelType": "WHATSAPP", "status": "ACTIVE", "lastMessageAt": "2026-03-29T13:10:00-03:00",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Olá João! Lembramos que sua consulta com Dr. Ricardo é amanhã às 10h. Confirma presença?", "status": "DELIVERED", "createdAt": "2026-03-27T10:00:00-03:00", "sentById": "user_billing_ana" },
+        { "direction": "INBOUND", "content": "Bom dia! Sim, confirmo. Preciso levar algum exame?", "status": "READ", "createdAt": "2026-03-27T11:00:00-03:00" },
+        { "direction": "OUTBOUND", "content": "Traga os exames de sangue que fez na última semana. Até amanhã!", "status": "READ", "createdAt": "2026-03-27T11:10:00-03:00", "sentById": "user_dr_ricardo" }
+      ]
+    },
+    {
+      "id": "conv_02", "patientId": "pat_02", "organizationId": "org_holilabs_demo",
+      "channelType": "WHATSAPP", "status": "ACTIVE", "lastMessageAt": "2026-03-29T17:50:00-03:00",
+      "messages": [
+        { "direction": "INBOUND", "content": "Dra., estou com dúvida sobre a dosagem da Metformina. É 500mg ou 850mg?", "status": "READ", "createdAt": "2026-03-29T10:00:00-03:00" },
+        { "direction": "OUTBOUND", "content": "Maria, sua prescrição é Metformina 850mg, 1 comprimido após almoço e 1 após jantar. Se tiver desconforto gástrico, pode tomar junto com a refeição.", "status": "DELIVERED", "createdAt": "2026-03-29T11:00:00-03:00", "sentById": "user_dr_ricardo" },
+        { "direction": "INBOUND", "content": "Obrigada! Vou seguir assim. 🙏", "status": "READ", "createdAt": "2026-03-29T11:10:00-03:00" }
+      ]
+    },
+    {
+      "id": "conv_03", "patientId": "pat_07", "organizationId": "org_holilabs_demo",
+      "channelType": "SMS", "status": "ACTIVE", "lastMessageAt": "2026-03-26T21:35:00-03:00",
+      "messages": [
+        { "direction": "INBOUND", "content": "Dr., tive uma crise de dor no peito ontem à noite. Durou uns 5 minutos. Devo ir ao pronto socorro?", "status": "READ", "createdAt": "2026-03-26T21:00:00-03:00" },
+        { "direction": "OUTBOUND", "content": "Fernando, por favor vá imediatamente ao pronto socorro mais próximo. Dor torácica precisa ser avaliada com urgência. Leve seus medicamentos atuais.", "status": "DELIVERED", "createdAt": "2026-03-26T21:20:00-03:00", "sentById": "user_dr_ricardo" },
+        { "direction": "INBOUND", "content": "Estou indo agora. Obrigado doutor.", "status": "READ", "createdAt": "2026-03-26T21:30:00-03:00" },
+        { "direction": "OUTBOUND", "content": "Me avise quando chegar lá. Vou encaminhar seu histórico para o pronto socorro.", "status": "DELIVERED", "createdAt": "2026-03-26T21:35:00-03:00", "sentById": "user_dr_ricardo" }
+      ]
+    }
+  ],
+
+  "screeningResults": [
+    {
+      "id": "scr_01", "patientId": "pat_09", "clinicianId": "user_dr_ricardo", "encounterId": "enc_04",
+      "instrumentId": "phq9", "score": 15, "severity": "Moderately Severe", "severityColor": "clinical-critical",
+      "completedAt": "2026-03-25T11:10:00-03:00",
+      "responses": [
+        { "questionId": "phq9_q1", "value": 2 }, { "questionId": "phq9_q2", "value": 2 },
+        { "questionId": "phq9_q3", "value": 2 }, { "questionId": "phq9_q4", "value": 2 },
+        { "questionId": "phq9_q5", "value": 1 }, { "questionId": "phq9_q6", "value": 2 },
+        { "questionId": "phq9_q7", "value": 2 }, { "questionId": "phq9_q8", "value": 1 },
+        { "questionId": "phq9_q9", "value": 1 }
+      ],
+      "triggeredRules": ["MH-001", "MH-002"],
+      "note": "Q9=1 — suicidal ideation flagged. Safety assessment completed. No active plan."
+    },
+    {
+      "id": "scr_02", "patientId": "pat_09", "clinicianId": "user_dr_ricardo",
+      "instrumentId": "phq9", "score": 12, "severity": "Moderate", "severityColor": "clinical-caution",
+      "completedAt": "2026-03-25T11:05:00-03:00",
+      "responses": [
+        { "questionId": "phq9_q1", "value": 1 }, { "questionId": "phq9_q2", "value": 2 },
+        { "questionId": "phq9_q3", "value": 2 }, { "questionId": "phq9_q4", "value": 1 },
+        { "questionId": "phq9_q5", "value": 1 }, { "questionId": "phq9_q6", "value": 1 },
+        { "questionId": "phq9_q7", "value": 2 }, { "questionId": "phq9_q8", "value": 1 },
+        { "questionId": "phq9_q9", "value": 1 }
+      ],
+      "triggeredRules": ["MH-001", "MH-002"],
+      "note": "Follow-up at 4 weeks. Sertralina increased to 100mg."
+    },
+    {
+      "id": "scr_03", "patientId": "pat_07", "clinicianId": "user_dr_ricardo",
+      "instrumentId": "findrisc", "score": 18, "severity": "High", "severityColor": "clinical-critical",
+      "completedAt": "2026-03-26T09:25:00-03:00",
+      "responses": [
+        { "questionId": "findrisc_q1", "value": 3 }, { "questionId": "findrisc_q2", "value": 1 },
+        { "questionId": "findrisc_q3", "value": 3 }, { "questionId": "findrisc_q4", "value": 2 },
+        { "questionId": "findrisc_q5", "value": 1 }, { "questionId": "findrisc_q6", "value": 2 },
+        { "questionId": "findrisc_q7", "value": 0 }, { "questionId": "findrisc_q8", "value": 5 }
+      ],
+      "triggeredRules": ["DM-001"],
+      "note": "High diabetes risk. Ordered fasting glucose + HbA1c."
+    },
+    {
+      "id": "scr_04", "patientId": "pat_19", "clinicianId": "user_dr_ricardo",
+      "instrumentId": "gad7", "score": 12, "severity": "Moderate", "severityColor": "clinical-caution",
+      "completedAt": "2026-03-23T10:30:00-03:00",
+      "responses": [
+        { "questionId": "gad7_q1", "value": 2 }, { "questionId": "gad7_q2", "value": 2 },
+        { "questionId": "gad7_q3", "value": 2 }, { "questionId": "gad7_q4", "value": 1 },
+        { "questionId": "gad7_q5", "value": 2 }, { "questionId": "gad7_q6", "value": 1 },
+        { "questionId": "gad7_q7", "value": 2 }
+      ],
+      "triggeredRules": ["MH-003"],
+      "note": "Moderate anxiety. Referred to CBT. Ruled out thyroid."
+    },
+    {
+      "id": "scr_05", "patientId": "pat_15", "clinicianId": "user_dr_ricardo",
+      "instrumentId": "framingham", "score": 22.4, "severity": "High risk", "severityColor": "clinical-critical",
+      "completedAt": "2026-03-19T14:00:00-03:00",
+      "responses": [
+        { "questionId": "age", "value": 59 }, { "questionId": "sex", "value": 1 },
+        { "questionId": "totalCholesterol", "value": 260 }, { "questionId": "hdlCholesterol", "value": 38 },
+        { "questionId": "systolicBP", "value": 155 }, { "questionId": "bpTreated", "value": 1 },
+        { "questionId": "smoking", "value": 0 }, { "questionId": "diabetes", "value": 0 }
+      ],
+      "triggeredRules": ["CVD-001", "LIPID-001"],
+      "note": "22.4% 10-year risk. Started Atorvastatina 40mg. Ecocardiogram ordered."
+    }
+  ]
+}

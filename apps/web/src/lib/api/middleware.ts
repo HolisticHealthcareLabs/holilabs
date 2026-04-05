@@ -38,10 +38,12 @@ export interface ApiContext {
     role: string;
     tenantRole?: TenantUserRole;
     workspaceRole?: string;
-    organizationId: string;
+    organizationId?: string;
     organizationName?: string;
     organizationType?: 'CLINIC' | 'HOSPITAL';
   };
+  validatedBody?: unknown;
+  validatedQuery?: unknown;
 }
 
 export interface RateLimitConfig {
@@ -245,7 +247,7 @@ export function rateLimit(config: RateLimitConfig) {
             'Retry-After': resetIn.toString(),
             'X-RateLimit-Limit': config.maxRequests.toString(),
             'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': current.resetAt.toString(),
+            'X-RateLimit-Reset': Math.ceil(current.resetAt / 1000).toString(),
           },
         }
       );
@@ -258,7 +260,7 @@ export function rateLimit(config: RateLimitConfig) {
 
     response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
     response.headers.set('X-RateLimit-Remaining', (config.maxRequests - current.count).toString());
-    response.headers.set('X-RateLimit-Reset', current.resetAt.toString());
+    response.headers.set('X-RateLimit-Reset', Math.ceil(current.resetAt / 1000).toString());
 
     return response;
   };
@@ -617,12 +619,43 @@ export async function verifyPatientAccess(
       return true;
     }
 
-    // PHASE 2: Check if patient is assigned to this clinician
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-      select: { assignedClinicianId: true },
-    });
+    // WORKSPACE BOUNDARY CHECK (CYRUS CVI-002): Verify user and patient share a workspace.
+    // Patient workspace is derived from assignedClinicianId → WorkspaceMember.
+    // DataAccessGrant (Phase 1 above) is exempt — it's an explicit cross-workspace grant.
+    const [userWorkspaces, patient] = await Promise.all([
+      prisma.workspaceMember.findMany({
+        where: { userId },
+        select: { workspaceId: true },
+      }),
+      prisma.patient.findUnique({
+        where: { id: patientId },
+        select: { assignedClinicianId: true },
+      }),
+    ]);
 
+    if (patient?.assignedClinicianId) {
+      const patientClinicianWorkspaces = await prisma.workspaceMember.findMany({
+        where: { userId: patient.assignedClinicianId },
+        select: { workspaceId: true },
+      });
+
+      const userWsIds = new Set(userWorkspaces.map((w: { workspaceId: string }) => w.workspaceId));
+      const sameWorkspace = patientClinicianWorkspaces.some(
+        (w: { workspaceId: string }) => userWsIds.has(w.workspaceId)
+      );
+
+      if (!sameWorkspace) {
+        logger.warn({
+          event: 'cross_workspace_access_denied',
+          userId,
+          patientId,
+          reason: 'user_and_patient_in_different_workspaces',
+        });
+        return false;
+      }
+    }
+
+    // PHASE 2: Check if patient is assigned to this clinician
     if (patient?.assignedClinicianId === userId) {
       return true;
     }
@@ -779,7 +812,7 @@ export function validateBody<T extends z.ZodType>(schema: T) {
       const validated = schema.parse(body);
 
       // Attach validated data to context
-      (context as any).validatedBody = validated;
+      context.validatedBody = validated;
 
       return next();
     } catch (error) {
@@ -812,7 +845,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       const validated = schema.parse(query);
 
       // Attach validated data to context
-      (context as any).validatedQuery = validated;
+      context.validatedQuery = validated;
 
       return next();
     } catch (error) {
@@ -862,25 +895,49 @@ export function withErrorHandling(handler: ApiHandler) {
       }, 'API request completed');
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const duration = Date.now() - startTime;
+      const err = error as Record<string, unknown>;
+      const code = typeof err?.code === 'string' ? err.code : undefined;
+      const message = error instanceof Error ? error.message : 'Unknown error';
 
       log.error({
         ...logError(error),
         event: 'api_error',
         duration,
-        errorCode: error.code,
+        errorCode: code,
       }, 'API request failed');
 
       // Prisma errors
-      if (error.code === 'P2002') {
+      if (code === 'P2002') {
         return NextResponse.json(
           { error: 'A record with this value already exists' },
           { status: 409 }
         );
       }
 
-      if (error.code === 'P2025') {
+      if (code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Foreign key constraint violation' },
+          { status: 409 }
+        );
+      }
+
+      if (code === 'P2014') {
+        return NextResponse.json(
+          { error: 'Required relation violation' },
+          { status: 422 }
+        );
+      }
+
+      if (code === 'P2020') {
+        return NextResponse.json(
+          { error: 'Value out of range' },
+          { status: 422 }
+        );
+      }
+
+      if (code === 'P2025') {
         return NextResponse.json(
           { error: 'Record not found' },
           { status: 404 }
@@ -892,7 +949,7 @@ export function withErrorHandling(handler: ApiHandler) {
         {
           error: process.env.NODE_ENV === 'production'
             ? 'Internal server error'
-            : error.message,
+            : message,
         },
         { status: 500 }
       );
@@ -935,7 +992,7 @@ export function compose(...middlewares: Middleware[]) {
           const middleware = middlewares[index++];
           return middleware(request, context, next);
         }
-        const result = handler(request, context);
+        const result = await handler(request, context);
         return result instanceof NextResponse ? result : NextResponse.json(result);
       };
 

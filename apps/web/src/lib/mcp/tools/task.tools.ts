@@ -91,8 +91,7 @@ async function createTaskHandler(
             priority: input.priority ?? 'NORMAL',
             assignedTo: context.clinicianId,
             dueDate,
-            relatedPatientId: input.relatedPatientId,
-            relatedEncounterId: input.relatedEncounterId,
+            clinicId: input.relatedPatientId || null,
         },
     });
 

@@ -19,12 +19,12 @@ const mockStatsData = {
 };
 
 beforeEach(() => {
-  global.fetch = jest.fn().mockImplementation((url: string) => {
+  global.fetch = jest.fn((url: string) => {
     if (url.includes('/code')) {
-      return Promise.resolve({ ok: true, json: async () => ({ referral: mockStatsData }) });
+      return Promise.resolve({ ok: true, json: async () => ({ success: true, stats: mockStatsData }) });
     }
     if (url.includes('/rewards')) {
-      return Promise.resolve({ ok: true, json: async () => ({ rewards: [] }) });
+      return Promise.resolve({ ok: true, json: async () => ({ success: true, rewards: [] }) });
     }
     return Promise.resolve({ ok: true, json: async () => ({}) });
   }) as any;
@@ -39,7 +39,7 @@ import ReferralDashboard from '../ReferralDashboard';
 describe('ReferralDashboard', () => {
   it('shows loading state initially', () => {
     render(<ReferralDashboard />);
-    expect(screen.getByRole('status') || document.querySelector('.animate-pulse')).toBeTruthy();
+    expect(document.querySelector('.animate-spin') || document.querySelector('.animate-pulse')).toBeTruthy();
   });
 
   it('renders referral code after loading', async () => {
@@ -52,7 +52,9 @@ describe('ReferralDashboard', () => {
   it('shows progress stats after loading', async () => {
     render(<ReferralDashboard />);
     await waitFor(() => {
-      expect(screen.getByText(/2.*\/.*3/i) || screen.getAllByText('2').length > 0).toBeTruthy();
+      expect(screen.getByText('REF-ABC123')).toBeInTheDocument();
     });
+    const twos = screen.queryAllByText('2');
+    expect(twos.length).toBeGreaterThan(0);
   });
 });

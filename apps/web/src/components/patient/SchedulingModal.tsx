@@ -114,13 +114,14 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
       >
         {/* Modal */}
         <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4"
+          className="w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4"
+          style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 id="scheduling-modal-title" className="text-2xl font-bold text-gray-800">Agendar Cita</h2>
+              <h2 id="scheduling-modal-title" className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Agendar Cita</h2>
               {/* Decorative - low contrast intentional for close button */}
               <button
                 ref={closeButtonRef}
@@ -136,17 +137,18 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
             {integrationState === 'not_integrated' && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-6">📅</div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                   Optimice su agenda
                 </h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                <p className="mb-8 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
                   Conecte su calendario para ver la disponibilidad en tiempo real y evitar conflictos de horarios.
                 </p>
 
                 <div className="flex justify-center space-x-4">
                   <button
                     onClick={handleConnectGoogle}
-                    className="px-8 py-4 bg-white border-2 border-gray-300 rounded-lg hover:border-primary hover:shadow-lg transition font-semibold flex items-center space-x-3"
+                    className="px-8 py-4 border-2 hover:border-primary hover:shadow-lg transition font-semibold flex items-center space-x-3"
+                    style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                   >
                     <svg className="w-6 h-6" viewBox="0 0 24 24">
                       <path
@@ -171,7 +173,8 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
 
                   <button
                     onClick={handleConnectOutlook}
-                    className="px-8 py-4 bg-white border-2 border-gray-300 rounded-lg hover:border-primary hover:shadow-lg transition font-semibold flex items-center space-x-3"
+                    className="px-8 py-4 border-2 hover:border-primary hover:shadow-lg transition font-semibold flex items-center space-x-3"
+                    style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                   >
                     <svg className="w-6 h-6" viewBox="0 0 24 24">
                       <path
@@ -191,13 +194,14 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                 {/* Calendar Selector (only for multiple calendars) */}
                 {integrationState === 'multiple_calendars' && (
                   <div className="mb-6">
-                    <label className="block font-semibold text-gray-700 mb-2">
+                    <label className="block font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
                       Seleccionar Calendario Primario
                     </label>
                     <select
                       value={selectedCalendar}
                       onChange={(e) => setSelectedCalendar(e.target.value)}
-                      className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      className="w-full p-3 border-2 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      style={{ borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-lg)' }}
                     >
                       {availableCalendars.map((cal) => (
                         <option key={cal.id} value={cal.id}>
@@ -212,12 +216,13 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Date Selector */}
                   <div>
-                    <h3 className="font-semibold text-gray-700 mb-3">Seleccionar Fecha</h3>
-                    <div className="border-2 border-gray-200 rounded-lg p-4">
+                    <h3 className="font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Seleccionar Fecha</h3>
+                    <div className="border-2 p-4" style={{ borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
                       <input
                         type="date"
                         onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                        className="w-full p-2 border border-gray-300 rounded"
+                        className="w-full p-2 border"
+                        style={{ borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-md)' }}
                         min={new Date().toISOString().split('T')[0]}
                       />
                     </div>
@@ -225,8 +230,8 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
 
                   {/* Time Slots */}
                   <div>
-                    <h3 className="font-semibold text-gray-700 mb-3">Horarios Disponibles</h3>
-                    <div className="border-2 border-gray-200 rounded-lg p-4 max-h-80 overflow-y-auto">
+                    <h3 className="font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Horarios Disponibles</h3>
+                    <div className="border-2 p-4 max-h-80 overflow-y-auto" style={{ borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}>
                       {selectedDate ? (
                         <div className="grid grid-cols-3 gap-2">
                           {/* Decorative - low contrast intentional for disabled/busy slot text */}
@@ -235,13 +240,21 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                               key={i}
                               disabled={slot.isBusy}
                               onClick={() => setSelectedTime(slot.time)}
-                              className={`p-2 rounded-lg text-sm font-medium transition ${
+                              className={`p-2 text-sm font-medium transition ${
                                 slot.isBusy
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  ? 'cursor-not-allowed'
                                   : selectedTime === slot.time
                                   ? 'bg-primary text-white'
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'hover:bg-green-200'
                               }`}
+                              style={{
+                                borderRadius: 'var(--radius-lg)',
+                                ...(slot.isBusy
+                                  ? { backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-muted)' }
+                                  : selectedTime === slot.time
+                                  ? {}
+                                  : { backgroundColor: 'var(--surface-success)', color: 'var(--text-success)' }),
+                              }}
                             >
                               {slot.time}
                               {slot.isBusy && (
@@ -253,7 +266,7 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                       ) : (
                         <>
                           {/* Decorative - low contrast intentional for empty state helper text */}
-                          <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          <p className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
                             Seleccione una fecha para ver horarios disponibles
                           </p>
                         </>
@@ -265,16 +278,16 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                 {/* Legend */}
                 <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-                    <span className="text-gray-600">Disponible (Holi Labs)</span>
+                    <div className="w-4 h-4 border border-green-300" style={{ backgroundColor: 'var(--surface-success)', borderRadius: 'var(--radius-md)' }}></div>
+                    <span style={{ color: 'var(--text-secondary)' }}>Disponible (Holi Labs)</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
-                    <span className="text-gray-600">Ocupado (Calendario externo)</span>
+                    <div className="w-4 h-4 border" style={{ backgroundColor: 'var(--surface-tertiary)', borderColor: 'var(--border-strong)', borderRadius: 'var(--radius-md)' }}></div>
+                    <span style={{ color: 'var(--text-secondary)' }}>Ocupado (Calendario externo)</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-primary rounded"></div>
-                    <span className="text-gray-600">Seleccionado</span>
+                    <div className="w-4 h-4 bg-primary" style={{ borderRadius: 'var(--radius-md)' }}></div>
+                    <span style={{ color: 'var(--text-secondary)' }}>Seleccionado</span>
                   </div>
                 </div>
 
@@ -282,7 +295,8 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                 <button
                   onClick={handleScheduleAppointment}
                   disabled={!selectedDate || !selectedTime}
-                  className="w-full mt-6 py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-6 py-4 bg-primary text-white font-semibold text-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
                 >
                   Agendar Cita
                 </button>

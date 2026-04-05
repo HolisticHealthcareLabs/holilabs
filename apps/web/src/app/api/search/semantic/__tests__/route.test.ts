@@ -11,6 +11,7 @@ jest.mock('@/lib/ai/embeddings', () => ({
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
+    $queryRaw: jest.fn(),
     $queryRawUnsafe: jest.fn(),
     userBehaviorEvent: { create: jest.fn() },
   },
@@ -42,8 +43,8 @@ const mockContext = { user: { id: 'doc-1', email: 'doc@test.com' } };
 describe('POST /api/search/semantic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // @ts-ignore
-    (prisma as any).userBehaviorEvent = { create: jest.fn().mockResolvedValue({}) };
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (prisma.userBehaviorEvent.create as jest.Mock).mockResolvedValue({});
   });
 
   it('returns 400 when query is empty', async () => {
@@ -75,7 +76,7 @@ describe('POST /api/search/semantic', () => {
   it('returns search results for clinical notes', async () => {
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
     (generateEmbedding as jest.Mock).mockResolvedValue(new Array(1536).fill(0.1));
-    (prisma.$queryRawUnsafe as jest.Mock).mockResolvedValue([
+    (prisma.$queryRaw as jest.Mock).mockResolvedValue([
       { id: 'emb-1', sourceType: 'NOTE', sourceId: 'note-1', patientId: 'patient-1', contentPreview: 'Diabetes management...', distance: 0.1 },
     ]);
 
@@ -95,7 +96,7 @@ describe('POST /api/search/semantic', () => {
   it('returns empty results when similarity below threshold', async () => {
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
     (generateEmbedding as jest.Mock).mockResolvedValue(new Array(1536).fill(0.1));
-    (prisma.$queryRawUnsafe as jest.Mock).mockResolvedValue([
+    (prisma.$queryRaw as jest.Mock).mockResolvedValue([
       { id: 'emb-1', sourceType: 'NOTE', sourceId: 'note-1', patientId: 'patient-1', contentPreview: 'Unrelated content', distance: 10 },
     ]);
 

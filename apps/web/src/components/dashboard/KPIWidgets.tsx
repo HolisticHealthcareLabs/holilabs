@@ -10,7 +10,7 @@ export function AITimeReclaimedWidgetRadial() {
   const hours = 12.5;
 
   return (
-    <div className="rounded-2xl p-6 backdrop-blur-xl bg-[oklch(0.95_0.02_160)]/10 dark:bg-[oklch(0.15_0.02_160)]/10 border border-[oklch(0.85_0.05_160)]/20 dark:border-[oklch(0.35_0.05_160)]/20">
+    <div className="p-6 backdrop-blur-xl bg-[oklch(0.95_0.02_160)]/10 dark:bg-[oklch(0.15_0.02_160)]/10 border border-[oklch(0.85_0.05_160)]/20 dark:border-[oklch(0.35_0.05_160)]/20" style={{ borderRadius: 'var(--radius-xl)' }}>
       <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4">
         AI Time Reclaimed
       </h3>
@@ -71,7 +71,7 @@ export function PendingResultsWidget() {
   ];
 
   return (
-    <div className="rounded-2xl p-6 backdrop-blur-xl bg-[oklch(0.95_0.02_200)]/10 dark:bg-[oklch(0.15_0.02_200)]/10 border border-[oklch(0.85_0.05_200)]/20 dark:border-[oklch(0.35_0.05_200)]/20">
+    <div className="p-6 backdrop-blur-xl bg-[oklch(0.95_0.02_200)]/10 dark:bg-[oklch(0.15_0.02_200)]/10 border border-[oklch(0.85_0.05_200)]/20 dark:border-[oklch(0.35_0.05_200)]/20" style={{ borderRadius: 'var(--radius-xl)' }}>
       <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4">
         Pending Results
       </h3>
@@ -82,7 +82,8 @@ export function PendingResultsWidget() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="flex items-center justify-between p-3 rounded-lg bg-white/50 dark:bg-gray-800/50"
+            className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50"
+            style={{ borderRadius: 'var(--radius-lg)' }}
           >
             <div>
               <span className="text-sm font-medium text-slate-900 dark:text-slate-100">

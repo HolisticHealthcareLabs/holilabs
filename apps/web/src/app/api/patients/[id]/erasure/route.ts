@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +30,12 @@ export const POST = createProtectedRoute(
         { error: 'Only ADMIN can execute patient erasure' },
         { status: 403 }
       );
+    }
+
+    // CYRUS: tenant isolation — even ADMIN must have access to this patient (CVI-002)
+    const hasAccess = await verifyPatientAccess(user.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
     }
 
     const body = await request.json().catch(() => ({}));

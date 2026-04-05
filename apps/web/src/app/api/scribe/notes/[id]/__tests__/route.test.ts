@@ -16,20 +16,15 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
+const mockSafeErrorResponse = jest.fn();
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
-  ),
+  safeErrorResponse: (...args: any[]) => mockSafeErrorResponse(...args),
 }));
 
 jest.mock('@/lib/validation/schemas', () => ({
   UpdateSOAPNoteSchema: {
-    parse: jest.fn((d: any) => d),
+    parse: (d: any) => d,
   },
-}));
-
-jest.mock('zod', () => ({
-  z: { ZodError: class ZodError extends Error { errors: any[] = []; } },
 }));
 
 const { GET, PATCH } = require('../route');
@@ -62,7 +57,13 @@ const mockNote = {
 };
 
 describe('GET /api/scribe/notes/[id]', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const { NextResponse } = require('next/server');
+    mockSafeErrorResponse.mockReturnValue(
+      NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    );
+  });
 
   it('returns SOAP note with details', async () => {
     (prisma.sOAPNote.findFirst as jest.Mock).mockResolvedValue(mockNote);
@@ -88,7 +89,13 @@ describe('GET /api/scribe/notes/[id]', () => {
 });
 
 describe('PATCH /api/scribe/notes/[id]', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const { NextResponse } = require('next/server');
+    mockSafeErrorResponse.mockReturnValue(
+      NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    );
+  });
 
   it('updates SOAP note fields', async () => {
     (prisma.sOAPNote.findFirst as jest.Mock).mockResolvedValue(mockNote);

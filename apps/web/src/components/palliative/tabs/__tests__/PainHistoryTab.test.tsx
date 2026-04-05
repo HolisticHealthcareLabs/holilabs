@@ -8,7 +8,7 @@ jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...p }: 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/' }));
 jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
 jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
-jest.mock('../PainTrendChart', () => ({ __esModule: true, default: () => <div data-testid="pain-chart" /> }));
+jest.mock('../../PainTrendChart', () => ({ __esModule: true, default: () => <div data-testid="pain-chart" /> }));
 
 const PainHistoryTab = require('../PainHistoryTab').default;
 

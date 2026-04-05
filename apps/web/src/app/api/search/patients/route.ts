@@ -26,9 +26,28 @@ export const GET = createProtectedRoute(
       return NextResponse.json({ patients: [] });
     }
 
+    // Scope search by workspace: ADMIN sees all patients in their workspace,
+    // non-ADMIN sees only their assigned patients (CYRUS CVI-002 tenant isolation)
+    const isAdmin = context.user?.role === 'ADMIN';
+    let clinicianFilter: Record<string, unknown>;
+
+    if (isAdmin && context.user?.organizationId) {
+      const members = await prisma.workspaceMember.findMany({
+        where: { workspaceId: context.user.organizationId },
+        select: { userId: true },
+      });
+      const memberIds = members.map((m: { userId: string }) => m.userId);
+      clinicianFilter = memberIds.length > 0
+        ? { assignedClinicianId: { in: memberIds } }
+        : { assignedClinicianId: context.user!.id };
+    } else {
+      clinicianFilter = { assignedClinicianId: context.user!.id };
+    }
+
     // Search patients with fuzzy matching
     const patients = await prisma.patient.findMany({
       where: {
+        ...clinicianFilter,
         OR: [
           {
             firstName: {

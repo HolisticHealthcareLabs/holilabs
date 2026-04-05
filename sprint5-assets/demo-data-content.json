@@ -1,0 +1,202 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "locale": "pt-BR",
+
+  "patients": [
+    { "name": "João Carlos da Silva", "cpf": "123.***.***-45", "age": 67, "sex": "M", "phone": "+5511987654321" },
+    { "name": "Maria Aparecida Santos", "cpf": "234.***.***-56", "age": 52, "sex": "F", "phone": "+5511976543210" },
+    { "name": "Carlos Eduardo Oliveira", "cpf": "345.***.***-67", "age": 45, "sex": "M", "phone": "+5511965432109" },
+    { "name": "Ana Paula Ferreira", "cpf": "456.***.***-78", "age": 38, "sex": "F", "phone": "+5511954321098" },
+    { "name": "Roberto Almeida Neto", "cpf": "567.***.***-89", "age": 71, "sex": "M", "phone": "+5511943210987" },
+    { "name": "Luciana Barbosa Costa", "cpf": "678.***.***-90", "age": 29, "sex": "F", "phone": "+5511932109876" },
+    { "name": "Fernando Henrique Souza", "cpf": "789.***.***-01", "age": 55, "sex": "M", "phone": "+5511921098765" },
+    { "name": "Juliana Moreira Lima", "cpf": "890.***.***-12", "age": 43, "sex": "F", "phone": "+5511910987654" },
+    { "name": "Pedro Augusto Mendes", "cpf": "901.***.***-23", "age": 62, "sex": "M", "phone": "+5511909876543" },
+    { "name": "Camila Rocha Pereira", "cpf": "012.***.***-34", "age": 35, "sex": "F", "phone": "+5511998765432" },
+    { "name": "Marcos Vinícius Gomes", "cpf": "111.***.***-22", "age": 48, "sex": "M", "phone": "+5511988776655" },
+    { "name": "Beatriz Helena Martins", "cpf": "222.***.***-33", "age": 57, "sex": "F", "phone": "+5511977665544" },
+    { "name": "Thiago Nascimento", "cpf": "333.***.***-44", "age": 33, "sex": "M", "phone": "+5511966554433" },
+    { "name": "Patrícia de Andrade", "cpf": "444.***.***-55", "age": 41, "sex": "F", "phone": "+5511955443322" },
+    { "name": "Ricardo José Pinto", "cpf": "555.***.***-66", "age": 59, "sex": "M", "phone": "+5511944332211" },
+    { "name": "Adriana Cunha Ribeiro", "cpf": "666.***.***-77", "age": 26, "sex": "F", "phone": "+5511933221100" },
+    { "name": "Daniel Freitas Araújo", "cpf": "777.***.***-88", "age": 50, "sex": "M", "phone": "+5511922110099" },
+    { "name": "Fernanda Lopes Carvalho", "cpf": "888.***.***-99", "age": 64, "sex": "F", "phone": "+5511911009988" },
+    { "name": "Gabriel Santos Machado", "cpf": "999.***.***-00", "age": 37, "sex": "M", "phone": "+5511900998877" },
+    { "name": "Isabela Duarte Correia", "cpf": "100.***.***-11", "age": 44, "sex": "F", "phone": "+5511899887766" },
+    { "name": "Antônio Marcos Teixeira", "cpf": "200.***.***-22", "age": 73, "sex": "M", "phone": "+5511888776655" },
+    { "name": "Renata Vieira Campos", "cpf": "300.***.***-33", "age": 31, "sex": "F", "phone": "+5511877665544" },
+    { "name": "Luís Felipe Batista", "cpf": "400.***.***-44", "age": 56, "sex": "M", "phone": "+5511866554433" },
+    { "name": "Vanessa Cardoso Dias", "cpf": "500.***.***-55", "age": 47, "sex": "F", "phone": "+5511855443322" },
+    { "name": "Henrique Monteiro", "cpf": "600.***.***-66", "age": 39, "sex": "M", "phone": "+5511844332211" },
+    { "name": "Cristiane Ramos", "cpf": "700.***.***-77", "age": 53, "sex": "F", "phone": "+5511833221100" },
+    { "name": "Marcelo Azevedo", "cpf": "800.***.***-88", "age": 68, "sex": "M", "phone": "+5511822110099" },
+    { "name": "Carolina Fonseca", "cpf": "900.***.***-99", "age": 42, "sex": "F", "phone": "+5511811009988" },
+    { "name": "Eduardo Barros", "cpf": "110.***.***-10", "age": 60, "sex": "M", "phone": "+5511800998877" },
+    { "name": "Amanda Pires Sampaio", "cpf": "120.***.***-20", "age": 2, "sex": "F", "phone": "+5511799887766" }
+  ],
+
+  "whatsappConversations": [
+    {
+      "patientIndex": 0,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Olá João! Lembramos que sua consulta com Dr. Ricardo é amanhã às 10h. Confirma presença?", "status": "DELIVERED", "minutesAgo": 1440, "template": "appointment_reminder" },
+        { "direction": "INBOUND", "content": "Bom dia! Sim, confirmo. Preciso levar algum exame?", "status": "READ", "minutesAgo": 1380 },
+        { "direction": "OUTBOUND", "content": "Traga os exames de sangue que fez na última semana. Até amanhã!", "status": "READ", "minutesAgo": 1370 }
+      ]
+    },
+    {
+      "patientIndex": 1,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "INBOUND", "content": "Dra., estou com dúvida sobre a dosagem da Metformina. É 500mg ou 850mg?", "status": "READ", "minutesAgo": 480 },
+        { "direction": "OUTBOUND", "content": "Maria, sua prescrição é Metformina 850mg, 1 comprimido após almoço e 1 após jantar. Se tiver desconforto gástrico, pode tomar junto com a refeição.", "status": "DELIVERED", "minutesAgo": 420 },
+        { "direction": "INBOUND", "content": "Obrigada! Vou seguir assim. 🙏", "status": "READ", "minutesAgo": 410 }
+      ]
+    },
+    {
+      "patientIndex": 2,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Carlos, seus resultados de hemograma e perfil lipídico já estão disponíveis no portal. Acesse pelo link seguro para visualizar.", "status": "DELIVERED", "minutesAgo": 180, "template": "lab_results" },
+        { "direction": "INBOUND", "content": "Recebi, obrigado. O colesterol está alto de novo?", "status": "READ", "minutesAgo": 120 },
+        { "direction": "OUTBOUND", "content": "Por questões de segurança, os resultados detalhados estão no portal. Mas podemos discutir na próxima consulta. Agende pelo link: [portal]", "status": "SENT", "minutesAgo": 90 }
+      ]
+    },
+    {
+      "patientIndex": 3,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "INBOUND", "content": "Oi, preciso remarcar minha consulta de sexta. Posso trocar pra segunda de manhã?", "status": "READ", "minutesAgo": 2880 },
+        { "direction": "OUTBOUND", "content": "Ana Paula, verificamos e temos horário disponível segunda às 9h30. Confirma?", "status": "DELIVERED", "minutesAgo": 2820 },
+        { "direction": "INBOUND", "content": "Perfeito! Confirmado. Obrigada 😊", "status": "READ", "minutesAgo": 2800 },
+        { "direction": "OUTBOUND", "content": "Consulta remarcada para segunda 31/03 às 9h30. Até lá!", "status": "DELIVERED", "minutesAgo": 2790 }
+      ]
+    },
+    {
+      "patientIndex": 4,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Sr. Roberto, lembrete: tome o Enalapril 10mg todas as manhãs em jejum. Não esqueça de medir a pressão antes.", "status": "DELIVERED", "minutesAgo": 60, "template": "medication_reminder" },
+        { "direction": "INBOUND", "content": "Tomei hoje. Pressão estava 135/85. Está boa?", "status": "DELIVERED", "minutesAgo": 30 }
+      ]
+    },
+    {
+      "patientIndex": 5,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Luciana, sua receita de anticoncepcional está pronta para retirada na farmácia. Leve documento com foto.", "status": "DELIVERED", "minutesAgo": 4320 },
+        { "direction": "INBOUND", "content": "Qual farmácia?", "status": "READ", "minutesAgo": 4200 },
+        { "direction": "OUTBOUND", "content": "Drogasil da Av. Paulista, 1234. Está disponível por 5 dias úteis.", "status": "READ", "minutesAgo": 4190 }
+      ]
+    },
+    {
+      "patientIndex": 6,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "INBOUND", "content": "Dr., tive uma crise de dor no peito ontem à noite. Durou uns 5 minutos. Devo ir ao pronto socorro?", "status": "READ", "minutesAgo": 720 },
+        { "direction": "OUTBOUND", "content": "Fernando, por favor vá imediatamente ao pronto socorro mais próximo. Dor torácica precisa ser avaliada com urgência. Leve seus medicamentos atuais.", "status": "DELIVERED", "minutesAgo": 700 },
+        { "direction": "INBOUND", "content": "Estou indo agora. Obrigado doutor.", "status": "READ", "minutesAgo": 690 },
+        { "direction": "OUTBOUND", "content": "Me avise quando chegar lá. Vou encaminhar seu histórico para o pronto socorro.", "status": "DELIVERED", "minutesAgo": 685 }
+      ]
+    },
+    {
+      "patientIndex": 7,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Juliana, lembramos que sua mamografia de rotina está pendente. Último exame foi há 26 meses. Gostaria de agendar?", "status": "DELIVERED", "minutesAgo": 10080, "template": "preventive_care" },
+        { "direction": "INBOUND", "content": "Verdade, preciso fazer sim. Pode ser na clínica mesmo?", "status": "READ", "minutesAgo": 9600 },
+        { "direction": "OUTBOUND", "content": "Encaminhamos a solicitação. A clínica de imagem parceira vai entrar em contato para agendar. Traga a guia autorizada.", "status": "DELIVERED", "minutesAgo": 9500 }
+      ]
+    },
+    {
+      "patientIndex": 8,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "OUTBOUND", "content": "Pedro, seu retorno está agendado para 03/04 às 14h. Por favor traga os exames solicitados (hemograma completo + HbA1c).", "status": "DELIVERED", "minutesAgo": 360, "template": "appointment_reminder" }
+      ]
+    },
+    {
+      "patientIndex": 9,
+      "channel": "WHATSAPP",
+      "messages": [
+        { "direction": "INBOUND", "content": "Boa tarde! Posso enviar uma foto da lesão que apareceu no meu braço? Queria uma opinião antes da consulta.", "status": "READ", "minutesAgo": 240 },
+        { "direction": "OUTBOUND", "content": "Camila, pode enviar. Vou avaliar e responder até o fim do dia. Se piorar, procure atendimento presencial.", "status": "DELIVERED", "minutesAgo": 200 },
+        { "direction": "INBOUND", "content": "[Imagem enviada]", "status": "READ", "minutesAgo": 190, "contentType": "IMAGE" }
+      ]
+    }
+  ],
+
+  "invoices": [
+    { "patientIndex": 0, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 250.00, "status": "PAID", "paidAt": "2026-03-25", "paymentMethod": "INSURANCE", "icd10": "I50.0" },
+    { "patientIndex": 1, "tussCode": "40302040", "description": "Hemograma completo", "cbhpmCode": "4.03.02.04-0", "amount": 45.00, "status": "PAID", "paidAt": "2026-03-20", "paymentMethod": "CARD", "icd10": "E11.9" },
+    { "patientIndex": 2, "tussCode": "40301630", "description": "Perfil lipídico", "cbhpmCode": "4.03.01.63-0", "amount": 85.00, "status": "PENDING", "paymentMethod": "INSURANCE", "icd10": "E78.5" },
+    { "patientIndex": 3, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 300.00, "status": "PAID", "paidAt": "2026-03-22", "paymentMethod": "CARD", "icd10": "J06.9" },
+    { "patientIndex": 4, "tussCode": "20101155", "description": "ECG de repouso", "cbhpmCode": "2.01.01.15-5", "amount": 180.00, "status": "OVERDUE", "dueDate": "2026-03-15", "paymentMethod": "INSURANCE", "icd10": "I10" },
+    { "patientIndex": 5, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 200.00, "status": "PAID", "paidAt": "2026-03-28", "paymentMethod": "CASH", "icd10": "Z30.0" },
+    { "patientIndex": 6, "tussCode": "40304361", "description": "Troponina I", "cbhpmCode": "4.03.04.36-1", "amount": 120.00, "status": "PENDING", "paymentMethod": "INSURANCE", "icd10": "I20.0" },
+    { "patientIndex": 6, "tussCode": "40304060", "description": "BNP (peptídeo natriurético)", "cbhpmCode": "4.03.04.06-0", "amount": 150.00, "status": "PENDING", "paymentMethod": "INSURANCE", "icd10": "I50.9" },
+    { "patientIndex": 7, "tussCode": "40901114", "description": "Mamografia bilateral", "cbhpmCode": "4.09.01.11-4", "amount": 220.00, "status": "PAID", "paidAt": "2026-03-18", "paymentMethod": "INSURANCE", "icd10": "Z12.3" },
+    { "patientIndex": 8, "tussCode": "40301699", "description": "Hemoglobina glicada (HbA1c)", "cbhpmCode": "4.03.01.69-9", "amount": 55.00, "status": "PENDING", "paymentMethod": "CARD", "icd10": "E11.6" },
+    { "patientIndex": 9, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 280.00, "status": "PAID", "paidAt": "2026-03-26", "paymentMethod": "CARD", "icd10": "L30.9" },
+    { "patientIndex": 10, "tussCode": "40316130", "description": "Ultrassom abdominal", "cbhpmCode": "4.03.16.13-0", "amount": 350.00, "status": "OVERDUE", "dueDate": "2026-03-10", "paymentMethod": "INSURANCE", "icd10": "K80.2" },
+    { "patientIndex": 11, "tussCode": "40301630", "description": "Perfil lipídico", "cbhpmCode": "4.03.01.63-0", "amount": 85.00, "status": "PAID", "paidAt": "2026-03-24", "paymentMethod": "INSURANCE", "icd10": "E78.0" },
+    { "patientIndex": 12, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 250.00, "status": "PAID", "paidAt": "2026-03-27", "paymentMethod": "CASH", "icd10": "M54.5" },
+    { "patientIndex": 13, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 300.00, "status": "PENDING", "paymentMethod": "CARD", "icd10": "N94.6" },
+    { "patientIndex": 14, "tussCode": "20101015", "description": "Ecocardiograma", "cbhpmCode": "2.01.01.01-5", "amount": 450.00, "status": "PAID", "paidAt": "2026-03-19", "paymentMethod": "INSURANCE", "icd10": "I25.1" },
+    { "patientIndex": 15, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 150.00, "status": "PAID", "paidAt": "2026-03-29", "paymentMethod": "CASH", "icd10": "Z00.0" },
+    { "patientIndex": 16, "tussCode": "40302040", "description": "Hemograma completo", "cbhpmCode": "4.03.02.04-0", "amount": 45.00, "status": "OVERDUE", "dueDate": "2026-03-05", "paymentMethod": "INSURANCE", "icd10": "D50.9" },
+    { "patientIndex": 17, "tussCode": "40901254", "description": "Densitometria óssea", "cbhpmCode": "4.09.01.25-4", "amount": 380.00, "status": "PENDING", "paymentMethod": "INSURANCE", "icd10": "M81.0" },
+    { "patientIndex": 18, "tussCode": "10101012", "description": "Consulta em consultório", "cbhpmCode": "1.01.01.01-2", "amount": 250.00, "status": "PAID", "paidAt": "2026-03-23", "paymentMethod": "CARD", "icd10": "F41.1" }
+  ],
+
+  "preventionScenarios": [
+    {
+      "patientIndex": 1,
+      "scenario": "overdue_mammogram",
+      "alert": { "en": "Mammogram overdue (26 months since last)", "pt-BR": "Mamografia atrasada (26 meses desde a última)", "es": "Mamografía atrasada (26 meses desde la última)" },
+      "priority": "clinical-caution",
+      "screening": "MAMMOGRAM",
+      "lastScreeningDate": "2024-01-15",
+      "guideline": "INCA — Mamografia bienal para mulheres de 50-69 anos",
+      "loincCode": "24606-6"
+    },
+    {
+      "patientIndex": 6,
+      "scenario": "high_findrisc",
+      "alert": { "en": "FINDRISC score 18 — high diabetes risk", "pt-BR": "Escore FINDRISC 18 — alto risco de diabetes", "es": "Puntaje FINDRISC 18 — alto riesgo de diabetes" },
+      "priority": "clinical-critical",
+      "screening": "FINDRISC",
+      "score": 18,
+      "guideline": "SBD — Rastreamento de diabetes tipo 2 em adultos com fatores de risco"
+    },
+    {
+      "patientIndex": 8,
+      "scenario": "elevated_phq9",
+      "alert": { "en": "PHQ-9 score 15 — moderately severe depression", "pt-BR": "Escore PHQ-9 15 — depressão moderadamente grave", "es": "Puntaje PHQ-9 15 — depresión moderadamente grave" },
+      "priority": "clinical-critical",
+      "screening": "PHQ9",
+      "score": 15,
+      "guideline": "CFM/ABP — Rastreamento de depressão em atenção primária"
+    },
+    {
+      "patientIndex": 29,
+      "scenario": "missing_vaccination",
+      "alert": { "en": "DTP vaccine missing (age 2, due at 15 months)", "pt-BR": "Vacina DTP pendente (2 anos, prevista aos 15 meses)", "es": "Vacuna DTP pendiente (2 años, prevista a los 15 meses)" },
+      "priority": "clinical-caution",
+      "screening": "VACCINATION",
+      "vaccine": "DTP (Tríplice Bacteriana)",
+      "guideline": "PNI — Calendário Nacional de Vacinação 2026"
+    },
+    {
+      "patientIndex": 14,
+      "scenario": "elevated_score2",
+      "alert": { "en": "SCORE2 cardiovascular risk 8% — requires intervention", "pt-BR": "Risco cardiovascular SCORE2 8% — requer intervenção", "es": "Riesgo cardiovascular SCORE2 8% — requiere intervención" },
+      "priority": "clinical-critical",
+      "screening": "SCORE2",
+      "score": 8,
+      "guideline": "ESC 2021 — Prevenção cardiovascular em prática clínica"
+    }
+  ]
+}

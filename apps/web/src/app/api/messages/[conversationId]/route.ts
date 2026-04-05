@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
@@ -119,6 +119,16 @@ export const GET = createProtectedRoute(
 
     const patientIdForQuery = isPatient ? userId : conversationId;
 
+    if (!isPatient) {
+      const hasAccess = await verifyPatientAccess(userId, patientIdForQuery);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
+        );
+      }
+    }
+
     const result = await fetchPaginatedMessages(patientIdForQuery, {
       limit,
       cursor,
@@ -175,6 +185,16 @@ export const PATCH = createProtectedRoute(
     const userId = context.user?.id;
     const isPatient = context.user?.role === 'PATIENT';
     const patientIdForQuery = isPatient ? userId : conversationId;
+
+    if (!isPatient) {
+      const hasAccess = await verifyPatientAccess(userId, patientIdForQuery);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
+        );
+      }
+    }
 
     const unreadMessages = await prisma.message.findMany({
       where: {

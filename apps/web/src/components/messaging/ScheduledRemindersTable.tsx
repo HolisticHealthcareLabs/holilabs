@@ -98,7 +98,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-gray-100 h-20 rounded-lg animate-pulse" />
+          <div key={i} className="bg-gray-100 dark:bg-gray-800 h-20 rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -108,7 +108,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
     return (
       <div className="text-center py-16">
         <div className="text-6xl mb-4 text-gray-300 dark:text-gray-600">—</div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           No scheduled reminders yet
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
@@ -122,11 +122,11 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
     <div>
       {/* Filters */}
       <div className="mb-6 flex items-center space-x-4">
-        <label className="text-sm font-medium text-gray-700">Filter by status:</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by status:</label>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="all">All</option>
           <option value="pending">Pending</option>
@@ -146,12 +146,12 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{reminder.templateName}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{reminder.templateName}</h3>
                     {getStatusBadge(reminder.status)}
                   </div>
 
@@ -234,9 +234,9 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl"
+              className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-md mx-4 shadow-2xl"
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Confirm {showConfirm.action}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -246,7 +246,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowConfirm(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>

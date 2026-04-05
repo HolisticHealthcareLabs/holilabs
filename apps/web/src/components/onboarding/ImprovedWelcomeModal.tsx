@@ -97,11 +97,11 @@ export default function ImprovedWelcomeModal() {
   if (currentStep < 3) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-        <div className="relative w-full max-w-2xl mx-4 bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div className="relative w-full max-w-2xl mx-4 overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}>
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+            className="absolute top-4 right-4 hover:text-gray-600 transition-colors z-10" style={{ color: 'var(--text-muted)' }}
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ export default function ImprovedWelcomeModal() {
           </button>
 
           {/* Progress Indicator */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gray-100">
+          <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
             <div 
               className="h-full bg-[#014751] transition-all duration-300"
               style={{ width: `${((currentStep + 1) / 4) * 100}%` }}
@@ -122,21 +122,21 @@ export default function ImprovedWelcomeModal() {
             {/* Icon */}
             <div className="mb-6 flex justify-center">
               {currentStep === 0 && (
-                <div className="w-16 h-16 bg-[#014751] rounded-xl flex items-center justify-center">
+                <div className="w-16 h-16 bg-[#014751] flex items-center justify-center" style={{ borderRadius: 'var(--radius-xl)' }}>
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               )}
               {currentStep === 1 && (
-                <div className="w-16 h-16 bg-[#014751] rounded-xl flex items-center justify-center">
+                <div className="w-16 h-16 bg-[#014751] flex items-center justify-center" style={{ borderRadius: 'var(--radius-xl)' }}>
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                 </div>
               )}
               {currentStep === 2 && (
-                <div className="w-16 h-16 bg-[#014751] rounded-xl flex items-center justify-center">
+                <div className="w-16 h-16 bg-[#014751] flex items-center justify-center" style={{ borderRadius: 'var(--radius-xl)' }}>
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -145,10 +145,10 @@ export default function ImprovedWelcomeModal() {
             </div>
 
             {/* Text */}
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+            <h2 className="text-2xl font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
               {tourSteps[currentStep].title}
             </h2>
-            <p className="text-gray-600 text-lg leading-relaxed mb-8 max-w-md mx-auto">
+            <p className="text-lg leading-relaxed mb-8 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
               {tourSteps[currentStep].description}
             </p>
 
@@ -156,13 +156,13 @@ export default function ImprovedWelcomeModal() {
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={handleClose}
-                className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="px-6 py-2.5 hover:text-gray-900 font-medium transition-colors" style={{ color: 'var(--text-secondary)' }}
               >
                 Skip tour
               </button>
               <button
                 onClick={handleNext}
-                className="px-8 py-2.5 bg-[#014751] hover:bg-[#014751]/90 text-white font-medium rounded-lg transition-all shadow-sm hover:shadow-md"
+                className="px-8 py-2.5 bg-[#014751] hover:bg-[#014751]/90 text-white font-medium transition-all hover:shadow-md" style={{ borderRadius: 'var(--radius-lg)', boxShadow: 'var(--token-shadow-sm)' }}
               >
                 {tourSteps[currentStep].action}
               </button>
@@ -173,13 +173,14 @@ export default function ImprovedWelcomeModal() {
               {[0, 1, 2, 3].map((step) => (
                 <div
                   key={step}
-                  className={`h-1.5 rounded-full transition-all ${
-                    step === currentStep 
-                      ? 'w-8 bg-[#014751]' 
-                      : step < currentStep 
-                        ? 'w-1.5 bg-[#014751]/60' 
-                        : 'w-1.5 bg-gray-200'
+                  className={`h-1.5 transition-all ${
+                    step === currentStep
+                      ? 'w-8 bg-[#014751]'
+                      : step < currentStep
+                        ? 'w-1.5 bg-[#014751]/60'
+                        : 'w-1.5'
                   }`}
+                  style={{ borderRadius: 'var(--radius-full)', ...(step > currentStep ? { backgroundColor: 'var(--border-default)' } : {}) }}
                 />
               ))}
             </div>
@@ -191,11 +192,11 @@ export default function ImprovedWelcomeModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl mx-4 bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-4xl mx-4 overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}>
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          className="absolute top-6 right-6 hover:text-gray-600 transition-colors z-10" style={{ color: 'var(--text-muted)' }}
           aria-label="Close"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,9 +205,9 @@ export default function ImprovedWelcomeModal() {
         </button>
 
         {/* Header */}
-        <div className="border-b border-gray-100 px-8 py-6 bg-gradient-to-b from-gray-50 to-white">
-          <h1 className="text-2xl font-semibold text-gray-900">Choose Your Starting Point</h1>
-          <p className="text-gray-600 mt-1">
+        <div className="px-8 py-6 bg-gradient-to-b from-gray-50 to-white" style={{ borderBottom: '1px solid var(--border-default)' }}>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Choose Your Starting Point</h1>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
             Select an option below to begin using your clinical dashboard
           </p>
           {demoError ? (
@@ -222,17 +223,17 @@ export default function ImprovedWelcomeModal() {
             {/* Option 1: Add First Patient */}
             <button
               onClick={handleAddFirstPatient}
-              className="group relative bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-[#014751] rounded-lg p-6 text-left transition-all"
+              className="group relative hover:bg-gray-50 border-2 hover:border-[#014751] p-6 text-left transition-all" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}
             >
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                <h3 className="text-lg font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Add First Patient
                 </h3>
                 <div className="text-sm text-[#014751] font-medium whitespace-nowrap">
                   Start now
                 </div>
               </div>
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                 Begin with a fresh start by creating your first patient record
               </p>
             </button>
@@ -241,10 +242,10 @@ export default function ImprovedWelcomeModal() {
             <button
               onClick={handleEnableDemoMode}
               disabled={demoStarting}
-              className="group relative bg-white hover:bg-[#014751]/5 border-2 border-[#014751] rounded-lg p-6 text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="group relative hover:bg-[#014751]/5 border-2 border-[#014751] p-6 text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-lg)' }}
             >
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                <h3 className="text-lg font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Start with Demo Mode
                 </h3>
                 <div className="flex flex-col items-end gap-1">
@@ -261,7 +262,7 @@ export default function ImprovedWelcomeModal() {
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                 Get started immediately with 10 pre-loaded sample patients. Perfect for exploring the platform's features. You can disable this later or add real patients at any time.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -280,18 +281,18 @@ export default function ImprovedWelcomeModal() {
             {/* Option 3: Import Patients */}
             <button
               onClick={handleImport}
-              className="group relative bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-[#014751] rounded-lg p-6 text-left transition-all opacity-60 cursor-not-allowed"
+              className="group relative hover:bg-gray-50 border-2 hover:border-[#014751] p-6 text-left transition-all opacity-60 cursor-not-allowed" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)', borderRadius: 'var(--radius-lg)' }}
               disabled
             >
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                <h3 className="text-lg font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   Import Patients
                 </h3>
-                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                <div className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                   Coming soon
                 </div>
               </div>
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                 Upload your existing patient database via CSV
               </p>
             </button>
@@ -301,7 +302,7 @@ export default function ImprovedWelcomeModal() {
           <div className="mt-6 text-center">
             <button
               onClick={handleClose}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm font-medium transition"
+              className="dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm font-medium transition" style={{ color: 'var(--text-tertiary)' }}
             >
               Skip and explore on my own
             </button>
@@ -309,11 +310,11 @@ export default function ImprovedWelcomeModal() {
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-100 px-8 py-4">
+        <div className="px-8 py-4" style={{ backgroundColor: 'var(--surface-secondary)', borderTop: '1px solid var(--border-default)' }}>
           <div className="flex items-center justify-center gap-6 text-sm">
             <button 
               onClick={() => router.push('/help')}
-              className="text-gray-600 hover:text-[#014751] font-medium transition flex items-center gap-1"
+              className="hover:text-[#014751] font-medium transition flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -323,7 +324,7 @@ export default function ImprovedWelcomeModal() {
             </button>
             <button 
               onClick={() => router.push('/docs')}
-              className="text-gray-600 hover:text-[#014751] font-medium transition flex items-center gap-1"
+              className="hover:text-[#014751] font-medium transition flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

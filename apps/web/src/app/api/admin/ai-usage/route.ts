@@ -167,20 +167,19 @@ export const GET = createProtectedRoute(
         },
       }),
 
-      // Daily breakdown (last 30 days max)
-      prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
-        SELECT
-          DATE(created_at) as date,
-          SUM(estimated_cost) as cost,
-          COUNT(*) as requests
-        FROM ai_usage_logs
-        WHERE created_at >= ${startDate}
-          AND created_at <= ${now}
-          ${clinicId ? prisma.$queryRaw`AND clinic_id = ${clinicId}` : prisma.$queryRaw``}
-        GROUP BY DATE(created_at)
-        ORDER BY date ASC
-        LIMIT 30
-      `.catch(() => []), // Fallback to empty array if raw query fails
+      // Daily breakdown (last 30 days max) — CVI-006: safe parameterized query
+      (clinicId
+        ? prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
+            SELECT DATE(created_at) as date, SUM(estimated_cost) as cost, COUNT(*) as requests
+            FROM ai_usage_logs
+            WHERE created_at >= ${startDate} AND created_at <= ${now} AND clinic_id = ${clinicId}
+            GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`
+        : prisma.$queryRaw<Array<{ date: string; cost: number; requests: bigint }>>`
+            SELECT DATE(created_at) as date, SUM(estimated_cost) as cost, COUNT(*) as requests
+            FROM ai_usage_logs
+            WHERE created_at >= ${startDate} AND created_at <= ${now}
+            GROUP BY DATE(created_at) ORDER BY date ASC LIMIT 30`
+      ).catch(() => []),
     ]);
 
     // Calculate cache hit rate
@@ -380,12 +379,23 @@ export const POST = createProtectedRoute(
         log.fromCache ? 'Yes' : 'No',
       ]);
 
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const escapeCsvCell = (cell: unknown): string => {
+        const str = String(cell);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+      const csv = [
+        headers.map(escapeCsvCell).join(','),
+        ...rows.map(r => r.map(escapeCsvCell).join(',')),
+      ].join('\n');
+
+      // CVI-006: Sanitize date params for Content-Disposition to prevent header injection
+      const safeStart = String(startDate).replace(/[^0-9A-Za-z_-]/g, '').slice(0, 20);
+      const safeEnd = String(endDate).replace(/[^0-9A-Za-z_-]/g, '').slice(0, 20);
 
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="ai-usage-${startDate}-${endDate}.csv"`,
+          'Content-Disposition': `attachment; filename="ai-usage-${safeStart}-${safeEnd}.csv"`,
         },
       });
     }

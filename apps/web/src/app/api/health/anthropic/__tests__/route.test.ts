@@ -1,21 +1,19 @@
 import { NextRequest } from 'next/server';
 
+const mockCreate = jest.fn();
+const MockAnthropic = jest.fn(() => ({
+  messages: { create: mockCreate },
+}));
+
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
   createPublicRoute: (handler: any) => handler,
 }));
 
-jest.mock('@anthropic-ai/sdk', () => {
-  return jest.fn().mockImplementation(() => ({
-    messages: {
-      create: jest.fn().mockResolvedValue({
-        id: 'msg-test',
-        model: 'claude-sonnet-4-20250514',
-        usage: { input_tokens: 5, output_tokens: 2 },
-      }),
-    },
-  }));
-});
+jest.mock('@anthropic-ai/sdk', () => ({
+  __esModule: true,
+  default: MockAnthropic,
+}));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
   safeErrorResponse: jest.fn(),
@@ -34,6 +32,14 @@ describe('GET /api/health/anthropic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
+    MockAnthropic.mockImplementation(() => ({
+      messages: { create: mockCreate },
+    }));
+    mockCreate.mockResolvedValue({
+      id: 'msg-test',
+      model: 'claude-sonnet-4-20250514',
+      usage: { input_tokens: 5, output_tokens: 2 },
+    });
   });
 
   afterAll(() => {

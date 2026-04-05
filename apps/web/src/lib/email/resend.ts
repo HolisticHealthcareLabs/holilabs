@@ -24,13 +24,14 @@ interface SendEmailOptions {
   cc?: string | string[];
   bcc?: string | string[];
   tags?: Array<{ name: string; value: string }>;
+  headers?: Record<string, string>;
 }
 
 /**
  * Helper to send branded emails via Resend
  */
 export async function sendEmail(options: SendEmailOptions) {
-  const { to, subject, react, html, text, from = env.FROM_EMAIL, replyTo, cc, bcc } = options;
+  const { to, subject, react, html, text, from = env.FROM_EMAIL, replyTo, cc, bcc, headers: customHeaders } = options;
 
   try {
     // Prefer a branded "Name <email>" sender format for deliverability and consistent UX.
@@ -38,6 +39,15 @@ export async function sendEmail(options: SendEmailOptions) {
       typeof from === 'string' && from.includes('<')
         ? from
         : `${env.FROM_NAME} <${from || env.FROM_EMAIL}>`;
+
+    // CAN-SPAM / RFC 8058 List-Unsubscribe headers
+    const appUrl = env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com';
+    const unsubUrl = `${appUrl}/api/notifications/unsubscribe`;
+    const canSpamHeaders: Record<string, string> = {
+      'List-Unsubscribe': `<${unsubUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      ...customHeaders,
+    };
 
     const { data, error } = await resend.emails.send({
       from: brandedFrom || 'Holi Labs <noreply@holilabs.xyz>',
@@ -49,6 +59,7 @@ export async function sendEmail(options: SendEmailOptions) {
       replyTo,
       cc,
       bcc,
+      headers: canSpamHeaders,
     });
 
     if (error) {

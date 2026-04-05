@@ -70,7 +70,7 @@ describe('POST /api/cdss/chat', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.data.response).toContain('troponin');
-    expect(json.data.disclaimer).toBeDefined();
+    expect(json.disclaimer).toBeDefined();
   });
 
   it('returns 400 when message is missing', async () => {

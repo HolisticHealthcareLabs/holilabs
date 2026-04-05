@@ -221,11 +221,11 @@ export async function generateOTP({
       },
     });
 
-    // Store OTP in database
+    // Store OTP hash only — never persist plaintext codes (CVI-003)
     await prisma.oTPCode.create({
       data: {
         patientUserId: patientUser.id,
-        code,
+        code: codeHash, // Store hash in code field for schema compat; actual comparison uses codeHash
         codeHash,
         expiresAt,
         sentVia: channel,

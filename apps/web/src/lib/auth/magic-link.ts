@@ -157,11 +157,11 @@ export async function generateMagicLink({
     // Calculate expiration
     const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_MINUTES * 60 * 1000);
 
-    // Store magic link in database
+    // Store hash only — never persist plaintext tokens (CVI-003)
     await prisma.magicLink.create({
       data: {
         patientUserId: patientUser.id,
-        token,
+        token: tokenHash, // Store hash in token field for schema compat; actual lookup uses tokenHash
         tokenHash,
         expiresAt,
         ipAddress,

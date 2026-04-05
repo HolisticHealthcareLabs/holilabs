@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "framework": "Playwright",
+  "baseUrl": "http://localhost:3000",
+
+  "journeys": [
+    {
+      "id": "J1",
+      "name": "Doctor's Clinical Day",
+      "description": "Full doctor workflow from login to billing",
+      "steps": [
+        { "id": "J1-01", "step_number": 1, "action": "navigate", "target": "/auth/login", "expected_result": "Login page renders with email/password fields", "expected_url": "/auth/login", "expected_element": "[data-testid='login-form']", "screenshot_checkpoint": true },
+        { "id": "J1-02", "step_number": 2, "action": "type", "target": "[data-testid='email-input']", "value": "ricardo@holilabs.demo", "expected_result": "Email field populated" },
+        { "id": "J1-03", "step_number": 3, "action": "type", "target": "[data-testid='password-input']", "value": "demo-password-123", "expected_result": "Password field populated" },
+        { "id": "J1-04", "step_number": 4, "action": "click", "target": "[data-testid='login-button']", "expected_result": "Redirects to My Day dashboard", "expected_url": "/dashboard/my-day", "expected_element": "[data-tour='my-day']", "screenshot_checkpoint": true },
+        { "id": "J1-05", "step_number": 5, "action": "assert", "target": "[data-testid='patient-queue']", "expected_result": "Patient queue visible with at least 1 patient. Time-aware greeting shown.", "expected_element": "[data-testid='greeting-text']" },
+        { "id": "J1-06", "step_number": 6, "action": "click", "target": "[data-testid='patient-card']:first-child", "expected_result": "Patient selected, redirects to Clinical Command", "expected_url": "/dashboard/clinical-command", "screenshot_checkpoint": true },
+        { "id": "J1-07", "step_number": 7, "action": "assert", "target": "[data-testid='clinical-layout']", "expected_result": "3-panel layout renders: left (patient context), center (SOAP+transcript), right (AI co-pilot). No page scroll.", "expected_element": "[data-testid='panel-left']" },
+        { "id": "J1-08", "step_number": 8, "action": "click", "target": "[data-testid='record-button']", "expected_result": "Recording starts. Microphone permission requested (if first time). Waveform animation visible.", "expected_element": "[data-testid='recording-indicator']", "screenshot_checkpoint": true },
+        { "id": "J1-09", "step_number": 9, "action": "wait", "target": "5000", "expected_result": "Transcript segments appear in real-time. Speaker labels (Doctor/Patient) visible if diarization active." },
+        { "id": "J1-10", "step_number": 10, "action": "click", "target": "[data-testid='record-button']", "expected_result": "Recording stops. SOAP note begins generating.", "expected_element": "[data-testid='soap-generating']" },
+        { "id": "J1-11", "step_number": 11, "action": "click", "target": "[data-testid='cdss-action-rx-safety']", "expected_result": "CDSS quick action fires real /api/cdss/chat request. Loading spinner, then structured response with sourceAuthority.", "expected_element": "[data-testid='cdss-response']", "screenshot_checkpoint": true },
+        { "id": "J1-12", "step_number": 12, "action": "click", "target": "[data-testid='pre-sign-review-button']", "expected_result": "Pre-sign review modal opens. Shows SOAP summary, diagnoses, prescriptions for confirmation.", "expected_element": "[data-testid='presign-modal']", "screenshot_checkpoint": true },
+        { "id": "J1-13", "step_number": 13, "action": "click", "target": "[data-testid='finalize-button']", "expected_result": "Finalize modal opens. Editable summary, medication list, reminder toggles visible.", "expected_element": "[data-testid='finalize-modal']", "screenshot_checkpoint": true },
+        { "id": "J1-14", "step_number": 14, "action": "click", "target": "[data-testid='finalize-submit']", "expected_result": "Encounter status → COMPLETED. Success state shown. Billing flow accessible.", "expected_element": "[data-testid='finalize-success']" },
+        { "id": "J1-15", "step_number": 15, "action": "navigate", "target": "/dashboard/faturamento/analitica", "expected_result": "Billing analytics page shows revenue KPIs with real data from completed encounters.", "expected_url": "/dashboard/faturamento/analitica", "expected_element": "[data-testid='revenue-total']", "screenshot_checkpoint": true }
+      ]
+    },
+    {
+      "id": "J2",
+      "name": "Communications Hub",
+      "description": "WhatsApp/SMS conversation flow",
+      "steps": [
+        { "id": "J2-01", "step_number": 1, "action": "navigate", "target": "/dashboard/comunicacoes", "expected_result": "Communications hub loads with conversation list", "expected_url": "/dashboard/comunicacoes", "expected_element": "[data-testid='comms-layout']", "screenshot_checkpoint": true },
+        { "id": "J2-02", "step_number": 2, "action": "assert", "target": "[data-testid='conversation-list']", "expected_result": "At least 3 conversations visible (from seed data). Unread badge on sidebar." },
+        { "id": "J2-03", "step_number": 3, "action": "click", "target": "[data-testid='channel-filter-whatsapp']", "expected_result": "Conversation list filtered to WhatsApp only" },
+        { "id": "J2-04", "step_number": 4, "action": "click", "target": "[data-testid='conversation-item']:first-child", "expected_result": "Message thread opens in center panel. Patient context sidebar shows on right.", "expected_element": "[data-testid='message-thread']", "screenshot_checkpoint": true },
+        { "id": "J2-05", "step_number": 5, "action": "assert", "target": "[data-testid='patient-context-sidebar']", "expected_result": "Patient name, age, phone, next appointment, allergies, last labs visible" },
+        { "id": "J2-06", "step_number": 6, "action": "type", "target": "[data-testid='message-input']", "value": "Olá, seus exames estão prontos no portal.", "expected_result": "Message text entered" },
+        { "id": "J2-07", "step_number": 7, "action": "click", "target": "[data-testid='send-button']", "expected_result": "Message appears with 'Sending...' status (optimistic update)", "expected_element": "[data-testid='message-status-sending']" },
+        { "id": "J2-08", "step_number": 8, "action": "wait", "target": "3000", "expected_result": "Message status updates to 'Sent' then 'Delivered'", "expected_element": "[data-testid='message-status-delivered']", "screenshot_checkpoint": true },
+        { "id": "J2-09", "step_number": 9, "action": "click", "target": "[data-testid='template-picker-button']", "expected_result": "Template picker opens with available HSM templates", "expected_element": "[data-testid='template-list']" },
+        { "id": "J2-10", "step_number": 10, "action": "click", "target": "[data-testid='template-item-appt_reminder_24h']", "expected_result": "Template body inserted into message input with {{placeholders}} auto-filled from patient context", "screenshot_checkpoint": true }
+      ]
+    },
+    {
+      "id": "J3",
+      "name": "Billing Workflow",
+      "description": "Analytics → create invoice → audit → void",
+      "steps": [
+        { "id": "J3-01", "step_number": 1, "action": "navigate", "target": "/dashboard/faturamento/analitica", "expected_result": "Analytics dashboard loads", "expected_url": "/dashboard/faturamento/analitica", "screenshot_checkpoint": true },
+        { "id": "J3-02", "step_number": 2, "action": "assert", "target": "[data-testid='revenue-kpis']", "expected_result": "4 KPI cards: Total Revenue, Outstanding, Overdue, Collection Rate. Values > R$0." },
+        { "id": "J3-03", "step_number": 3, "action": "assert", "target": "[data-testid='revenue-trend-chart']", "expected_result": "Revenue trend chart rendered with at least 1 data point" },
+        { "id": "J3-04", "step_number": 4, "action": "assert", "target": "[data-testid='payer-mix']", "expected_result": "Payer mix shows Insurance, Private, Cash distribution" },
+        { "id": "J3-05", "step_number": 5, "action": "assert", "target": "[data-testid='aging-report']", "expected_result": "Aging report shows at least 1 overdue invoice in 30-day bucket" },
+        { "id": "J3-06", "step_number": 6, "action": "navigate", "target": "/dashboard/faturamento", "expected_result": "Invoice list loads with seed data invoices", "expected_element": "[data-testid='invoice-list']", "screenshot_checkpoint": true },
+        { "id": "J3-07", "step_number": 7, "action": "click", "target": "[data-testid='create-invoice-button']", "expected_result": "Invoice creation wizard opens", "expected_element": "[data-testid='invoice-wizard']" },
+        { "id": "J3-08", "step_number": 8, "action": "navigate", "target": "/dashboard/faturamento/auditoria", "expected_result": "Audit trail page loads with log entries", "expected_url": "/dashboard/faturamento/auditoria", "expected_element": "[data-testid='audit-table']", "screenshot_checkpoint": true },
+        { "id": "J3-09", "step_number": 9, "action": "click", "target": "[data-testid='verify-integrity-button']", "expected_result": "Hash chain verification runs. Green checkmark shows 'Hash chain intact.'", "expected_element": "[data-testid='integrity-status-ok']", "screenshot_checkpoint": true },
+        { "id": "J3-10", "step_number": 10, "action": "navigate", "target": "/dashboard/faturamento/anulacoes", "expected_result": "Cancellations page loads (may show empty state)", "expected_url": "/dashboard/faturamento/anulacoes", "screenshot_checkpoint": true },
+        { "id": "J3-11", "step_number": 11, "action": "navigate", "target": "/dashboard/faturamento", "expected_result": "Back to invoice list" },
+        { "id": "J3-12", "step_number": 12, "action": "click", "target": "[data-testid='invoice-row-HLB-2026-0005'] [data-testid='void-button']", "expected_result": "Void confirmation dialog opens with reason selector", "expected_element": "[data-testid='void-dialog']", "screenshot_checkpoint": true }
+      ]
+    },
+    {
+      "id": "J4",
+      "name": "Prevention Screening",
+      "description": "Screening → results → rule triggers → gov submit",
+      "steps": [
+        { "id": "J4-01", "step_number": 1, "action": "navigate", "target": "/dashboard/prevencao/rastreamento", "expected_result": "Screening page loads with instrument list", "expected_url": "/dashboard/prevencao/rastreamento", "expected_element": "[data-testid='instrument-list']", "screenshot_checkpoint": true },
+        { "id": "J4-02", "step_number": 2, "action": "click", "target": "[data-testid='instrument-phq9']", "expected_result": "PHQ-9 questionnaire opens with first question visible", "expected_element": "[data-testid='screening-form']" },
+        { "id": "J4-03", "step_number": 3, "action": "click", "target": "[data-testid='phq9_q1-option-2']", "expected_result": "Q1 answered with value 2 (More than half the days). Progress indicator updates to 1/9." },
+        { "id": "J4-04", "step_number": 4, "action": "assert", "target": "[data-testid='question-progress']", "expected_result": "Shows 'Question 1 of 9' then advances to Q2 after selection" },
+        { "id": "J4-05", "step_number": 5, "action": "click", "target": "[data-testid='complete-all-remaining']", "expected_result": "Fill remaining questions with value=1 for testing. Total score = 2+8(1) = 10", "expected_element": "[data-testid='submit-screening']" },
+        { "id": "J4-06", "step_number": 6, "action": "click", "target": "[data-testid='submit-screening']", "expected_result": "Results page shows: Score 10, Severity 'Moderate' with clinical-caution color + warning icon + text label", "expected_element": "[data-testid='screening-result']", "screenshot_checkpoint": true },
+        { "id": "J4-07", "step_number": 7, "action": "assert", "target": "[data-testid='triggered-rules']", "expected_result": "Triggered rule MH-001 shown: 'PHQ-9 ≥10 indicates at least moderate depression. Consider SSRI + psychotherapy.'", "expected_element": "[data-testid='rule-MH-001']" },
+        { "id": "J4-08", "step_number": 8, "action": "assert", "target": "[data-testid='evidence-source']", "expected_result": "Citation shown: 'Kroenke K, Spitzer RL, Williams JB (2001)' with link to PubMed" },
+        { "id": "J4-09", "step_number": 9, "action": "navigate", "target": "/dashboard/prevencao/imunizacao", "expected_result": "Vaccination tracking page loads. Shows overdue vaccinations if any.", "expected_url": "/dashboard/prevencao/imunizacao", "screenshot_checkpoint": true },
+        { "id": "J4-10", "step_number": 10, "action": "click", "target": "[data-testid='gov-submit-button']", "expected_result": "Gov submit dialog opens. Shows RNDS (sandbox) option. Submitting returns 'Stub OK' status.", "expected_element": "[data-testid='gov-submit-status']", "screenshot_checkpoint": true }
+      ]
+    },
+    {
+      "id": "J5",
+      "name": "Patient Portal",
+      "description": "Magic link → view results → consent management",
+      "steps": [
+        { "id": "J5-01", "step_number": 1, "action": "navigate", "target": "/portal/auth/verify?token=demo-magic-link-token", "expected_result": "Magic link verification page processes token", "expected_url": "/portal", "screenshot_checkpoint": true },
+        { "id": "J5-02", "step_number": 2, "action": "assert", "target": "[data-testid='portal-dashboard']", "expected_result": "Patient portal dashboard loads with patient name and upcoming appointments" },
+        { "id": "J5-03", "step_number": 3, "action": "navigate", "target": "/portal/appointments", "expected_result": "Appointment list shows scheduled visits", "expected_element": "[data-testid='appointment-list']" },
+        { "id": "J5-04", "step_number": 4, "action": "navigate", "target": "/portal/records", "expected_result": "Health records page shows available records", "expected_url": "/portal/records", "expected_element": "[data-testid='records-list']", "screenshot_checkpoint": true },
+        { "id": "J5-05", "step_number": 5, "action": "navigate", "target": "/portal/medications", "expected_result": "Medications page shows active prescriptions with dosage and schedule", "expected_element": "[data-testid='medication-list']", "screenshot_checkpoint": true },
+        { "id": "J5-06", "step_number": 6, "action": "navigate", "target": "/portal/onboarding/consent", "expected_result": "Consent management page with granular opt-in toggles", "expected_url": "/portal/onboarding/consent", "expected_element": "[data-testid='consent-form']", "screenshot_checkpoint": true },
+        { "id": "J5-07", "step_number": 7, "action": "click", "target": "[data-testid='consent-whatsapp-toggle']", "expected_result": "WhatsApp consent toggled. Granular options appear: appointment reminders, medication reminders, lab alerts." },
+        { "id": "J5-08", "step_number": 8, "action": "click", "target": "[data-testid='consent-save']", "expected_result": "Consent saved. Audit log entry created. Confirmation message shown.", "expected_element": "[data-testid='consent-saved-confirmation']", "screenshot_checkpoint": true }
+      ]
+    }
+  ]
+}

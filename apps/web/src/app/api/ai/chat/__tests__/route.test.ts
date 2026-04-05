@@ -23,7 +23,9 @@ jest.mock('@/lib/security/input-sanitization', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn() }
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({

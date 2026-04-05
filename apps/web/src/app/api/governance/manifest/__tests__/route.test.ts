@@ -12,27 +12,31 @@ jest.mock('@/lib/governance/rules-manifest', () => ({
 }));
 
 jest.mock('@/lib/clinical/governance-policy', () => ({
-  getActiveContentBundle: jest.fn().mockReturnValue({
-    contentBundleVersion: 'cbv-1',
-    contentChecksum: 'abc123',
-    protocolVersion: 'p-v2',
-    lifecycleState: 'ACTIVE',
-    signoffStatus: 'APPROVED',
-    updatedAt: '2025-01-01T00:00:00Z',
-  }),
-  getActiveSignoffRecord: jest.fn().mockReturnValue({
-    signedOffBy: 'Dr. Elena',
-    role: 'CMO',
-    signedOffAt: '2025-01-01T00:00:00Z',
-    status: 'APPROVED',
-    notes: null,
-  }),
-  getRuntimeContentStatus: jest.fn().mockReturnValue('VALID'),
+  getActiveContentBundle: jest.fn(),
+  getActiveSignoffRecord: jest.fn(),
+  getRuntimeContentStatus: jest.fn(),
 }));
 
 const { GET } = require('../route');
-const { verifyPatientAccess } = require('@/lib/api/middleware');
 const { RulesManifest } = require('@/lib/governance/rules-manifest');
+const { getActiveContentBundle, getActiveSignoffRecord, getRuntimeContentStatus } = require('@/lib/clinical/governance-policy');
+
+const mockBundle = {
+  contentBundleVersion: 'cbv-1',
+  contentChecksum: 'abc123',
+  protocolVersion: 'p-v2',
+  lifecycleState: 'ACTIVE',
+  signoffStatus: 'APPROVED',
+  updatedAt: '2025-01-01T00:00:00Z',
+};
+
+const mockSignoff = {
+  signedOffBy: 'Dr. Elena',
+  role: 'CMO',
+  signedOffAt: '2025-01-01T00:00:00Z',
+  status: 'APPROVED',
+  notes: null,
+};
 
 const mockContext = {
   user: { id: 'admin-1', email: 'admin@holilabs.com', role: 'ADMIN' },
@@ -42,7 +46,10 @@ const mockContext = {
 describe('GET /api/governance/manifest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (RulesManifest.getActiveManifest as jest.Mock).mockReturnValue('v2.1.0');
+    (getActiveContentBundle as jest.Mock).mockReturnValue(mockBundle);
+    (getActiveSignoffRecord as jest.Mock).mockReturnValue(mockSignoff);
+    (getRuntimeContentStatus as jest.Mock).mockReturnValue('VALID');
   });
 
   it('returns governance manifest with version and metric definitions', async () => {

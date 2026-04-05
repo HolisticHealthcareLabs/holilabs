@@ -1,0 +1,305 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "twilioContentApiCompatible": true,
+  "templates": [
+    {
+      "id": "appt_reminder_24h",
+      "category": "utility",
+      "name": "Appointment Reminder — 24 hours",
+      "locales": {
+        "pt-BR": {
+          "header": "Lembrete de Consulta",
+          "body": "Olá {{patient_name}}! Sua consulta com {{doctor_name}} está agendada para amanhã, {{appointment_date}} às {{appointment_time}}. Local: {{clinic_name}}, {{clinic_address}}. Confirme sua presença respondendo SIM ou reagende respondendo REAGENDAR.",
+          "footer": "{{clinic_name}} — Cuidando da sua saúde",
+          "buttons": [
+            { "type": "quick_reply", "text": "SIM, confirmo" },
+            { "type": "quick_reply", "text": "REAGENDAR" }
+          ]
+        },
+        "es-CO": {
+          "header": "Recordatorio de Cita",
+          "body": "¡Hola {{patient_name}}! Su cita con {{doctor_name}} está programada para mañana, {{appointment_date}} a las {{appointment_time}}. Lugar: {{clinic_name}}, {{clinic_address}}. Confirme su asistencia respondiendo SÍ o reprograme respondiendo REPROGRAMAR.",
+          "footer": "{{clinic_name}} — Cuidando su salud",
+          "buttons": [
+            { "type": "quick_reply", "text": "SÍ, confirmo" },
+            { "type": "quick_reply", "text": "REPROGRAMAR" }
+          ]
+        },
+        "en": {
+          "header": "Appointment Reminder",
+          "body": "Hi {{patient_name}}! Your appointment with {{doctor_name}} is scheduled for tomorrow, {{appointment_date}} at {{appointment_time}}. Location: {{clinic_name}}, {{clinic_address}}. Confirm by replying YES or reschedule by replying RESCHEDULE.",
+          "footer": "{{clinic_name}} — Caring for your health",
+          "buttons": [
+            { "type": "quick_reply", "text": "YES, confirmed" },
+            { "type": "quick_reply", "text": "RESCHEDULE" }
+          ]
+        }
+      },
+      "variables": ["patient_name", "doctor_name", "appointment_date", "appointment_time", "clinic_name", "clinic_address"]
+    },
+    {
+      "id": "appt_reminder_2h",
+      "category": "utility",
+      "name": "Appointment Reminder — 2 hours",
+      "locales": {
+        "pt-BR": {
+          "body": "{{patient_name}}, sua consulta com {{doctor_name}} é daqui a 2 horas ({{appointment_time}}). Lembre-se de trazer: {{required_documents}}. Até logo!",
+          "buttons": [{ "type": "quick_reply", "text": "Estou a caminho" }]
+        },
+        "es-CO": {
+          "body": "{{patient_name}}, su cita con {{doctor_name}} es en 2 horas ({{appointment_time}}). Recuerde traer: {{required_documents}}. ¡Hasta pronto!",
+          "buttons": [{ "type": "quick_reply", "text": "Estoy en camino" }]
+        },
+        "en": {
+          "body": "{{patient_name}}, your appointment with {{doctor_name}} is in 2 hours ({{appointment_time}}). Remember to bring: {{required_documents}}. See you soon!",
+          "buttons": [{ "type": "quick_reply", "text": "On my way" }]
+        }
+      },
+      "variables": ["patient_name", "doctor_name", "appointment_time", "required_documents"]
+    },
+    {
+      "id": "appt_confirmation_request",
+      "category": "utility",
+      "name": "Appointment Confirmation Request",
+      "locales": {
+        "pt-BR": {
+          "body": "Olá {{patient_name}}! Você tem consulta agendada em {{appointment_date}} às {{appointment_time}} com {{doctor_name}}. Pode confirmar sua presença?",
+          "buttons": [
+            { "type": "quick_reply", "text": "Confirmo ✅" },
+            { "type": "quick_reply", "text": "Preciso reagendar" },
+            { "type": "quick_reply", "text": "Cancelar consulta" }
+          ]
+        },
+        "es-CO": {
+          "body": "¡Hola {{patient_name}}! Tiene cita programada el {{appointment_date}} a las {{appointment_time}} con {{doctor_name}}. ¿Puede confirmar su asistencia?",
+          "buttons": [
+            { "type": "quick_reply", "text": "Confirmo ✅" },
+            { "type": "quick_reply", "text": "Reprogramar" },
+            { "type": "quick_reply", "text": "Cancelar cita" }
+          ]
+        },
+        "en": {
+          "body": "Hi {{patient_name}}! You have an appointment on {{appointment_date}} at {{appointment_time}} with {{doctor_name}}. Can you confirm your attendance?",
+          "buttons": [
+            { "type": "quick_reply", "text": "Confirmed ✅" },
+            { "type": "quick_reply", "text": "Reschedule" },
+            { "type": "quick_reply", "text": "Cancel" }
+          ]
+        }
+      },
+      "variables": ["patient_name", "appointment_date", "appointment_time", "doctor_name"]
+    },
+    {
+      "id": "appt_reschedule_offer",
+      "category": "utility",
+      "name": "Reschedule Offer",
+      "locales": {
+        "pt-BR": {
+          "body": "{{patient_name}}, entendemos que precisa reagendar. Temos os seguintes horários disponíveis:\n\n1️⃣ {{slot_1}}\n2️⃣ {{slot_2}}\n3️⃣ {{slot_3}}\n\nResponda com o número da opção desejada ou ligue para {{clinic_phone}}.",
+          "buttons": [
+            { "type": "quick_reply", "text": "1️⃣" },
+            { "type": "quick_reply", "text": "2️⃣" },
+            { "type": "quick_reply", "text": "3️⃣" }
+          ]
+        },
+        "es-CO": {
+          "body": "{{patient_name}}, entendemos que necesita reprogramar. Tenemos los siguientes horarios disponibles:\n\n1️⃣ {{slot_1}}\n2️⃣ {{slot_2}}\n3️⃣ {{slot_3}}\n\nResponda con el número de la opción deseada o llame al {{clinic_phone}}.",
+          "buttons": [
+            { "type": "quick_reply", "text": "1️⃣" },
+            { "type": "quick_reply", "text": "2️⃣" },
+            { "type": "quick_reply", "text": "3️⃣" }
+          ]
+        },
+        "en": {
+          "body": "{{patient_name}}, we understand you need to reschedule. We have the following slots available:\n\n1️⃣ {{slot_1}}\n2️⃣ {{slot_2}}\n3️⃣ {{slot_3}}\n\nReply with the number of your preferred option or call {{clinic_phone}}.",
+          "buttons": [
+            { "type": "quick_reply", "text": "1️⃣" },
+            { "type": "quick_reply", "text": "2️⃣" },
+            { "type": "quick_reply", "text": "3️⃣" }
+          ]
+        }
+      },
+      "variables": ["patient_name", "slot_1", "slot_2", "slot_3", "clinic_phone"]
+    },
+    {
+      "id": "lab_results_ready",
+      "category": "utility",
+      "name": "Lab Results Ready",
+      "locales": {
+        "pt-BR": {
+          "body": "{{patient_name}}, seus resultados de exames estão disponíveis. Acesse pelo portal seguro para visualizar: {{portal_link}}\n\n⚠️ Por segurança, não enviamos resultados por mensagem. Use o link acima para acessar com suas credenciais.",
+          "buttons": [{ "type": "url", "text": "Acessar Portal", "url": "{{portal_link}}" }]
+        },
+        "es-CO": {
+          "body": "{{patient_name}}, sus resultados de laboratorio están disponibles. Acceda al portal seguro para verlos: {{portal_link}}\n\n⚠️ Por seguridad, no enviamos resultados por mensaje. Use el enlace anterior para acceder con sus credenciales.",
+          "buttons": [{ "type": "url", "text": "Acceder al Portal", "url": "{{portal_link}}" }]
+        },
+        "en": {
+          "body": "{{patient_name}}, your lab results are ready. Access them securely at: {{portal_link}}\n\n⚠️ For privacy, we don't share results via message. Use the link above to log in.",
+          "buttons": [{ "type": "url", "text": "View Results", "url": "{{portal_link}}" }]
+        }
+      },
+      "variables": ["patient_name", "portal_link"],
+      "lgpdNote": "NEVER include diagnosis, lab values, or clinical data in the message body. Always redirect to secure portal."
+    },
+    {
+      "id": "prescription_ready",
+      "category": "utility",
+      "name": "Prescription Ready for Pickup",
+      "locales": {
+        "pt-BR": {
+          "body": "{{patient_name}}, sua receita está pronta para retirada na farmácia {{pharmacy_name}} ({{pharmacy_address}}). Prazo: {{expiry_days}} dias úteis. Leve documento com foto.",
+          "buttons": [{ "type": "quick_reply", "text": "Obrigado(a)!" }]
+        },
+        "es-CO": {
+          "body": "{{patient_name}}, su receta está lista para retiro en la farmacia {{pharmacy_name}} ({{pharmacy_address}}). Plazo: {{expiry_days}} días hábiles. Lleve documento con foto.",
+          "buttons": [{ "type": "quick_reply", "text": "¡Gracias!" }]
+        },
+        "en": {
+          "body": "{{patient_name}}, your prescription is ready for pickup at {{pharmacy_name}} ({{pharmacy_address}}). Available for {{expiry_days}} business days. Bring photo ID.",
+          "buttons": [{ "type": "quick_reply", "text": "Thank you!" }]
+        }
+      },
+      "variables": ["patient_name", "pharmacy_name", "pharmacy_address", "expiry_days"]
+    },
+    {
+      "id": "followup_48h",
+      "category": "utility",
+      "name": "Post-Visit Follow-Up — 48 hours",
+      "locales": {
+        "pt-BR": {
+          "body": "Olá {{patient_name}}! Passaram 2 dias desde sua consulta com {{doctor_name}}. Como está se sentindo? Se tiver dúvidas sobre o tratamento, estamos aqui para ajudar.",
+          "buttons": [
+            { "type": "quick_reply", "text": "Estou bem 😊" },
+            { "type": "quick_reply", "text": "Tenho dúvidas" },
+            { "type": "quick_reply", "text": "Preciso de ajuda" }
+          ]
+        },
+        "es-CO": {
+          "body": "¡Hola {{patient_name}}! Han pasado 2 días desde su cita con {{doctor_name}}. ¿Cómo se siente? Si tiene dudas sobre el tratamiento, estamos aquí para ayudarle.",
+          "buttons": [
+            { "type": "quick_reply", "text": "Estoy bien 😊" },
+            { "type": "quick_reply", "text": "Tengo dudas" },
+            { "type": "quick_reply", "text": "Necesito ayuda" }
+          ]
+        },
+        "en": {
+          "body": "Hi {{patient_name}}! It's been 2 days since your visit with {{doctor_name}}. How are you feeling? If you have questions about your treatment, we're here to help.",
+          "buttons": [
+            { "type": "quick_reply", "text": "Doing well 😊" },
+            { "type": "quick_reply", "text": "Have questions" },
+            { "type": "quick_reply", "text": "Need help" }
+          ]
+        }
+      },
+      "variables": ["patient_name", "doctor_name"]
+    },
+    {
+      "id": "followup_7d",
+      "category": "utility",
+      "name": "Post-Visit Follow-Up — 7 days",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, faz uma semana desde sua consulta. Lembramos que é importante seguir o plano de tratamento. Se precisar, agende um retorno: {{scheduling_link}}" },
+        "es-CO": { "body": "{{patient_name}}, ha pasado una semana desde su cita. Le recordamos que es importante seguir el plan de tratamiento. Si necesita, agende un control: {{scheduling_link}}" },
+        "en": { "body": "{{patient_name}}, it's been a week since your visit. Remember to follow your treatment plan. If needed, schedule a follow-up: {{scheduling_link}}" }
+      },
+      "variables": ["patient_name", "scheduling_link"]
+    },
+    {
+      "id": "followup_30d",
+      "category": "utility",
+      "name": "Post-Visit Follow-Up — 30 days",
+      "locales": {
+        "pt-BR": { "body": "Olá {{patient_name}}! Já faz 1 mês desde sua última consulta com {{doctor_name}}. Agende seu retorno para acompanhamento: {{scheduling_link}}" },
+        "es-CO": { "body": "¡Hola {{patient_name}}! Ya pasó 1 mes desde su última cita con {{doctor_name}}. Agende su control de seguimiento: {{scheduling_link}}" },
+        "en": { "body": "Hi {{patient_name}}! It's been 1 month since your last visit with {{doctor_name}}. Schedule your follow-up: {{scheduling_link}}" }
+      },
+      "variables": ["patient_name", "doctor_name", "scheduling_link"]
+    },
+    {
+      "id": "billing_invoice_sent",
+      "category": "utility",
+      "name": "Invoice Sent",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, sua fatura #{{invoice_number}} no valor de R$ {{amount}} foi emitida. Vencimento: {{due_date}}. Pague pelo link: {{payment_link}}" },
+        "es-CO": { "body": "{{patient_name}}, su factura #{{invoice_number}} por ${{amount}} COP ha sido emitida. Vencimiento: {{due_date}}. Pague por el enlace: {{payment_link}}" },
+        "en": { "body": "{{patient_name}}, your invoice #{{invoice_number}} for ${{amount}} has been sent. Due: {{due_date}}. Pay at: {{payment_link}}" }
+      },
+      "variables": ["patient_name", "invoice_number", "amount", "due_date", "payment_link"]
+    },
+    {
+      "id": "billing_payment_received",
+      "category": "utility",
+      "name": "Payment Received",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, confirmamos o recebimento do pagamento de R$ {{amount}} referente à fatura #{{invoice_number}}. Obrigado!" },
+        "es-CO": { "body": "{{patient_name}}, confirmamos el recibo de su pago de ${{amount}} COP referente a la factura #{{invoice_number}}. ¡Gracias!" },
+        "en": { "body": "{{patient_name}}, we confirm receipt of your payment of ${{amount}} for invoice #{{invoice_number}}. Thank you!" }
+      },
+      "variables": ["patient_name", "amount", "invoice_number"]
+    },
+    {
+      "id": "billing_payment_overdue",
+      "category": "utility",
+      "name": "Payment Overdue",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, sua fatura #{{invoice_number}} de R$ {{amount}} está com pagamento pendente desde {{due_date}}. Por favor, regularize pelo link: {{payment_link}} ou entre em contato conosco." },
+        "es-CO": { "body": "{{patient_name}}, su factura #{{invoice_number}} de ${{amount}} COP tiene pago pendiente desde {{due_date}}. Por favor, regularice por el enlace: {{payment_link}} o contáctenos." },
+        "en": { "body": "{{patient_name}}, your invoice #{{invoice_number}} for ${{amount}} has been overdue since {{due_date}}. Please settle at: {{payment_link}} or contact us." }
+      },
+      "variables": ["patient_name", "invoice_number", "amount", "due_date", "payment_link"]
+    },
+    {
+      "id": "prevention_screening_invitation",
+      "category": "utility",
+      "name": "Screening Invitation",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, de acordo com seu perfil de saúde, está na hora do seu {{screening_name}}. Este exame é recomendado {{guideline_reason}}. Agende pelo link: {{scheduling_link}}" },
+        "es-CO": { "body": "{{patient_name}}, según su perfil de salud, es momento de su {{screening_name}}. Este examen es recomendado {{guideline_reason}}. Agende por el enlace: {{scheduling_link}}" },
+        "en": { "body": "{{patient_name}}, based on your health profile, it's time for your {{screening_name}}. This screening is recommended {{guideline_reason}}. Schedule at: {{scheduling_link}}" }
+      },
+      "variables": ["patient_name", "screening_name", "guideline_reason", "scheduling_link"]
+    },
+    {
+      "id": "prevention_screening_results",
+      "category": "utility",
+      "name": "Screening Results Summary",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, os resultados do seu {{screening_name}} estão disponíveis no portal seguro. Seu médico analisou e deixou uma orientação. Acesse: {{portal_link}}" },
+        "es-CO": { "body": "{{patient_name}}, los resultados de su {{screening_name}} están disponibles en el portal seguro. Su médico los analizó y dejó una orientación. Acceda: {{portal_link}}" },
+        "en": { "body": "{{patient_name}}, your {{screening_name}} results are available on the secure portal. Your doctor has reviewed them. Access at: {{portal_link}}" }
+      },
+      "variables": ["patient_name", "screening_name", "portal_link"],
+      "lgpdNote": "Never include screening scores or clinical assessments in the message body."
+    },
+    {
+      "id": "medication_reminder",
+      "category": "utility",
+      "name": "Daily Medication Reminder",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, lembrete: tome {{medication_name}} {{dosage}} agora ({{time_of_day}}). {{instructions}}" },
+        "es-CO": { "body": "{{patient_name}}, recordatorio: tome {{medication_name}} {{dosage}} ahora ({{time_of_day}}). {{instructions}}" },
+        "en": { "body": "{{patient_name}}, reminder: take {{medication_name}} {{dosage}} now ({{time_of_day}}). {{instructions}}" }
+      },
+      "variables": ["patient_name", "medication_name", "dosage", "time_of_day", "instructions"]
+    },
+    {
+      "id": "vaccination_reminder",
+      "category": "utility",
+      "name": "Vaccination Reminder",
+      "locales": {
+        "pt-BR": { "body": "{{patient_name}}, a vacina {{vaccine_name}} está pendente conforme o calendário nacional (PNI). Agende na UBS mais próxima ou em nossa clínica: {{scheduling_link}}" },
+        "es-CO": { "body": "{{patient_name}}, la vacuna {{vaccine_name}} está pendiente según el calendario nacional (PAI). Agende en el punto de vacunación más cercano o en nuestra clínica: {{scheduling_link}}" },
+        "en": { "body": "{{patient_name}}, the {{vaccine_name}} vaccine is due per the national immunization schedule. Schedule at your nearest health center or our clinic: {{scheduling_link}}" }
+      },
+      "variables": ["patient_name", "vaccine_name", "scheduling_link"]
+    }
+  ],
+  "whatsappComplianceNotes": {
+    "lgpd": "All patient consent must be granular (separate opt-in per message category). Never send clinical data (diagnoses, lab values, screening scores) in message body — always redirect to secure portal.",
+    "retention": "Messages retained 90 days in operational DB, permanently in AuditLog hash chain.",
+    "costModel": "Utility messages: ~$0.001/msg. Marketing: ~$0.0625/msg. Free 24h service window after patient initiates. Total for typical 1000-patient clinic: <$10/month.",
+    "apiVersion": "WhatsApp Cloud API (On-Premises API EOL October 2025). Use Meta Business Suite for template approval."
+  }
+}

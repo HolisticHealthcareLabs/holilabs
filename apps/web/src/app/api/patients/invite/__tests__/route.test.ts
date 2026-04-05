@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -45,6 +46,7 @@ jest.mock('jose', () => ({
 
 const { POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const mockContext = {
   user: {
@@ -74,6 +76,7 @@ const mockPatient = {
 describe('POST /api/patients/invite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
     process.env.JWT_SECRET = 'test-secret';
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
   });

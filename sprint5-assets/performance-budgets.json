@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+
+  "bundleSizes": [
+    { "metric": "Main JS bundle (gzipped)", "target": "200KB", "warning": "250KB", "critical": "300KB", "measurement": "analyze-bundle.js output or next-bundle-analyzer" },
+    { "metric": "Per-page JS (largest page)", "target": "50KB", "warning": "75KB", "critical": "100KB", "measurement": ".next/analyze/client.html" },
+    { "metric": "CSS (total)", "target": "30KB", "warning": "50KB", "critical": "75KB", "measurement": "Extracted CSS from build output" },
+    { "metric": "First Load JS (shared)", "target": "85KB", "warning": "100KB", "critical": "120KB", "measurement": "pnpm build output 'First Load JS shared by all'" }
+  ],
+
+  "coreWebVitals": [
+    { "metric": "LCP (Largest Contentful Paint)", "target": "2.5s", "warning": "3.0s", "critical": "4.0s", "measurement": "Lighthouse / CrUX / web-vitals library" },
+    { "metric": "FID (First Input Delay)", "target": "100ms", "warning": "200ms", "critical": "300ms", "measurement": "Lighthouse / CrUX" },
+    { "metric": "CLS (Cumulative Layout Shift)", "target": "0.1", "warning": "0.15", "critical": "0.25", "measurement": "Lighthouse / CrUX" },
+    { "metric": "INP (Interaction to Next Paint)", "target": "200ms", "warning": "300ms", "critical": "500ms", "measurement": "web-vitals library" },
+    { "metric": "TTFB (Time to First Byte)", "target": "200ms", "warning": "400ms", "critical": "800ms", "measurement": "Server response time" }
+  ],
+
+  "apiResponseTimes": [
+    { "endpoint": "GET /api/health", "p50": "10ms", "p95": "50ms", "p99": "100ms" },
+    { "endpoint": "GET /api/copilot/context/:id", "p50": "100ms", "p95": "300ms", "p99": "500ms" },
+    { "endpoint": "POST /api/copilot/suggest", "p50": "1500ms", "p95": "3000ms", "p99": "5000ms", "note": "LLM round-trip — higher budget acceptable" },
+    { "endpoint": "POST /api/copilot/transcribe", "p50": "200ms", "p95": "500ms", "p99": "1000ms" },
+    { "endpoint": "GET /api/comms/conversations", "p50": "100ms", "p95": "300ms", "p99": "500ms" },
+    { "endpoint": "POST /api/comms/send", "p50": "200ms", "p95": "500ms", "p99": "1000ms" },
+    { "endpoint": "POST /api/comms/webhook/twilio", "p50": "50ms", "p95": "200ms", "p99": "500ms", "note": "Twilio expects <5s response" },
+    { "endpoint": "POST /api/billing/invoice", "p50": "150ms", "p95": "400ms", "p99": "800ms" },
+    { "endpoint": "GET /api/billing/analytics", "p50": "300ms", "p95": "800ms", "p99": "1500ms", "note": "Aggregation queries" },
+    { "endpoint": "POST /api/billing/audit", "p50": "200ms", "p95": "500ms", "p99": "1000ms" },
+    { "endpoint": "POST /api/prevention/screen", "p50": "50ms", "p95": "100ms", "p99": "200ms", "note": "Pure computation, no LLM" },
+    { "endpoint": "POST /api/prevention/gov-submit", "p50": "100ms", "p95": "500ms", "p99": "2000ms", "note": "Stub is fast; real RNDS may be slow" }
+  ],
+
+  "lighthouseScores": {
+    "performance": { "target": 90, "warning": 80, "critical": 70 },
+    "accessibility": { "target": 95, "warning": 90, "critical": 85 },
+    "bestPractices": { "target": 90, "warning": 85, "critical": 80 },
+    "seo": { "target": 90, "warning": 85, "critical": 80 }
+  },
+
+  "database": [
+    { "metric": "Single query execution", "target": "50ms", "warning": "100ms", "critical": "500ms" },
+    { "metric": "Page load total DB time", "target": "200ms", "warning": "400ms", "critical": "1000ms" },
+    { "metric": "Full-text search (pg_trgm)", "target": "100ms", "warning": "300ms", "critical": "1000ms" },
+    { "metric": "Analytics aggregation", "target": "500ms", "warning": "1000ms", "critical": "3000ms" }
+  ],
+
+  "realtime": [
+    { "metric": "SSE message delivery", "target": "500ms", "warning": "1000ms", "critical": "3000ms" },
+    { "metric": "SSE reconnect time", "target": "2s", "warning": "5s", "critical": "30s" },
+    { "metric": "Optimistic UI update", "target": "50ms", "warning": "100ms", "critical": "200ms", "note": "Local state update before server confirmation" }
+  ],
+
+  "clinicalSpecific": [
+    { "metric": "Transcription latency (Deepgram)", "target": "300ms", "warning": "500ms", "critical": "1000ms", "note": "Time from speech to text appearing" },
+    { "metric": "SOAP generation time", "target": "5s", "warning": "10s", "critical": "30s", "note": "LLM processing after encounter ends" },
+    { "metric": "Vitals detection latency", "target": "100ms", "warning": "200ms", "critical": "500ms", "note": "Regex parsing on transcript" },
+    { "metric": "CDSS alert generation", "target": "2s", "warning": "5s", "critical": "10s", "note": "Real API call to /api/cdss/chat" },
+    { "metric": "Screening scoring", "target": "10ms", "warning": "50ms", "critical": "100ms", "note": "Pure client-side computation" }
+  ]
+}

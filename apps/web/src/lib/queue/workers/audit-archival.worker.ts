@@ -9,10 +9,8 @@ import { Worker, Job } from 'bullmq';
 import { defaultWorkerOptions, QueueName } from '../config';
 import {
   archiveOldAuditLogs,
-  deleteExpiredAuditLogs,
   archiveAuditLogsByDateRange,
   ArchiveResult,
-  DeletionResult,
 } from '@/lib/jobs/audit-archival';
 import logger from '@/lib/logger';
 
@@ -24,7 +22,7 @@ export interface AuditArchivalJobData {
 }
 
 // Job result interface
-export type AuditArchivalJobResult = ArchiveResult | DeletionResult;
+export type AuditArchivalJobResult = ArchiveResult;
 
 /**
  * Process audit archival job
@@ -51,10 +49,6 @@ async function processAuditArchival(
     if (type === 'archive') {
       // Archive old logs (daily job)
       result = await archiveOldAuditLogs();
-      await job.updateProgress(90);
-    } else if (type === 'delete') {
-      // Delete expired logs (annual job)
-      result = await deleteExpiredAuditLogs();
       await job.updateProgress(90);
     } else if (type === 'archive-range' && startDate && endDate) {
       // Archive specific date range (manual trigger)

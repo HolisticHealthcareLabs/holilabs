@@ -71,8 +71,8 @@ describe('POST /api/clinical/primitives/merge-context', () => {
     expect(data.success).toBe(true);
     expect(data.data.context).toBeDefined();
     expect(data.data.context.patientId).toBe('patient-1');
-    expect(data.data.context.diagnoses).toBeInstanceOf(Array);
-    expect(data.data.sourcesSummary).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data.context.diagnoses)).toBe(true);
+    expect(Array.isArray(data.data.sourcesSummary)).toBe(true);
   });
 
   it('returns 400 when patientId is missing', async () => {

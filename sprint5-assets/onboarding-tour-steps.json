@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "tourId": "first-run-onboarding",
+  "steps": [
+    {
+      "target": "body",
+      "placement": "center",
+      "disableBeacon": true,
+      "spotlightClicks": false,
+      "title": {
+        "en": "Welcome to HoliLabs!",
+        "pt-BR": "Bem-vindo ao HoliLabs!",
+        "es": "¡Bienvenido a HoliLabs!"
+      },
+      "content": {
+        "en": "Your AI-powered clinical assistant is ready. Let's take a quick tour — it takes less than 2 minutes.",
+        "pt-BR": "Seu assistente clínico com IA está pronto. Vamos fazer um tour rápido — leva menos de 2 minutos.",
+        "es": "Tu asistente clínico con IA está listo. Hagamos un tour rápido — toma menos de 2 minutos."
+      }
+    },
+    {
+      "target": "[data-tour='my-day']",
+      "placement": "right",
+      "spotlightClicks": true,
+      "title": {
+        "en": "My Day",
+        "pt-BR": "Meu Dia",
+        "es": "Mi Día"
+      },
+      "content": {
+        "en": "Start here every morning. See your patient queue, tasks, and schedule at a glance.",
+        "pt-BR": "Comece aqui todas as manhãs. Veja sua fila de pacientes, tarefas e agenda de uma só vez.",
+        "es": "Comienza aquí cada mañana. Ve tu cola de pacientes, tareas y agenda de un vistazo."
+      }
+    },
+    {
+      "target": "[data-tour='clinical-command']",
+      "placement": "right",
+      "spotlightClicks": true,
+      "title": {
+        "en": "Clinical Command (Co-Pilot)",
+        "pt-BR": "Comando Clínico (Co-Piloto)",
+        "es": "Comando Clínico (Co-Piloto)"
+      },
+      "content": {
+        "en": "Your AI co-pilot. Tap the microphone to start dictating — it generates SOAP notes in real time and flags drug interactions automatically.",
+        "pt-BR": "Seu co-piloto de IA. Toque no microfone para começar a ditar — gera notas SOAP em tempo real e sinaliza interações medicamentosas automaticamente.",
+        "es": "Tu co-piloto de IA. Toca el micrófono para empezar a dictar — genera notas SOAP en tiempo real y señala interacciones medicamentosas automáticamente."
+      }
+    },
+    {
+      "target": "[data-tour='comunicacoes']",
+      "placement": "right",
+      "spotlightClicks": true,
+      "title": {
+        "en": "Communications",
+        "pt-BR": "Comunicações",
+        "es": "Comunicaciones"
+      },
+      "content": {
+        "en": "WhatsApp, SMS, and email — all in one place. Send appointment reminders, medication alerts, and lab notifications to patients.",
+        "pt-BR": "WhatsApp, SMS e e-mail — tudo em um só lugar. Envie lembretes de consulta, alertas de medicação e notificações de exames.",
+        "es": "WhatsApp, SMS y email — todo en un solo lugar. Envía recordatorios de citas, alertas de medicación y notificaciones de laboratorio."
+      }
+    },
+    {
+      "target": "[data-tour='faturamento']",
+      "placement": "right",
+      "spotlightClicks": true,
+      "title": {
+        "en": "Billing & Revenue",
+        "pt-BR": "Faturamento",
+        "es": "Facturación"
+      },
+      "content": {
+        "en": "Claims, analytics, audit trail, and cancellations. All billing codes (TUSS, CBHPM, ICD-10, CUPS) are built in.",
+        "pt-BR": "Guias, analítica, trilha de auditoria e anulações. Todos os códigos de faturamento (TUSS, CBHPM, CID-10, CUPS) estão integrados.",
+        "es": "Reclamaciones, analítica, auditoría y anulaciones. Todos los códigos de facturación (TUSS, CBHPM, CIE-10, CUPS) están integrados."
+      }
+    },
+    {
+      "target": "[data-tour='prevencao']",
+      "placement": "right",
+      "spotlightClicks": true,
+      "title": {
+        "en": "Prevention",
+        "pt-BR": "Prevenção",
+        "es": "Prevención"
+      },
+      "content": {
+        "en": "Screening tools (PHQ-9, FINDRISC, SCORE2), vaccination tracking, and prevention protocols — all evidence-based.",
+        "pt-BR": "Ferramentas de rastreamento (PHQ-9, FINDRISC, SCORE2), controle de vacinação e protocolos de prevenção — todos baseados em evidências.",
+        "es": "Herramientas de tamizaje (PHQ-9, FINDRISC, SCORE2), seguimiento de vacunación y protocolos de prevención — todos basados en evidencia."
+      }
+    },
+    {
+      "target": "[data-tour='clinical-command']",
+      "placement": "center",
+      "spotlightClicks": true,
+      "title": {
+        "en": "Try it now!",
+        "pt-BR": "Experimente agora!",
+        "es": "¡Pruébalo ahora!"
+      },
+      "content": {
+        "en": "Let's open the Clinical Command. A demo patient is loaded — tap the microphone to dictate your first note.",
+        "pt-BR": "Vamos abrir o Comando Clínico. Um paciente demo está carregado — toque no microfone para ditar sua primeira nota.",
+        "es": "Abramos el Comando Clínico. Un paciente demo está cargado — toca el micrófono para dictar tu primera nota."
+      }
+    },
+    {
+      "target": "body",
+      "placement": "center",
+      "disableBeacon": true,
+      "spotlightClicks": false,
+      "isCompletionStep": true,
+      "title": {
+        "en": "You just saved 8 minutes!",
+        "pt-BR": "Você acabou de economizar 8 minutos!",
+        "es": "¡Acabas de ahorrar 8 minutos!"
+      },
+      "content": {
+        "en": "That's the power of AI documentation. Use ⌘K anytime to search patients, pages, or actions. Welcome aboard!",
+        "pt-BR": "Esse é o poder da documentação com IA. Use ⌘K a qualquer momento para buscar pacientes, páginas ou ações. Bem-vindo a bordo!",
+        "es": "Ese es el poder de la documentación con IA. Usa ⌘K en cualquier momento para buscar pacientes, páginas o acciones. ¡Bienvenido a bordo!"
+      }
+    }
+  ],
+  "options": {
+    "continuous": true,
+    "showSkipButton": true,
+    "showProgress": true,
+    "disableOverlayClose": false,
+    "spotlightPadding": 8,
+    "styles": {
+      "options": {
+        "primaryColor": "#06b6d4",
+        "textColor": "#1f2937",
+        "zIndex": 10000
+      }
+    },
+    "locale": {
+      "en": { "back": "Back", "close": "Close", "last": "Get Started", "next": "Next", "skip": "Skip tour" },
+      "pt-BR": { "back": "Voltar", "close": "Fechar", "last": "Começar", "next": "Próximo", "skip": "Pular tour" },
+      "es": { "back": "Atrás", "close": "Cerrar", "last": "Empezar", "next": "Siguiente", "skip": "Saltar tour" }
+    }
+  }
+}

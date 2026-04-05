@@ -13,12 +13,13 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/patients/dossier-queue', () => ({
-  enqueuePatientDossierJob: jest.fn(() => Promise.resolve()),
+  enqueuePatientDossierJob: jest.fn().mockResolvedValue(undefined),
 }));
 
 const { GET, POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { enqueuePatientDossierJob } = require('@/lib/patients/dossier-queue');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -76,7 +77,10 @@ describe('GET /api/patients/[id]/documents', () => {
 });
 
 describe('POST /api/patients/[id]/documents', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (enqueuePatientDossierJob as jest.Mock).mockResolvedValue(undefined);
+  });
 
   it('uploads a new document', async () => {
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);

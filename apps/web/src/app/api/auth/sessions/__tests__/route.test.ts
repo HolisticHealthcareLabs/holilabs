@@ -1,5 +1,11 @@
 import { NextRequest } from 'next/server';
 
+const mockSessionService = {
+  getUserSessions: jest.fn(),
+  terminateSession: jest.fn(),
+  terminateAllUserSessions: jest.fn(),
+};
+
 jest.mock('@/lib/api/middleware', () => ({
   createPublicRoute: (handler: any) => handler,
 }));
@@ -13,8 +19,28 @@ jest.mock('@/lib/auth', () => ({
 }));
 
 jest.mock('@/lib/auth/session-tracking', () => ({
-  getSessionTrackingService: jest.fn(() => ({
-    getUserSessions: jest.fn().mockResolvedValue([
+  getSessionTrackingService: jest.fn(() => mockSessionService),
+}));
+
+jest.mock('@/lib/auth/token-revocation', () => ({
+  getTokenRevocationService: jest.fn(),
+  RevocationReason: { LOGOUT: 'LOGOUT' },
+}));
+
+jest.mock('@/lib/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+}));
+
+const { GET, DELETE } = require('../route');
+const { auth } = require('@/lib/auth/auth');
+const { getSessionTrackingService } = require('@/lib/auth/session-tracking');
+
+describe('GET /api/auth/sessions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getSessionTrackingService as jest.Mock).mockReturnValue(mockSessionService);
+    mockSessionService.getUserSessions.mockResolvedValue([
       {
         sessionId: 's1',
         userAgent: 'Mozilla/5.0',
@@ -24,26 +50,10 @@ jest.mock('@/lib/auth/session-tracking', () => ({
         lastActivityAt: new Date(),
         expiresAt: new Date(),
       },
-    ]),
-    terminateSession: jest.fn().mockResolvedValue(undefined),
-    terminateAllUserSessions: jest.fn().mockResolvedValue(3),
-  })),
-}));
-
-jest.mock('@/lib/auth/token-revocation', () => ({
-  getTokenRevocationService: jest.fn(),
-  RevocationReason: { LOGOUT: 'LOGOUT' },
-}));
-
-jest.mock('@/lib/logger', () => ({
-  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
-}));
-
-const { GET, DELETE } = require('../route');
-const { auth } = require('@/lib/auth/auth');
-
-describe('GET /api/auth/sessions', () => {
-  beforeEach(() => jest.clearAllMocks());
+    ]);
+    mockSessionService.terminateSession.mockResolvedValue(undefined);
+    mockSessionService.terminateAllUserSessions.mockResolvedValue(3);
+  });
 
   it('returns user sessions when authenticated', async () => {
     (auth as jest.Mock).mockResolvedValue({ user: { id: 'u1' } });
@@ -81,7 +91,11 @@ describe('GET /api/auth/sessions', () => {
 });
 
 describe('DELETE /api/auth/sessions', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getSessionTrackingService as jest.Mock).mockReturnValue(mockSessionService);
+    mockSessionService.terminateAllUserSessions.mockResolvedValue(3);
+  });
 
   it('terminates all sessions when no sessionId', async () => {
     (auth as jest.Mock).mockResolvedValue({ user: { id: 'u1' } });

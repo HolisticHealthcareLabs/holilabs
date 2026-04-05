@@ -18,6 +18,10 @@ jest.mock('react-dom', () => ({
   createPortal: (node: any) => node,
 }));
 
+beforeAll(() => {
+  Element.prototype.scrollIntoView = jest.fn();
+});
+
 const { CommandPalette } = require('../CommandPalette');
 
 describe('dashboard/CommandPalette', () => {

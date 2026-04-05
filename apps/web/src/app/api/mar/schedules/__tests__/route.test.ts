@@ -17,6 +17,7 @@ jest.mock('@/lib/prisma', () => ({
     medicationSchedule: {
       create: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       update: jest.fn(),
     },
   },
@@ -44,6 +45,7 @@ const { POST, GET, DELETE } = require('../route');
 const { prisma } = require('@/lib/prisma');
 const { generateSchedule } = require('@/lib/mar/schedule-generator');
 const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { logAuditEvent } = require('@/lib/audit');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'clinician@holilabs.com', role: 'CLINICIAN' },
@@ -76,6 +78,12 @@ describe('POST /api/mar/schedules', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (logAuditEvent as jest.Mock).mockResolvedValue(undefined);
+    (generateSchedule as jest.Mock).mockReturnValue({
+      isPRN: false,
+      timesPerDay: 2,
+      scheduledTimes: [{ label: '08:00' }, { label: '20:00' }],
+    });
     (prisma.medication.findUnique as jest.Mock).mockResolvedValue(mockMedication);
     (prisma.medicationSchedule.create as jest.Mock).mockResolvedValue(mockSchedule);
   });
@@ -138,6 +146,7 @@ describe('GET /api/mar/schedules', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (logAuditEvent as jest.Mock).mockResolvedValue(undefined);
     (prisma.medicationSchedule.findMany as jest.Mock).mockResolvedValue([mockSchedule]);
   });
 
@@ -164,6 +173,8 @@ describe('DELETE /api/mar/schedules', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (logAuditEvent as jest.Mock).mockResolvedValue(undefined);
+    (prisma.medicationSchedule.findUnique as jest.Mock).mockResolvedValue({ patientId: 'pat-1' });
     (prisma.medicationSchedule.update as jest.Mock).mockResolvedValue({
       ...mockSchedule,
       isActive: false,

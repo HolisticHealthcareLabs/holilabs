@@ -3,10 +3,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+const motionCache: Record<string, React.FC<any>> = {};
 jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
+  motion: new Proxy({}, {
+    get: (_: any, tag: string) => {
+      if (!motionCache[tag]) {
+        const Comp = React.forwardRef(({ children, ...props }: any, ref: any) =>
+          React.createElement(tag, { ...props, ref }, children)
+        );
+        Comp.displayName = `motion.${tag}`;
+        motionCache[tag] = Comp;
+      }
+      return motionCache[tag];
+    },
+  }),
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
@@ -31,18 +41,8 @@ describe('NotificationsTile', () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  it('renders with provided initial notifications', () => {
-    const notifications = [
-      {
-        id: '1',
-        type: 'info' as const,
-        title: 'Test Alert',
-        message: 'Test message',
-        timestamp: new Date(),
-        read: false,
-      },
-    ];
-    render(<NotificationsTile initialNotifications={notifications} />);
-    expect(screen.getByText('Test Alert')).toBeInTheDocument();
+  it('renders with notifications after mount', () => {
+    render(<NotificationsTile initialNotifications={[]} />);
+    expect(screen.getByText('Lab Results Ready')).toBeInTheDocument();
   });
 });

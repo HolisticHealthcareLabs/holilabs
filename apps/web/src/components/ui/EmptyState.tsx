@@ -99,11 +99,12 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-12 text-center"
+      className="p-12 text-center"
+      style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-xl)' }}
     >
       {icon || illustrations[illustration]}
-      <h3 className="mt-6 text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
-      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
+      <h3 className="mt-6 text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <p className="mt-2 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>{description}</p>
       {action && (
         <div className="mt-6">
           {action.href ? (
@@ -254,9 +255,10 @@ export function ErrorState({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-neutral-900 border border-error-200 dark:border-error-900/30 rounded-xl p-12 text-center"
+      className="border border-error-200 dark:border-error-900/30 p-12 text-center"
+      style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)' }}
     >
-      <div className="mx-auto w-24 h-24 bg-error-100 dark:bg-error-900/30 rounded-full flex items-center justify-center mb-6">
+      <div className="mx-auto w-24 h-24 bg-error-100 dark:bg-error-900/30 flex items-center justify-center mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
         <svg className="w-12 h-12 text-error-600 dark:text-error-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
@@ -266,8 +268,8 @@ export function ErrorState({
           />
         </svg>
       </div>
-      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
-      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
+      <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <p className="mt-2 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>{description}</p>
       {onRetry && (
         <div className="mt-6">
           <Button variant="danger" size="lg" onClick={onRetry} leftIcon={retryIcon}>
@@ -292,9 +294,10 @@ export function SuccessState({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white dark:bg-neutral-900 border border-success-200 dark:border-success-900/30 rounded-xl p-12 text-center"
+      className="border border-success-200 dark:border-success-900/30 p-12 text-center"
+      style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)' }}
     >
-      <div className="mx-auto w-24 h-24 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center mb-6">
+      <div className="mx-auto w-24 h-24 bg-success-100 dark:bg-success-900/30 flex items-center justify-center mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
         <svg className="w-12 h-12 text-success-600 dark:text-success-400" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
@@ -303,8 +306,8 @@ export function SuccessState({
           />
         </svg>
       </div>
-      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
-      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
+      <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+      <p className="mt-2 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>{description}</p>
       {onClose && (
         <div className="mt-6">
           <Button variant="success" size="lg" onClick={onClose}>

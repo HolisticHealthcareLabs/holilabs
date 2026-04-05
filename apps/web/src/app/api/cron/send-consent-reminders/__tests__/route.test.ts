@@ -71,12 +71,12 @@ describe('/api/cron/send-consent-reminders', () => {
 
   it('blocks GET in production', async () => {
     const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
 
     const res = await GET(makeRequest('GET', { authorization: `Bearer ${CRON_SECRET}` }));
     const data = await res.json();
 
     expect(res.status).toBe(405);
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 });

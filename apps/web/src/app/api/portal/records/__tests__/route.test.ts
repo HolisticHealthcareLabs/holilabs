@@ -10,8 +10,13 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+jest.mock('@/lib/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+}));
+
 jest.mock('@/lib/audit', () => ({
-  createAuditLog: jest.fn(),
+  createAuditLog: jest.fn().mockResolvedValue({ id: 'audit-1' }),
 }));
 
 const { GET } = require('../route');
@@ -20,6 +25,7 @@ const { prisma } = require('@/lib/prisma');
 const mockContext = {
   session: { userId: 'pu-1', patientId: 'patient-1', email: 'patient@example.com' },
   requestId: 'req-1',
+  params: {},
 };
 
 const mockRecord = {
@@ -33,6 +39,13 @@ const mockRecord = {
   session: null,
 };
 
+const BASE_PARAMS = 'page=1&limit=20&sortBy=createdAt&sortOrder=desc&status=SIGNED&startDate=2025-01-01&endDate=2027-01-01&search=test';
+
+function makeUrl(extra?: string) {
+  const base = `http://localhost:3000/api/portal/records?${BASE_PARAMS}`;
+  return extra ? `${base}&${extra}` : base;
+}
+
 describe('GET /api/portal/records', () => {
   beforeEach(() => jest.clearAllMocks());
 
@@ -40,7 +53,7 @@ describe('GET /api/portal/records', () => {
     (prisma.sOAPNote.findMany as jest.Mock).mockResolvedValue([mockRecord]);
     (prisma.sOAPNote.count as jest.Mock).mockResolvedValue(1);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/records'), mockContext);
+    const res = await GET(new NextRequest(makeUrl()), mockContext);
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -54,10 +67,8 @@ describe('GET /api/portal/records', () => {
     (prisma.sOAPNote.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.sOAPNote.count as jest.Mock).mockResolvedValue(0);
 
-    const res = await GET(
-      new NextRequest('http://localhost:3000/api/portal/records?search=headache'),
-      mockContext
-    );
+    const url = `http://localhost:3000/api/portal/records?page=1&limit=20&sortBy=createdAt&sortOrder=desc&status=SIGNED&startDate=2025-01-01&endDate=2027-01-01&search=headache`;
+    const res = await GET(new NextRequest(url), mockContext);
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -77,10 +88,7 @@ describe('GET /api/portal/records', () => {
     (prisma.sOAPNote.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.sOAPNote.count as jest.Mock).mockResolvedValue(0);
 
-    await GET(
-      new NextRequest('http://localhost:3000/api/portal/records?status=SIGNED'),
-      mockContext
-    );
+    await GET(new NextRequest(makeUrl()), mockContext);
 
     expect(prisma.sOAPNote.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -93,7 +101,7 @@ describe('GET /api/portal/records', () => {
     (prisma.sOAPNote.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.sOAPNote.count as jest.Mock).mockResolvedValue(0);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/records'), mockContext);
+    const res = await GET(new NextRequest(makeUrl()), mockContext);
     const data = await res.json();
 
     expect(res.status).toBe(200);

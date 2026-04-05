@@ -1,0 +1,247 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "researchSources": [
+    "https://hitconsultant.net/2026/03/10/epic-ai-himss-2026-agent-factory-curiosity-foundation-models/",
+    "https://www.abridge.com/press-release/series-d",
+    "https://www.fiercehealthcare.com/ai-and-machine-learning/ambient-ai-startup-abridge-scores-300m-series-e-backed-a16z-and-khosla",
+    "https://www.prnewswire.com/news-releases/nabla-raises-70m-series-c-to-deliver-agentic-ai-to-the-heart-of-clinical-workflows-bringing-total-funding-to-120m-302483646.html",
+    "https://www.veroscribe.com/blog/nuance-dax-review-2026",
+    "https://www.athenahealth.com/resources/blog/introducing-chart-assist-clinical-ai-assistant"
+  ],
+  "competitors": [
+    {
+      "product_name": "Epic Agent Factory + Chart with Art",
+      "company": "Epic Systems",
+      "founded": 1979,
+      "hq": "Verona, Wisconsin, USA",
+      "funding_total": "Private (bootstrapped, $4B+ annual revenue)",
+      "key_features": [
+        "Agent Factory: no-code visual builder to create and deploy AI agents across clinical workflows",
+        "Chart with Art: ambient listening for outpatient, now expanding to bedside nursing and home care",
+        "Curiosity foundation models: Epic-trained clinical LLMs",
+        "85%+ of Epic customer base actively using AI tools",
+        "Deep EHR integration (native — it IS the EHR)",
+        "Genomics and interoperability announcements at HIMSS26"
+      ],
+      "target_market": "Large US health systems (250+ bed hospitals)",
+      "pricing_model": "Bundled with Epic EHR license (est. $500K-$5M+ implementation, per-provider monthly fees)",
+      "ehr_integrations": ["Epic (native)"],
+      "latam_presence": { "active": false, "details": "No significant LATAM presence. Some academic medical centers in Brazil use Epic but adoption is minimal. Cost prohibitive for LATAM clinics." },
+      "strengths": [
+        "Dominant US market position (>35% of US hospital beds)",
+        "Native EHR integration eliminates middleware",
+        "Massive training data from billions of clinical encounters",
+        "No-code agent builder lowers customization barrier",
+        "Deep payer and regulatory integrations"
+      ],
+      "weaknesses": [
+        "Extremely expensive — inaccessible to small/medium clinics",
+        "No LATAM market presence or localization",
+        "Closed ecosystem — no interoperability with non-Epic systems",
+        "Slow to adopt cloud-native architecture",
+        "No Portuguese/Spanish clinical NLP"
+      ],
+      "threat_to_holilabs": {
+        "level": "low",
+        "reasoning": "Epic serves large US hospitals at $500K+ implementations. HoliLabs targets LATAM primary care clinics at 1/100th the cost. Different market, different language, different regulatory environment."
+      }
+    },
+    {
+      "product_name": "Abridge Ambient AI",
+      "company": "Abridge",
+      "founded": 2018,
+      "hq": "Pittsburgh, Pennsylvania, USA",
+      "funding_total": "$750M+ (Series E at $5.3B valuation, June 2025)",
+      "key_features": [
+        "Ambient documentation with ~1.5 minute post-visit processing",
+        "Contextual Reasoning Engine for clinically useful and billable notes",
+        "Source-mapped AI summaries (clinicians can verify against transcript)",
+        "28+ languages supported",
+        "50+ specialties covered",
+        "Outpatient + ED + inpatient coverage",
+        "#1 Best in KLAS 2026 for Ambient AI (2nd year)",
+        "Projected 80M+ patient conversations in 2026"
+      ],
+      "target_market": "US health systems (academic medical centers, safety-net hospitals, community health)",
+      "pricing_model": "Per-provider per-month SaaS (est. $200-$400/provider/month)",
+      "ehr_integrations": ["Epic", "athenahealth", "eClinicalWorks", "Cerner/Oracle", "AllScripts", "NextGen"],
+      "latam_presence": { "active": false, "details": "No LATAM operations. 28+ languages includes Spanish but no Portuguese clinical NLP. No LATAM billing code support." },
+      "strengths": [
+        "Best-in-class ambient documentation quality",
+        "Source mapping builds clinician trust",
+        "Multi-EHR compatibility",
+        "Massive scale (250+ health systems)",
+        "Strong investor backing ($5.3B valuation)"
+      ],
+      "weaknesses": [
+        "US-focused — no LATAM regulatory compliance (LGPD, ANVISA, ANS)",
+        "No billing code support for TUSS/CBHPM/CUPS",
+        "No WhatsApp patient communication",
+        "No prevention screening tools",
+        "Expensive for small clinics"
+      ],
+      "threat_to_holilabs": {
+        "level": "medium",
+        "reasoning": "If Abridge enters LATAM (possible given 28+ languages), their ambient quality is best-in-class. However, they lack LATAM billing, LGPD compliance, WhatsApp integration, and prevention tools. HoliLabs's moat is the full clinical workflow, not just documentation."
+      }
+    },
+    {
+      "product_name": "Nabla Ambient AI + Nabla Connect",
+      "company": "Nabla",
+      "founded": 2018,
+      "hq": "Paris, France",
+      "funding_total": "$120M (Series C, June 2025)",
+      "key_features": [
+        "~20 second post-visit SOAP generation (fastest in market)",
+        "Unified ambient + dictation + coding + command platform",
+        "Agentic AI: initiates EHR actions, not just documentation",
+        "Nabla Connect: plug-and-play module for any EHR vendor",
+        "130+ healthcare organizations",
+        "15-point patient satisfaction increase (Denver Health study)",
+        "Navina partnership for pre-visit clinical intelligence"
+      ],
+      "target_market": "US health systems + European expansion (Paris HQ)",
+      "pricing_model": "Per-provider SaaS (est. $150-$300/provider/month)",
+      "ehr_integrations": ["Epic", "Cerner/Oracle", "Nabla Connect (any EHR)"],
+      "latam_presence": { "active": false, "details": "European company expanding in US market. No LATAM presence. French/English focus. No Portuguese clinical NLP." },
+      "strengths": [
+        "Fastest processing time (~20 seconds)",
+        "Agentic capabilities beyond documentation",
+        "Nabla Connect enables rapid EHR integration",
+        "European data privacy DNA (GDPR experience translates well to LGPD)",
+        "Lower cost than Abridge/Nuance"
+      ],
+      "weaknesses": [
+        "Smaller scale (130 orgs vs Abridge's 250+)",
+        "No LATAM market or language support",
+        "No billing code support for LATAM",
+        "No patient communication platform",
+        "Limited specialty coverage vs Abridge"
+      ],
+      "threat_to_holilabs": {
+        "level": "medium",
+        "reasoning": "Nabla's European privacy-first approach and lower pricing make them a potential LATAM entrant. The Nabla Connect SDK could be adopted by LATAM EHR vendors. However, they lack full clinical workflow (billing, prevention, comms)."
+      }
+    },
+    {
+      "product_name": "Microsoft Dragon Copilot (formerly Nuance DAX)",
+      "company": "Microsoft (acquired Nuance 2022 for $19.7B)",
+      "founded": "1992 (Nuance), 2022 (Microsoft acquisition)",
+      "hq": "Redmond, Washington, USA",
+      "funding_total": "Microsoft-backed (infinite runway)",
+      "key_features": [
+        "Ambient conversation capture with multi-speaker differentiation",
+        "37+ specialties supported",
+        "Deep Epic integration (embedded in Epic workflow)",
+        "AI actions: referral letters, after-visit summaries, evidence linking",
+        "Nursing documentation (med-surg, new 2026)",
+        "Desktop Copilot: invoke AI across apps without switching",
+        "100,000+ clinicians daily, 600+ organizations",
+        "3M+ ambient conversations per month"
+      ],
+      "target_market": "US + Europe health systems (expanding to Austria, France, Germany, Ireland, Belgium, Netherlands)",
+      "pricing_model": "$369-$830+/provider/month",
+      "ehr_integrations": ["Epic", "athenahealth", "MEDITECH", "Cerner/Oracle", "200+ others"],
+      "latam_presence": { "active": false, "details": "European expansion underway (2025-2026) but no announced LATAM plans. Microsoft Azure has LATAM presence but Dragon Copilot is not localized for LATAM healthcare." },
+      "strengths": [
+        "Microsoft backing — unlimited resources",
+        "Largest installed base (100K+ clinicians)",
+        "Broadest EHR compatibility (200+)",
+        "Dragon brand recognition (30+ years in speech recognition)",
+        "Enterprise sales machine"
+      ],
+      "weaknesses": [
+        "Most expensive option ($369-$830/month)",
+        "Complex implementation (enterprise sales cycle)",
+        "No LATAM billing integration",
+        "No patient communication platform",
+        "No prevention/screening tools",
+        "Heavy dependency on Microsoft ecosystem"
+      ],
+      "threat_to_holilabs": {
+        "level": "low",
+        "reasoning": "Pricing alone ($369-$830/month) makes Dragon Copilot inaccessible to LATAM primary care clinics. Even if Microsoft enters LATAM, they target large hospital systems, not the small/medium clinic segment HoliLabs serves."
+      }
+    },
+    {
+      "product_name": "athenaOne + Chart Assistant (Sage) + athenaAmbient",
+      "company": "athenahealth (Bain Capital + Hellman & Friedman)",
+      "founded": 1997,
+      "hq": "Watertown, Massachusetts, USA",
+      "funding_total": "Private equity ($17B acquisition, 2022)",
+      "key_features": [
+        "Chart Assistant with Sage: AI chatbot in patient chart, 300+ prompts",
+        "athenaAmbient: digital scribe generating notes + diagnoses + orders from conversations (entering user testing Feb 2026)",
+        "AI-Native Clinical Encounter: real-time clinical intelligence partner",
+        "Network effects: 160,000+ providers share anonymized clinical data",
+        "athenaAmbient available at NO ADDITIONAL COST to existing customers",
+        "Supports in-person and telehealth",
+        "Advanced Intelligence Layer across entire athenaOne platform"
+      ],
+      "target_market": "US ambulatory care (independent practices, small-medium groups)",
+      "pricing_model": "% of collections (typically 4-8% of revenue) + per-provider fees",
+      "ehr_integrations": ["athenaOne (native)"],
+      "latam_presence": { "active": false, "details": "No LATAM presence. US-only. Revenue-share pricing model doesn't translate well to LATAM payment structures." },
+      "strengths": [
+        "Most relevant competitor for ambulatory/outpatient segment",
+        "athenaAmbient included FREE (massive competitive pressure on paid ambient tools)",
+        "Network effects from 160K+ providers",
+        "AI-native architecture (not bolted-on)",
+        "Revenue-share pricing aligns incentives with clinics"
+      ],
+      "weaknesses": [
+        "US-only, no internationalization",
+        "athenaAmbient still in user testing (not GA as of March 2026)",
+        "No LATAM billing codes or regulatory compliance",
+        "No WhatsApp/patient communication",
+        "Closed ecosystem (athenaOne only)"
+      ],
+      "threat_to_holilabs": {
+        "level": "low",
+        "reasoning": "athenahealth is the closest competitor in terms of target market (ambulatory care). However, they are US-only with zero LATAM presence. Their revenue-share model and network effects don't translate to LATAM markets. The free athenaAmbient sets a pricing precedent that HoliLabs should match (ambient AI as table stakes, not premium)."
+      }
+    }
+  ],
+  "holilabs_moat": {
+    "summary": "HoliLabs is defensible because no US competitor has built the full LATAM clinical workflow stack: LGPD compliance + TUSS/CBHPM/CUPS billing + WhatsApp patient communication + PNI/PAI vaccination tracking + RNDS/e-SUS government integration + Portuguese/Spanish clinical NLP — all at a price point accessible to LATAM primary care clinics.",
+    "differentiators": [
+      {
+        "feature": "LATAM-native billing codes",
+        "detail": "TUSS, CBHPM, CUPS, RIPS, CIE-10 built into every workflow. No competitor has this.",
+        "moat_strength": "very_high"
+      },
+      {
+        "feature": "WhatsApp-first patient communication",
+        "detail": "WhatsApp is the dominant communication channel in LATAM (98% penetration in Brazil). No US competitor integrates WhatsApp natively.",
+        "moat_strength": "very_high"
+      },
+      {
+        "feature": "LGPD + LATAM regulatory compliance",
+        "detail": "Built-in LGPD Art. 33 data handling, ANVISA SaMD awareness, ANS TISS authorization. US competitors would need years to achieve this.",
+        "moat_strength": "high"
+      },
+      {
+        "feature": "Government system integration",
+        "detail": "RNDS FHIR, e-SUS APS, SISAB, PNI vaccination tracking. No international competitor integrates with Brazilian government health systems.",
+        "moat_strength": "high"
+      },
+      {
+        "feature": "Price accessibility",
+        "detail": "Targeting $50-$150/provider/month vs $200-$830 for US competitors. 5-10x cheaper, aligned with LATAM clinic economics.",
+        "moat_strength": "high"
+      },
+      {
+        "feature": "Prevention as a clinical feature",
+        "detail": "PHQ-9, GAD-7, FINDRISC, SCORE2 screening tools + government vaccination schedule tracking. No ambient-focused competitor offers this.",
+        "moat_strength": "medium"
+      },
+      {
+        "feature": "Multi-lingual clinical NLP",
+        "detail": "Portuguese + Spanish + English clinical transcription with medical terminology (Deepgram nova-3-medical). Most competitors only support English clinical NLP at full accuracy.",
+        "moat_strength": "medium"
+      }
+    ],
+    "strategic_recommendation": "HoliLabs should NOT compete on ambient documentation speed (Nabla's 20sec, Abridge's 1.5min are benchmarks to match, not beat). Instead, compete on the FULL workflow: ambient + billing + comms + prevention + government integration. Position as 'the complete clinical OS for LATAM' vs 'just another ambient scribe.' The athenahealth free-ambient precedent means ambient AI is becoming table stakes — the moat is everything around it."
+  }
+}

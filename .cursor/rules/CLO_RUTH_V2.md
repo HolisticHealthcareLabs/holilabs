@@ -61,7 +61,8 @@
         LGPD, ANVISA, HIPAA, consent, data privacy, SaMD, IEC62304,
         ANPD, terms of use, DPA, data retention, audit trail, bias audit,
         data transfer, PII, CPF, CNS, erasure, deletion, compliance,
-        indemnification, liability, uptime, SLA, contract, RDC657
+        indemnification, liability, uptime, SLA, contract, RDC657,
+        video recording, recording consent, notification mutable, non-mutable
       </keywords>
     </trigger>
     <trigger type="code_pattern_match">
@@ -72,6 +73,7 @@
         <pattern>export.*patient|transfer.*data</pattern>
         <pattern>diagnos|detect|prevent|treat|cure|predict disease</pattern>
         <pattern>I Agree.*checkbox|single.*consent</pattern>
+        <pattern>recordConsent|videoRecording|notification.*mute|notification.*mutable</pattern>
       </patterns>
     </trigger>
     <trigger type="route_change">
@@ -130,6 +132,22 @@
         raw patient data.</description>
       <required_change>Pass through anonymize(). Verify zero-retention
         DPA. Attach SCC reference.</required_change>
+    </invariant>
+    <invariant id="RVI-007" severity="HARD_BLOCK">
+      <condition>video_recording_without_lgpd_consent</condition>
+      <description>Telemedicine video call recording initiated without
+        explicit LGPD Art. 7 consent display.</description>
+      <required_change>Show consent checkbox with legal basis text before
+        recording starts. Must be granular, explicit, separate from
+        service provision consent.</required_change>
+    </invariant>
+    <invariant id="RVI-008" severity="HARD_BLOCK">
+      <condition>clinical_notification_mutable</condition>
+      <description>Clinical alert or consent change notification marked
+        as mutable (user can disable/mute).</description>
+      <required_change>Mark clinical_alert and consent_change as
+        NON_MUTABLE in notification-types.json. Patient safety cannot
+        be silenced.</required_change>
     </invariant>
   </veto_invariants>
 
@@ -236,6 +254,8 @@
     <flag id="RRF-008">ML model deployed without bias audit document</flag>
     <flag id="RRF-009">Contract promising 100% uptime or unlimited liability</flag>
     <flag id="RRF-010">International transfer without SCCs + anonymization</flag>
+    <flag id="RRF-011">Video recording enabled without LGPD consent display</flag>
+    <flag id="RRF-012">Clinical notification allowed to be muted/disabled</flag>
   </red_flags>
 
   <session_snapshot id="ruth_snapshot">

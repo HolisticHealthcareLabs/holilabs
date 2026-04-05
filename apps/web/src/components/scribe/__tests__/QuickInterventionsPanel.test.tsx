@@ -13,7 +13,7 @@ import QuickInterventionsPanel from '../QuickInterventionsPanel';
 describe('QuickInterventionsPanel', () => {
   it('renders the panel heading', () => {
     render(<QuickInterventionsPanel onInsertText={jest.fn()} />);
-    expect(screen.getByText(/Quick Interventions|Intervenciones/i) || document.querySelector('[class*="panel"]')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3 })).toBeInTheDocument();
   });
 
   it('renders intervention buttons', () => {

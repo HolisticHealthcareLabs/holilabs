@@ -37,12 +37,20 @@ const SUBSCRIBED_EVENT_TYPES: ClinicalEventType[] = [
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
+const ALLOWED_ROLES = ['CLINICIAN', 'PHYSICIAN', 'NURSE', 'ADMIN'];
+
 export async function GET(request: NextRequest) {
   // ─── Auth Gate ─────────────────────────────────────────────────────────────
   // CYRUS: session required — no anonymous SSE subscriptions
   const session = await auth();
   if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 });
+  }
+
+  // CYRUS: explicit role validation — CVI-007
+  const userRole = (session.user as Record<string, unknown>)['role'] as string | undefined;
+  if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
+    return new Response('Forbidden: insufficient role', { status: 403 });
   }
 
   // ─── Tenant Scoping ────────────────────────────────────────────────────────

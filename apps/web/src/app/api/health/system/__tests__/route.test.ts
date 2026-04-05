@@ -14,23 +14,35 @@ jest.mock('@/lib/prisma', () => ({
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
 
+const originalFetch = global.fetch;
+
 describe('GET /api/health/system', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
+    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: jest.fn().mockResolvedValue('OK'),
+    }) as any;
   });
 
   afterAll(() => {
     process.env = originalEnv;
+    global.fetch = originalFetch;
   });
 
   it('returns system health with all services checked', async () => {
-    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
     process.env.ANTHROPIC_API_KEY = 'test-key';
     process.env.DEEPGRAM_API_KEY = 'test-key';
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
+    process.env.R2_ACCESS_KEY_ID = 'test-key';
+    process.env.R2_SECRET_ACCESS_KEY = 'test-secret';
+    process.env.R2_BUCKET = 'test-bucket';
+    process.env.SENTRY_DSN = 'https://test@sentry.io/123';
 
     const res = await GET();
     const data = await res.json();
@@ -55,7 +67,6 @@ describe('GET /api/health/system', () => {
   });
 
   it('reports error when API keys are missing', async () => {
-    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.DEEPGRAM_API_KEY;
     delete process.env.ENCRYPTION_KEY;
@@ -69,7 +80,6 @@ describe('GET /api/health/system', () => {
   });
 
   it('reports error for invalid encryption key length', async () => {
-    (prisma.$queryRaw as jest.Mock).mockResolvedValue([{ '?column?': 1 }]);
     process.env.ENCRYPTION_KEY = 'too-short';
 
     const res = await GET();

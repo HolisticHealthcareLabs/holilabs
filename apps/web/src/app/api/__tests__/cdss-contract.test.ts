@@ -206,6 +206,10 @@ jest.mock('@/lib/api/audit-buffer', () => ({
 
 const { prisma } = require('@/lib/prisma');
 const { chat } = require('@/lib/ai/chat');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { processClinicalDecision, processDiagnosisOnly, processTreatmentOnly } = require('@/lib/clinical/process-clinical-decision');
+const { symptomDiagnosisEngine } = require('@/lib/clinical/engines/symptom-diagnosis-engine');
+const { sanitizeString, validateArray, sanitizeMedicationName } = require('@/lib/security/validation');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -257,6 +261,8 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue({
       id: 'p1',
       dateOfBirth: '1985-03-10',
@@ -280,17 +286,98 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
       success: true,
       message: 'Consider ordering troponin levels for evaluation of chest pain.',
     });
+
+    (processClinicalDecision as jest.Mock).mockResolvedValue({
+      interactionId: 'int-001',
+      patientId: 'p1',
+      diagnosis: {
+        data: {
+          differentials: [
+            {
+              icd10Code: 'R07.9',
+              name: 'Chest pain, unspecified',
+              probability: 0.6,
+              confidence: 'moderate',
+              reasoning: 'Based on symptoms',
+              redFlags: [],
+              workupSuggestions: ['ECG'],
+            },
+          ],
+          urgency: 'urgent',
+        },
+        method: 'ai',
+      },
+      treatments: [
+        {
+          data: [{ type: 'medication', priority: 'routine', rationale: 'Standard care', evidenceGrade: 'A', contraindications: [] }],
+          method: 'ai',
+        },
+      ],
+      alerts: [],
+      processingMethods: {
+        diagnosis: 'ai',
+        treatments: ['ai'],
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    (processDiagnosisOnly as jest.Mock).mockResolvedValue({
+      data: {
+        differentials: [
+          {
+            icd10Code: 'R07.9',
+            name: 'Chest pain',
+            probability: 0.6,
+            confidence: 'moderate',
+            reasoning: 'Symptom analysis',
+            redFlags: [],
+            workupSuggestions: ['ECG'],
+          },
+        ],
+        urgency: 'urgent',
+      },
+      method: 'ai',
+    });
+
+    (processTreatmentOnly as jest.Mock).mockResolvedValue({
+      data: [{ type: 'medication', priority: 'routine', rationale: 'Standard', evidenceGrade: 'A', contraindications: [] }],
+      method: 'ai',
+    });
+
+    (symptomDiagnosisEngine.evaluate as jest.Mock).mockResolvedValue({
+      method: 'ai',
+      confidence: 0.85,
+      data: {
+        differentials: [
+          {
+            icd10Code: 'R07.9',
+            name: 'Chest pain',
+            probability: 0.7,
+            reasoning: 'Symptom pattern match',
+            redFlags: ['Cardiac history'],
+            workupSuggestions: ['ECG', 'Troponin'],
+          },
+        ],
+        urgency: 'urgent',
+      },
+      aiLatencyMs: 450,
+      fallbackReason: null,
+    });
+
+    (sanitizeString as jest.Mock).mockImplementation((s: string) => s);
+    (validateArray as jest.Mock).mockImplementation(() => {});
+    (sanitizeMedicationName as jest.Mock).mockImplementation((s: string) => s);
   });
 
   // ════════════════════════════════════════════════════════════════════════════
   // 1. POST /api/cdss/chat
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('POST /api/cdss/chat', () => {
+  describe('POST /api/cdss/chat', () => {
     let POST: any;
     beforeAll(() => {
-      // TODO: Implement /api/cdss/chat route with ClinicalSafetyEnvelope response
-      ({ POST } = require('../../cdss/chat/route'));
+
+      ({ POST } = require('../cdss/chat/route'));
     });
 
     it('response contains all ClinicalSafetyEnvelope fields', async () => {
@@ -362,11 +449,11 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   // 2. POST /api/cdss/summary
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('POST /api/cdss/summary', () => {
+  describe('POST /api/cdss/summary', () => {
     let POST: any;
     beforeAll(() => {
-      // TODO: Implement /api/cdss/summary route with ClinicalSafetyEnvelope response
-      ({ POST } = require('../../cdss/summary/route'));
+
+      ({ POST } = require('../cdss/summary/route'));
     });
 
     beforeEach(() => {
@@ -468,11 +555,11 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   // 2b. GET /api/cdss/summary
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('GET /api/cdss/summary', () => {
+  describe('GET /api/cdss/summary', () => {
     let GET: any;
     beforeAll(() => {
-      // TODO: Implement GET /api/cdss/summary with ClinicalSafetyEnvelope response
-      ({ GET } = require('../../cdss/summary/route'));
+
+      ({ GET } = require('../cdss/summary/route'));
     });
 
     beforeEach(() => {
@@ -525,11 +612,11 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   // 3. GET /api/cdss/alerts/[patientId]
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('GET /api/cdss/alerts/[patientId]', () => {
+  describe('GET /api/cdss/alerts/[patientId]', () => {
     let GET: any;
     beforeAll(() => {
-      // TODO: Implement GET /api/cdss/alerts with ClinicalSafetyEnvelope response
-      ({ GET } = require('../../cdss/alerts/[patientId]/route'));
+
+      ({ GET } = require('../cdss/alerts/[patientId]/route'));
     });
 
     it('response contains all ClinicalSafetyEnvelope fields', async () => {
@@ -596,11 +683,11 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   // 4. POST /api/clinical/decision
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('POST /api/clinical/decision', () => {
+  describe('POST /api/clinical/decision', () => {
     let POST: any;
     beforeAll(() => {
       // TODO: Ensure /api/clinical/decision returns complete ClinicalSafetyEnvelope fields
-      ({ POST } = require('../../clinical/decision/route'));
+      ({ POST } = require('../clinical/decision/route'));
     });
 
     const validBody = {
@@ -695,7 +782,7 @@ describe('CDSS Contract Test Matrix — ClinicalSafetyEnvelope', () => {
   // 5. POST /api/clinical/diagnosis
   // ════════════════════════════════════════════════════════════════════════════
 
-  describe.skip('POST /api/clinical/diagnosis', () => {
+  describe('POST /api/clinical/diagnosis', () => {
     let POST: any;
     beforeAll(() => {
       // TODO: Ensure /api/clinical/diagnosis returns complete ClinicalSafetyEnvelope fields

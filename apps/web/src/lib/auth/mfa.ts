@@ -31,7 +31,7 @@
 import twilio from 'twilio';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { encryptPHI, decryptPHI } from '@/lib/security/encryption';
+import { encryptPHIWithVersion, decryptPHI } from '@/lib/security/encryption';
 import { createAuditLog } from '@/lib/audit';
 import crypto from 'crypto';
 
@@ -257,10 +257,10 @@ export async function verifyMFAEnrollment(
     // Generate backup codes
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
-    // Encrypt backup codes for storage
-    const encryptedBackupCodes = backupCodes
-      .map((code) => encryptPHI(code))
-      .filter((code): code is string => code !== null);
+    // Encrypt backup codes for storage (versioned encryption with key rotation support)
+    const encryptedBackupCodes = (
+      await Promise.all(backupCodes.map((code) => encryptPHIWithVersion(code)))
+    ).filter((code): code is string => code !== null);
 
     // Update user with MFA enabled
     await prisma.user.update({
@@ -268,7 +268,7 @@ export async function verifyMFAEnrollment(
       data: {
         mfaEnabled: true,
         mfaServiceSid: TWILIO_VERIFY_SERVICE_SID,
-        mfaPhoneNumber: encryptPHI(phoneNumber), // Encrypt phone number
+        mfaPhoneNumber: phoneNumber, // Prisma encryption extension handles field-level encryption (CVI-003)
         mfaBackupCodes: encryptedBackupCodes,
         mfaEnrolledAt: new Date(),
       },
@@ -358,12 +358,8 @@ export async function sendMFALoginCode(
       throw new Error('MFA not enabled for this user');
     }
 
-    // Decrypt phone number
-    const phoneNumber = decryptPHI(user.mfaPhoneNumber);
-
-    if (!phoneNumber) {
-      throw new Error('Failed to decrypt phone number');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    const phoneNumber = user.mfaPhoneNumber;
 
     const client = getTwilioClient();
 
@@ -468,12 +464,8 @@ export async function verifyMFALoginCode(
       throw new Error('MFA not enabled for this user');
     }
 
-    // Decrypt phone number
-    const phoneNumber = decryptPHI(user.mfaPhoneNumber);
-
-    if (!phoneNumber) {
-      throw new Error('Failed to decrypt phone number');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    const phoneNumber = user.mfaPhoneNumber;
 
     const client = getTwilioClient();
 
@@ -658,7 +650,7 @@ function generateBackupCodes(count: number, length: number): string[] {
   for (let i = 0; i < count; i++) {
     let code = '';
     for (let j = 0; j < length; j++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+      code += chars.charAt(crypto.randomInt(chars.length));
     }
     codes.push(code);
   }
@@ -757,10 +749,8 @@ export async function getMFAStatus(userId: string): Promise<{
 
   let phoneNumberMasked: string | null = null;
   if (user.mfaPhoneNumber) {
-    const decrypted = decryptPHI(user.mfaPhoneNumber);
-    if (decrypted) {
-      phoneNumberMasked = decrypted.replace(/\d(?=\d{4})/g, '*');
-    }
+    // Prisma encryption extension auto-decrypts mfaPhoneNumber (CVI-003)
+    phoneNumberMasked = user.mfaPhoneNumber.replace(/\d(?=\d{4})/g, '*');
   }
 
   return {
@@ -786,10 +776,10 @@ export async function regenerateBackupCodes(userId: string): Promise<string[]> {
     // Generate new backup codes
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
-    // Encrypt backup codes
-    const encryptedBackupCodes = backupCodes
-      .map((code) => encryptPHI(code))
-      .filter((code): code is string => code !== null);
+    // Encrypt backup codes (versioned encryption with key rotation support)
+    const encryptedBackupCodes = (
+      await Promise.all(backupCodes.map((code) => encryptPHIWithVersion(code)))
+    ).filter((code): code is string => code !== null);
 
     // Update user
     await prisma.user.update({

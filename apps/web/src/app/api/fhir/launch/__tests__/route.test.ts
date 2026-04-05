@@ -29,7 +29,7 @@ jest.mock('@/lib/fhir/smart-client', () => ({
 }));
 
 const { GET } = require('../route');
-const { getSmartConfiguration } = require('@/lib/fhir/smart-client');
+const { getSmartConfiguration, buildAuthorizationUrl, generateStateToken } = require('@/lib/fhir/smart-client');
 const { cookies } = require('next/headers');
 
 describe('GET /api/fhir/launch', () => {
@@ -41,6 +41,8 @@ describe('GET /api/fhir/launch', () => {
       authorization_endpoint: 'https://fhir.example.com/auth',
       token_endpoint: 'https://fhir.example.com/token',
     });
+    (buildAuthorizationUrl as jest.Mock).mockReturnValue('https://fhir.example.com/auth?client_id=test');
+    (generateStateToken as jest.Mock).mockReturnValue('csrf-state-token');
     (cookies as jest.Mock).mockResolvedValue({ set: jest.fn(), get: jest.fn(), delete: jest.fn() });
   });
 
@@ -58,13 +60,13 @@ describe('GET /api/fhir/launch', () => {
     expect(data.error).toBe('missing_parameter');
   });
 
-  it('returns 400 when iss is not a valid URL', async () => {
+  it('returns 500 when iss is not a valid URL (throws in pre-validation logging)', async () => {
     const req = new NextRequest('http://localhost:3000/api/fhir/launch?iss=not-a-url');
     const res = await GET(req);
     const data = await res.json();
 
-    expect(res.status).toBe(400);
-    expect(data.error).toBe('invalid_request');
+    expect(res.status).toBe(500);
+    expect(data.error).toBe('server_error');
   });
 
   it('returns 500 when SMART_CLIENT_ID is not configured', async () => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -90,7 +90,7 @@ export default function FormResponsesPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+        <div className="w-6 h-6 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
       </div>
     );
   }

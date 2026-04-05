@@ -1,12 +1,3 @@
-/**
- * Tests for GET /api/command-center/devices
- *
- * - GET returns list of active devices with online/offline status
- * - GET marks devices with recent heartbeat as online
- * - GET returns empty array when DB is unavailable
- * - GET respects the limit query parameter
- */
-
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
@@ -38,39 +29,48 @@ const mockContext = {
   requestId: 'req-1',
 };
 
-const recentHeartbeat = new Date(Date.now() - 2 * 60 * 1000); // 2 minutes ago = online
-const staleHeartbeat = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago = offline
+const recentHeartbeat = new Date(Date.now() - 2 * 60 * 1000);
+const staleHeartbeat = new Date(Date.now() - 10 * 60 * 1000);
+
+const mockDevices = [
+  {
+    id: 'dev-1',
+    deviceId: 'mac-abc123',
+    deviceType: 'DESKTOP_MAC',
+    hostname: 'dev-machine',
+    os: 'macOS 14',
+    lastHeartbeatAt: recentHeartbeat,
+    firstSeenAt: new Date(),
+    sidecarVersion: '1.2.0',
+    edgeVersion: null,
+    rulesetVersion: 'v1',
+  },
+  {
+    id: 'dev-2',
+    deviceId: 'win-xyz456',
+    deviceType: 'DESKTOP_WINDOWS',
+    hostname: 'office-pc',
+    os: 'Windows 11',
+    lastHeartbeatAt: staleHeartbeat,
+    firstSeenAt: new Date(),
+    sidecarVersion: '1.1.0',
+    edgeVersion: null,
+    rulesetVersion: 'v1',
+  },
+];
 
 describe('GET /api/command-center/devices', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (getOrCreateWorkspaceForUser as jest.Mock).mockResolvedValue({ workspaceId: 'ws-1' });
-    (_prisma.agentDevice.findMany as jest.Mock).mockResolvedValue([
-      {
-        id: 'dev-1',
-        deviceId: 'mac-abc123',
-        deviceType: 'DESKTOP_MAC',
-        hostname: 'dev-machine',
-        os: 'macOS 14',
-        lastHeartbeatAt: recentHeartbeat,
-        firstSeenAt: new Date(),
-        sidecarVersion: '1.2.0',
-        edgeVersion: null,
-        rulesetVersion: 'v1',
-      },
-      {
-        id: 'dev-2',
-        deviceId: 'win-xyz456',
-        deviceType: 'DESKTOP_WINDOWS',
-        hostname: 'office-pc',
-        os: 'Windows 11',
-        lastHeartbeatAt: staleHeartbeat,
-        firstSeenAt: new Date(),
-        sidecarVersion: '1.1.0',
-        edgeVersion: null,
-        rulesetVersion: 'v1',
-      },
-    ]);
+
+    const prismaModule = require('@/lib/prisma');
+    if (!prismaModule._prisma) {
+      prismaModule._prisma = {
+        agentDevice: { findMany: jest.fn() },
+      };
+    }
+    (prismaModule._prisma.agentDevice.findMany as jest.Mock).mockResolvedValue(mockDevices);
   });
 
   it('returns list of active devices with online/offline status', async () => {
@@ -81,7 +81,7 @@ describe('GET /api/command-center/devices', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data)).toBe(true);
     expect(data.data).toHaveLength(2);
   });
 
@@ -100,6 +100,7 @@ describe('GET /api/command-center/devices', () => {
 
   it('returns empty array when _prisma is null', async () => {
     const originalMock = jest.requireMock('@/lib/prisma');
+    const savedPrisma = originalMock._prisma;
     originalMock._prisma = null;
 
     const request = new NextRequest('http://localhost:3000/api/command-center/devices');
@@ -109,19 +110,20 @@ describe('GET /api/command-center/devices', () => {
     expect(response.status).toBe(200);
     expect(data.data).toEqual([]);
 
-    originalMock._prisma = {
-      agentDevice: { findMany: jest.fn() },
-    };
+    originalMock._prisma = savedPrisma;
   });
 
   it('passes limit query parameter to database query', async () => {
+    const prismaModule = require('@/lib/prisma');
+    (prismaModule._prisma.agentDevice.findMany as jest.Mock).mockResolvedValue([]);
+
     const request = new NextRequest(
       'http://localhost:3000/api/command-center/devices?limit=10'
     );
 
     await GET(request, mockContext);
 
-    expect(_prisma.agentDevice.findMany).toHaveBeenCalledWith(
+    expect(prismaModule._prisma.agentDevice.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ take: 10 })
     );
   });

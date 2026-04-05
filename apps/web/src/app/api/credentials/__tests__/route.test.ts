@@ -78,7 +78,7 @@ describe('GET /api/credentials', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.credentials).toBeInstanceOf(Array);
+    expect(Array.isArray(data.credentials)).toBe(true);
     expect(data.credentials[0].credentialType).toBe('MEDICAL_LICENSE');
   });
 

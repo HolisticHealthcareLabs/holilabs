@@ -10,23 +10,34 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import VoiceActivityDetector from '../VoiceActivityDetector';
 
-describe('VoiceActivityDetector', () => {
-  it('renders the component container', () => {
-    const { container } = render(
-      <VoiceActivityDetector stream={null} isRecording={false} />
-    );
-    expect(container.firstChild).toBeInTheDocument();
-  });
+// Mock AudioContext for jsdom (plain functions survive resetMocks)
+// Fill data array with 128 (neutral baseline) to simulate silence
+const mockAnalyser = {
+  fftSize: 0,
+  smoothingTimeConstant: 0,
+  frequencyBinCount: 1024,
+  getByteTimeDomainData: (arr: Uint8Array) => { arr.fill(128); },
+};
+const mockAudioContext = {
+  createAnalyser: () => mockAnalyser,
+  createMediaStreamSource: () => ({ connect: () => {} }),
+  close: () => {},
+};
+(globalThis as any).AudioContext = function () { return mockAudioContext; };
 
+describe('VoiceActivityDetector', () => {
   it('renders nothing when not recording', () => {
     const { container } = render(<VoiceActivityDetector stream={null} isRecording={false} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the VAD UI when recording (with a stream)', () => {
-    // Even without a real stream, the component renders the indicator container
-    // Pass a fake MediaStream-like object; the component only uses it in useEffect
     render(<VoiceActivityDetector stream={{} as MediaStream} isRecording={true} />);
-    expect(screen.getByText(/Voz detectada|Silencio|Esperando/i)).toBeInTheDocument();
+    expect(screen.getByText(/Voz detectada|Silencio/)).toBeInTheDocument();
+  });
+
+  it('renders volume indicator when recording', () => {
+    const { container } = render(<VoiceActivityDetector stream={{} as MediaStream} isRecording={true} />);
+    expect(container.querySelector('.bg-gradient-to-r')).toBeInTheDocument();
   });
 });

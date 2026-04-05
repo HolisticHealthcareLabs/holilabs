@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server';
 
-jest.mock('@/lib/api/middleware', () => ({
-  createProtectedRoute: (handler: any) => handler,
-  createPublicRoute: (handler: any) => handler,
+jest.mock('@/lib/api/patient-portal-middleware', () => ({
+  createPatientPortalRoute: (handler: any) => handler,
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -21,13 +20,14 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
-jest.mock('@/lib/auth/patient-session', () => ({
-  requirePatientSession: jest.fn(),
-}));
-
 const { GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
-const { requirePatientSession } = require('@/lib/auth/patient-session');
+
+const mockContext = {
+  session: { userId: 'pu-1', patientId: 'pat-1', email: 'patient@test.com' },
+  requestId: 'req-1',
+  params: {},
+};
 
 function makeRequest() {
   return new NextRequest('http://localhost:3000/api/portal/dashboard/stats');
@@ -37,7 +37,6 @@ describe('GET /api/portal/dashboard/stats', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('returns dashboard stats for authenticated patient', async () => {
-    (requirePatientSession as jest.Mock).mockResolvedValue({ patientId: 'pat-1' });
     (prisma.appointment.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.medication.count as jest.Mock).mockResolvedValue(2);
     (prisma.notification.count as jest.Mock).mockResolvedValue(3);
@@ -45,7 +44,7 @@ describe('GET /api/portal/dashboard/stats', () => {
     (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
     (prisma.formInstance.count as jest.Mock).mockResolvedValue(1);
 
-    const res = await GET(makeRequest());
+    const res = await GET(makeRequest(), mockContext);
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -56,13 +55,29 @@ describe('GET /api/portal/dashboard/stats', () => {
     expect(data.stats.forms.pending).toBe(1);
   });
 
-  it('returns 500 when session is invalid', async () => {
-    (requirePatientSession as jest.Mock).mockRejectedValue(new Error('Unauthorized'));
+  it('returns correct appointment count when upcoming exist', async () => {
+    const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    (prisma.appointment.findMany as jest.Mock).mockResolvedValue([
+      {
+        id: 'apt-1',
+        startTime: futureDate,
+        endTime: new Date(futureDate.getTime() + 30 * 60 * 1000),
+        description: 'Checkup',
+        status: 'SCHEDULED',
+        clinician: { id: 'doc-1', firstName: 'Ana', lastName: 'García', specialty: 'GP' },
+      },
+    ]);
+    (prisma.medication.count as jest.Mock).mockResolvedValue(0);
+    (prisma.notification.count as jest.Mock).mockResolvedValue(0);
+    (prisma.document.count as jest.Mock).mockResolvedValue(0);
+    (prisma.clinicalNote.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.formInstance.count as jest.Mock).mockResolvedValue(0);
 
-    const res = await GET(makeRequest());
+    const res = await GET(makeRequest(), mockContext);
     const data = await res.json();
 
-    expect(res.status).toBe(500);
-    expect(data.success).toBe(false);
+    expect(res.status).toBe(200);
+    expect(data.stats.upcomingAppointments.count).toBe(1);
+    expect(data.stats.upcomingAppointments.next).toBeTruthy();
   });
 });

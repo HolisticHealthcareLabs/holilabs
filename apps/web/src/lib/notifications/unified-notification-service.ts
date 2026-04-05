@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail as sendResendEmail } from '@/lib/email';
 import { sendSMS as sendTwilioSMS } from '@/lib/sms';
 import { sendAppointmentConfirmationWhatsApp } from '@/lib/notifications/whatsapp';
+import { sendPushNotification, type PushSubscription as WebPushSubscription } from '@/lib/notifications/web-push';
 import logger from '@/lib/logger';
 import type { UserType, NotificationType, NotificationPriority } from '@prisma/client';
 
@@ -422,10 +423,8 @@ export async function sendNotification(
       }
 
       // 5. Send push notification if enabled
-      // TODO: Implement web push notifications
       if (payload.forcePush || hasChannelConsent(preferences, 'push', payload.type)) {
         try {
-          // Get user's push subscriptions
           const subscriptions = await prisma.pushSubscription.findMany({
             where: {
               userId: payload.recipientId,
@@ -434,14 +433,38 @@ export async function sendNotification(
           });
 
           if (subscriptions.length > 0) {
-            // TODO: Send push notifications to all subscriptions
-            // This requires web-push library integration
-            deliveryStatus.push = true;
+            const pushPayload = {
+              title: payload.title,
+              body: payload.message,
+              icon: '/icons/icon-192x192.png',
+              badge: '/icons/badge-72x72.png',
+              data: {
+                type: payload.type,
+                url: payload.actionUrl,
+                notificationId: notification.id,
+              },
+            };
+
+            const results = await Promise.allSettled(
+              subscriptions.map(sub => {
+                const keys = sub.keys as { p256dh: string; auth: string };
+                return sendPushNotification(
+                  { endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } },
+                  pushPayload,
+                );
+              })
+            );
+
+            const sent = results.filter(r => r.status === 'fulfilled' && r.value).length;
+            if (sent > 0) {
+              deliveryStatus.push = true;
+            }
 
             logger.info({
               event: 'notification_sent_push',
               notificationId: notification.id,
               subscriptionCount: subscriptions.length,
+              sentCount: sent,
             });
           }
         } catch (error) {

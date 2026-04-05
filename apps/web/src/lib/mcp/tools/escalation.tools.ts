@@ -154,20 +154,13 @@ async function createEscalationHandler(
         ? new Date(Date.now() + input.slaDeadlineHours * 3600 * 1000)
         : null;
 
-    const escalation: any = await prisma.escalation.create({
+    const escalation: any = await (prisma.escalation as any).create({
         data: {
             patientId: input.patientId,
-            encounterId: input.encounterId,
-            title: input.title,
-            description: input.description,
-            category: input.category,
-            severity: input.severity,
-            slaDeadlineHours: input.slaDeadlineHours,
-            slaDeadline,
-            escalationLevel: input.escalationLevel,
-            notificationChannels: input.notificationChannels,
-            createdBy: context.clinicianId,
-            status: 'PENDING',
+            reason: `${input.title}: ${input.description || ''}`.trim(),
+            slaDeadline: slaDeadline || new Date(Date.now() + 24 * 3600 * 1000),
+            scheduledReminderId: input.encounterId || 'manual',
+            status: 'OPEN',
         },
         include: {
             patient: {
@@ -368,7 +361,7 @@ async function resolveEscalationHandler(
     });
 
     if (input.notes) {
-        await (prisma.escalationNote as any).create({
+        await (prisma as any).escalationNote.create({
             data: {
                 escalationId: updated.id,
                 authorId: context.clinicianId,

@@ -69,7 +69,6 @@ describe('AIProvidersSettingsPage — skeleton loading', () => {
     globalThis.fetch = jest.fn().mockReturnValue(new Promise(() => {}));
     render(<AIProvidersSettingsPage />);
 
-    // Skeleton cards are aria-hidden so they don't confuse screen readers
     const skeletons = document.querySelectorAll('[aria-hidden="true"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
@@ -83,8 +82,8 @@ describe('AIProvidersSettingsPage — skeleton loading', () => {
     render(<AIProvidersSettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('Google Gemini')).toBeDefined();
-      expect(screen.getByText('DeepSeek-R1 (Diagnostic Engine)')).toBeDefined();
-      expect(screen.getByText('OpenAI GPT-OSS-120B (High Efficiency)')).toBeDefined();
+      expect(screen.getByText('DeepSeek')).toBeDefined();
+      expect(screen.getByText('OpenAI')).toBeDefined();
     });
   });
 });
@@ -92,41 +91,40 @@ describe('AIProvidersSettingsPage — skeleton loading', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('AIProvidersSettingsPage — inline revoke confirmation', () => {
-  it('clicking Revoke shows inline confirmation — no browser confirm()', async () => {
+  it('clicking revoke shows inline confirmation — no browser confirm()', async () => {
     const confirmSpy = jest.spyOn(window, 'confirm');
     mockFetch([
-      { ok: true, body: workspaceResponse },
+      { ok: true, body: { ...workspaceResponse, role: 'ADMIN' } },
       { ok: true, body: configsResponse },
     ]);
 
     render(<AIProvidersSettingsPage />);
     await waitFor(() => screen.getByText('Google Gemini'));
 
-    // Only Gemini has isConfigured + isActive, so only it shows Revoke
-    const revokeBtn = screen.getByText('Revoke');
+    const revokeBtn = screen.getByText(/revoke key/i);
     fireEvent.click(revokeBtn);
 
     expect(confirmSpy).not.toHaveBeenCalled();
-    expect(screen.getByText(/Confirm revocation/)).toBeDefined();
-    expect(screen.getByText('Cancel')).toBeDefined();
+    expect(screen.getByText(/confirm revoke/i)).toBeDefined();
+    expect(screen.getByText('cancel')).toBeDefined();
 
     confirmSpy.mockRestore();
   });
 
-  it('Cancel hides the inline confirmation', async () => {
+  it('cancel hides the inline confirmation', async () => {
     mockFetch([
-      { ok: true, body: workspaceResponse },
+      { ok: true, body: { ...workspaceResponse, role: 'ADMIN' } },
       { ok: true, body: configsResponse },
     ]);
 
     render(<AIProvidersSettingsPage />);
     await waitFor(() => screen.getByText('Google Gemini'));
 
-    fireEvent.click(screen.getByText('Revoke'));
-    expect(screen.getByText(/Confirm revocation/)).toBeDefined();
+    fireEvent.click(screen.getByText(/revoke key/i));
+    expect(screen.getByText(/confirm revoke/i)).toBeDefined();
 
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.queryByText(/Confirm revocation/)).toBeNull();
+    fireEvent.click(screen.getByText('cancel'));
+    expect(screen.queryByText(/confirm revoke/i)).toBeNull();
   });
 });
 
@@ -142,24 +140,22 @@ describe('AIProvidersSettingsPage — save key feedback', () => {
     ]);
 
     render(<AIProvidersSettingsPage />);
-    await waitFor(() => screen.getByText('DeepSeek-R1 (Diagnostic Engine)'));
+    await waitFor(() => screen.getByText('DeepSeek'));
 
-    const input = screen.getByLabelText('API key for DeepSeek-R1 (Diagnostic Engine)') as HTMLInputElement;
+    const input = screen.getByLabelText('API key for DeepSeek') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'sk-api03-validkey' } });
     expect(input.value).toBe('sk-api03-validkey');
 
-    // After entering a value, only the DeepSeek Save button is enabled.
     const allButtons = screen.getAllByRole('button');
     const enabledSaveBtn = allButtons.find(
-      (btn) => btn.textContent?.trim() === 'Save' && !(btn as HTMLButtonElement).disabled
+      (btn) => btn.textContent?.trim() === 'save key btn' && !(btn as HTMLButtonElement).disabled
     );
     expect(enabledSaveBtn).toBeDefined();
     fireEvent.click(enabledSaveBtn!);
 
-    // Successful save calls setKeyInputs('') — input is cleared
     await waitFor(
       () => {
-        const currentInput = screen.queryByLabelText('API key for DeepSeek-R1 (Diagnostic Engine)') as HTMLInputElement | null;
+        const currentInput = screen.queryByLabelText('API key for DeepSeek') as HTMLInputElement | null;
         expect(currentInput?.value ?? '').toBe('');
       },
       { timeout: 2000 }
@@ -174,29 +170,26 @@ describe('AIProvidersSettingsPage — save key feedback', () => {
     ]);
 
     render(<AIProvidersSettingsPage />);
-    await waitFor(() => screen.getByText('DeepSeek-R1 (Diagnostic Engine)'));
+    await waitFor(() => screen.getByText('DeepSeek'));
 
-    const input = screen.getByLabelText('API key for DeepSeek-R1 (Diagnostic Engine)') as HTMLInputElement;
+    const input = screen.getByLabelText('API key for DeepSeek') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'sk-api03-test' } });
 
     const allButtons = screen.getAllByRole('button');
     const enabledSaveBtn = allButtons.find(
-      (btn) => btn.textContent?.trim() === 'Save' && !(btn as HTMLButtonElement).disabled
+      (btn) => btn.textContent?.trim() === 'save key btn' && !(btn as HTMLButtonElement).disabled
     );
     expect(enabledSaveBtn).toBeDefined();
     fireEvent.click(enabledSaveBtn!);
 
     await waitFor(() => {
-      // Must NOT expose raw database errors to doctors
       expect(screen.queryByText(/Prisma/)).toBeNull();
       expect(screen.queryByText(/unique constraint/)).toBeNull();
-      // Must show clinic-friendly message
       expect(screen.getByText('Unable to save the key. Please try again.')).toBeDefined();
     }, { timeout: 2000 });
   });
 
   it('key input is accessible to clinician role (not admin-only)', async () => {
-    // Use CLINICIAN role — key input must still render
     mockFetch([
       { ok: true, body: { workspaceId: 'ws-1', role: 'CLINICIAN' } },
       { ok: true, body: configsResponse },
@@ -205,9 +198,8 @@ describe('AIProvidersSettingsPage — save key feedback', () => {
     render(<AIProvidersSettingsPage />);
     await waitFor(() => screen.getByText('Google Gemini'));
 
-    // Input must exist for all three providers
     expect(screen.getByLabelText('API key for Google Gemini')).toBeDefined();
-    expect(screen.getByLabelText('API key for DeepSeek-R1 (Diagnostic Engine)')).toBeDefined();
-    expect(screen.getByLabelText('API key for OpenAI GPT-OSS-120B (High Efficiency)')).toBeDefined();
+    expect(screen.getByLabelText('API key for DeepSeek')).toBeDefined();
+    expect(screen.getByLabelText('API key for OpenAI')).toBeDefined();
   });
 });

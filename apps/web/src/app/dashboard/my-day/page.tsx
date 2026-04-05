@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
-import WelcomeModal from '@/components/onboarding/WelcomeModal';
-import SpecialtyWalkthrough from '@/components/onboarding/SpecialtyWalkthrough';
 import {
   Calendar, Clock, Stethoscope,
   User, FileText, CheckCircle2,
@@ -13,7 +11,10 @@ import {
 } from 'lucide-react';
 import { PatientQueue, type Appointment } from './_components/PatientQueue';
 import { TaskWidget, type TaskItem } from './_components/TaskWidget';
-import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
+
+const WelcomeModal = lazy(() => import('@/components/onboarding/WelcomeModal'));
+const SpecialtyWalkthrough = lazy(() => import('@/components/onboarding/SpecialtyWalkthrough'));
+const SpotlightTrigger = lazy(() => import('@/components/onboarding/SpotlightTrigger'));
 import {
   staggerContainer,
   staggerItem,
@@ -32,8 +33,15 @@ function getGreetingKey(now: Date): string {
   return 'goodEvening';
 }
 
-function formatToday(now: Date): string {
-  return now.toLocaleDateString('en-US', {
+const LOCALE_BCP47: Record<string, string> = {
+  en: 'en-US',
+  pt: 'pt-BR',
+  es: 'es-MX',
+};
+
+function formatToday(now: Date, locale: string): string {
+  const bcp47 = LOCALE_BCP47[locale] ?? locale;
+  return now.toLocaleDateString(bcp47, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -113,94 +121,21 @@ function adaptPersonaSchedule(items: PersonaScheduleItem[]): Appointment[] {
 // Default mock data (shown for non-ephemeral / non-demo sessions)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_APPOINTMENTS: Appointment[] = [
-  {
-    id: 'P002',
-    time: '08:00 AM',
-    patientName: 'Maria Santos',
-    initials: 'MS',
-    age: 53,
-    sex: 'F',
-    chiefComplaint: 'Follow-up: HTN + CKD Stage 3 (eGFR trending)',
-    status: 'Finished',
-  },
-  {
-    id: 'P003',
-    time: '08:30 AM',
-    patientName: "James O'Brien",
-    initials: 'JO',
-    age: 80,
-    sex: 'M',
-    chiefComplaint: 'Chest tightness 5 days, bilateral ankle edema',
-    status: 'Pending Signature',
-  },
-  {
-    id: 'P004',
-    time: '09:00 AM',
-    patientName: 'Sofia Reyes',
-    initials: 'SR',
-    age: 41,
-    sex: 'F',
-    chiefComplaint: 'Annual cardiology review, lipid panel results',
-    status: 'In Progress',
-  },
-  {
-    id: 'P001',
-    time: '09:30 AM',
-    patientName: 'Robert Chen',
-    initials: 'RC',
-    age: 67,
-    sex: 'M',
-    chiefComplaint: 'Warfarin INR check, atrial fibrillation management',
-    status: 'Arrived',
-  },
-  {
-    id: 'apt-005',
-    time: '10:00 AM',
-    patientName: 'Juliana Costa Lima',
-    initials: 'JL',
-    age: 38,
-    sex: 'F',
-    chiefComplaint: 'New patient: palpitations and exercise intolerance',
-    status: 'Scheduled',
-  },
-  {
-    id: 'apt-006',
-    time: '10:30 AM',
-    patientName: 'Fernando Augusto Vieira',
-    initials: 'FV',
-    age: 63,
-    sex: 'M',
-    chiefComplaint: 'Post-stent follow-up, dual antiplatelet review',
-    status: 'Scheduled',
-  },
+// Chief complaints use i18n keys — resolved at render time via t()
+const DEFAULT_APPOINTMENT_DEFS = [
+  { id: 'P002',    time: '08:00 AM', patientName: 'Maria Santos',           initials: 'MS', age: 53, sex: 'F', complaintKey: 'cc1', status: 'Finished' as const },
+  { id: 'P003',    time: '08:30 AM', patientName: "James O'Brien",          initials: 'JO', age: 80, sex: 'M', complaintKey: 'cc2', status: 'Pending Signature' as const },
+  { id: 'P004',    time: '09:00 AM', patientName: 'Sofia Reyes',            initials: 'SR', age: 41, sex: 'F', complaintKey: 'cc3', status: 'In Progress' as const },
+  { id: 'P001',    time: '09:30 AM', patientName: 'Robert Chen',            initials: 'RC', age: 67, sex: 'M', complaintKey: 'cc4', status: 'Arrived' as const },
+  { id: 'apt-005', time: '10:00 AM', patientName: 'Juliana Costa Lima',     initials: 'JL', age: 38, sex: 'F', complaintKey: 'cc5', status: 'Scheduled' as const },
+  { id: 'apt-006', time: '10:30 AM', patientName: 'Fernando Augusto Vieira', initials: 'FV', age: 63, sex: 'M', complaintKey: 'cc6', status: 'Scheduled' as const },
 ];
 
-const DEFAULT_TASKS: TaskItem[] = [
-  {
-    id: 'task-001',
-    label: 'Unsigned SOAP Notes',
-    count: 2,
-    icon: 'signature',
-    urgency: 'high',
-    href: '/dashboard/clinical-command',
-  },
-  {
-    id: 'task-002',
-    label: 'Pending Prior Authorizations',
-    count: 1,
-    icon: 'auth',
-    urgency: 'medium',
-    href: '/dashboard/billing',
-  },
-  {
-    id: 'task-003',
-    label: 'Lab Results to Review',
-    count: 3,
-    icon: 'lab',
-    urgency: 'medium',
-    href: '/dashboard/patients',
-  },
+// Task definitions — labels are i18n keys resolved at render time
+const DEFAULT_TASK_DEFS = [
+  { id: 'task-001', labelKey: 'unsignedSoapNotes', count: 2, icon: 'signature' as const, urgency: 'high' as const, href: '/dashboard/clinical-command' },
+  { id: 'task-002', labelKey: 'pendingPriorAuth',  count: 1, icon: 'auth' as const,      urgency: 'medium' as const, href: '/dashboard/billing' },
+  { id: 'task-003', labelKey: 'labResultsToReview', count: 3, icon: 'lab' as const,       urgency: 'medium' as const, href: '/dashboard/patients' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -340,25 +275,27 @@ export default function MyDayPage() {
     return () => { cancelled = true; };
   }, [organizationId]);
 
-  const appointments = personaSchedule ?? DEFAULT_APPOINTMENTS;
-  const tasks: TaskItem[] = [
-    {
-      id: 'task-001',
-      label: 'Unsigned SOAP Notes',
-      count: 1,
-      icon: 'signature',
-      urgency: 'high',
-      href: '/dashboard/clinical-command',
-    },
-    ...DEFAULT_TASKS.slice(1),
-  ];
-
   const t = useTranslations('dashboard.myDay');
   const locale = useLocale();
+
+  const defaultAppointments: Appointment[] = useMemo(() =>
+    DEFAULT_APPOINTMENT_DEFS.map((d) => ({
+      id: d.id, time: d.time, patientName: d.patientName, initials: d.initials,
+      age: d.age, sex: d.sex, chiefComplaint: t(d.complaintKey), status: d.status,
+    })),
+  [t]);
+
+  const appointments = personaSchedule ?? defaultAppointments;
+
+  const tasks: TaskItem[] = DEFAULT_TASK_DEFS.map((def, i) => ({
+    ...def,
+    label: t(def.labelKey),
+    count: i === 0 ? 1 : def.count,
+  }));
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? 'CLINICIAN');
   const doctorLastName = getDoctorLastName(session?.user?.name);
   const greeting = isClockReady && now ? t(getGreetingKey(now)) : t('welcome');
-  const todayLabel = isClockReady && now ? formatToday(now) : t('loadingDate');
+  const todayLabel = isClockReady && now ? formatToday(now, locale) : t('loadingDate');
   const localTimeLabel = isClockReady && now ? formatLocalTime(now) : '--:--';
   const timeZoneLabel = isClockReady && now ? formatTimeZone(now) : 'Detecting timezone';
   const stats = useScheduleStats(appointments);
@@ -378,22 +315,26 @@ export default function MyDayPage() {
   return (
     <>
     {showWelcome && (
-      <WelcomeModal
-        doctorName={doctorLastName ?? session?.user?.name ?? ''}
-        specialty={personaSpecialty ?? 'Clinical'}
-        onStartTour={startTour}
-        onDismiss={dismissWelcome}
-      />
+      <Suspense fallback={null}>
+        <WelcomeModal
+          doctorName={doctorLastName ?? session?.user?.name ?? ''}
+          specialty={personaSpecialty ?? 'Clinical'}
+          onStartTour={startTour}
+          onDismiss={dismissWelcome}
+        />
+      </Suspense>
     )}
     {tourActive && (
-      <SpecialtyWalkthrough
-        active={tourActive}
-        onComplete={() => setTourActive(false)}
-        doctorName={doctorLastName ?? session?.user?.name ?? ''}
-        specialty={personaSpecialty ?? 'Medicine'}
-        voiceId={workspaceVoiceId}
-        language={locale as 'en' | 'pt' | 'es'}
-      />
+      <Suspense fallback={null}>
+        <SpecialtyWalkthrough
+          active={tourActive}
+          onComplete={() => setTourActive(false)}
+          doctorName={doctorLastName ?? session?.user?.name ?? ''}
+          specialty={personaSpecialty ?? 'Medicine'}
+          voiceId={workspaceVoiceId}
+          language={locale as 'en' | 'pt' | 'es'}
+        />
+      </Suspense>
     )}
     <motion.div
       className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
@@ -402,16 +343,16 @@ export default function MyDayPage() {
       animate="visible"
     >
       {/* Header: greeting + date */}
-      <motion.div variants={slideDownHeader} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-        <div>
+      <motion.div variants={slideDownHeader} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            {greeting}{doctorLastName ? `, Dr. ${doctorLastName}` : ''}
+            <span className="whitespace-nowrap">{greeting}{doctorLastName ? ',' : ''}</span>{doctorLastName ? <>{' '}<span className="whitespace-nowrap">Dr.&nbsp;{doctorLastName}</span></> : ''}
           </h1>
           <p suppressHydrationWarning className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" />
-            {todayLabel}
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">{todayLabel}</span>
             {personaSpecialty && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-semibold uppercase tracking-wide border border-cyan-200/60 dark:border-cyan-500/20">
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-semibold uppercase tracking-wide border border-cyan-200/60 dark:border-cyan-500/20 whitespace-nowrap">
                 {personaSpecialty} {t('demo')}
               </span>
             )}
@@ -419,14 +360,17 @@ export default function MyDayPage() {
         </div>
 
         {/* Stat pills */}
-        <div className="flex items-center gap-3">
-          <SpotlightTrigger
-            steps={[
-              { target: '#my-day-schedule', title: t('todaySchedule'), content: 'Your patients for today, sorted by arrival status.' },
-              { target: '#stat-cards', title: 'Quick Stats', content: 'Patients seen, remaining, waiting room, and unsigned charts.' },
-              { target: '#requires-attention', title: 'Action Items', content: 'Tasks that need your immediate attention.' },
-            ]}
-          />
+        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
+          <Suspense fallback={null}>
+            <SpotlightTrigger
+              label={t('quickTour')}
+              steps={[
+                { target: '#my-day-schedule', title: t('todaySchedule'), content: t('tourScheduleContent') },
+                { target: '#stat-cards', title: t('tourQuickStats'), content: t('tourQuickStatsContent') },
+                { target: '#requires-attention', title: t('tourActionItems'), content: t('tourActionItemsContent') },
+              ]}
+            />
+          </Suspense>
           <div suppressHydrationWarning className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
             <Clock className="w-3.5 h-3.5" />
             {localTimeLabel}
@@ -470,7 +414,7 @@ export default function MyDayPage() {
                 {t(card.label)}
               </span>
             </div>
-            <p className={`text-3xl font-bold tabular-nums ${card.accent}`}>
+            <p className={`text-3xl font-bold tabular-nums text-center ${card.accent}`}>
               {card.value}
             </p>
           </motion.div>

@@ -48,12 +48,13 @@ export function FirstRunWelcome({ userName, onDismiss }: FirstRunWelcomeProps) {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border border-white/10 p-8 md:p-12 mb-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border border-white/10 p-8 md:p-12 mb-8" style={{ borderRadius: 'var(--radius-xl)' }}>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent" />
 
         <button
           onClick={onDismiss}
-          className="absolute top-4 right-4 p-2 text-white/40 hover:text-white/70 transition-colors rounded-lg hover:bg-white/5"
+          className="absolute top-4 right-4 p-2 text-white/40 hover:text-white/70 transition-colors hover:bg-white/5"
+          style={{ borderRadius: 'var(--radius-lg)' }}
           aria-label="Dismiss welcome"
         >
           <X className="w-5 h-5" />
@@ -72,14 +73,16 @@ export function FirstRunWelcome({ userName, onDismiss }: FirstRunWelcomeProps) {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/demo"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+              style={{ borderRadius: 'var(--radius-xl)' }}
             >
               Try Interactive Demo
               <ChevronRight className="w-4 h-4" />
             </Link>
             <button
               onClick={onDismiss}
-              className="inline-flex items-center gap-2 px-6 py-3 text-blue-300 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 text-blue-300 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
+              style={{ borderRadius: 'var(--radius-xl)' }}
             >
               Skip — go to dashboard
             </button>
@@ -92,13 +95,14 @@ export function FirstRunWelcome({ userName, onDismiss }: FirstRunWelcomeProps) {
         {FEATURES.map((feature) => (
           <div
             key={feature.badge}
-            className={`rounded-xl border ${feature.borderColor} bg-gradient-to-br ${feature.color} p-6`}
+            className={`border ${feature.borderColor} bg-gradient-to-br ${feature.color} p-6`}
+            style={{ borderRadius: 'var(--radius-xl)' }}
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className={`p-2 rounded-lg bg-white/5 ${feature.iconColor}`}>
+              <div className={`p-2 bg-white/5 ${feature.iconColor}`} style={{ borderRadius: 'var(--radius-lg)' }}>
                 <feature.icon className="w-5 h-5" />
               </div>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${feature.badgeColor}`}>
+              <span className={`text-xs font-semibold px-2 py-0.5 ${feature.badgeColor}`} style={{ borderRadius: 'var(--radius-full)' }}>
                 {feature.badge}
               </span>
             </div>
