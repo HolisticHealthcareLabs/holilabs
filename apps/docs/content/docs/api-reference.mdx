@@ -1,0 +1,55 @@
+---
+title: "API Reference"
+description: "RESTful API with RBAC enforcement and comprehensive health checks."
+---
+
+RESTful API with RBAC enforcement and comprehensive health checks.
+
+## Authentication
+
+All routes require `Authorization: Bearer <token>`. Tokens issued by NextAuth.js carry tenant ID, user role, and session metadata.
+
+## Route Protection
+
+Every route uses `createProtectedRoute`:
+
+```typescript
+import { createProtectedRoute } from '@/lib/auth';
+
+export const GET = createProtectedRoute({
+  roles: ['ADMIN', 'CLINICIAN'],
+  handler: async (req, ctx) => {
+    // Route logic
+  },
+});
+```
+
+## Core Endpoints
+
+### Safety
+- `POST /api/prescriptions/safety-check` — unified clinical + financial pre-check
+- `GET /api/encounters/[id]/summary` — encounter + prescriptions + counts
+
+### Encounters
+- `PATCH /api/encounters/[id]/status` — state machine: SCHEDULED→CHECKED_IN→IN_PROGRESS→COMPLETED
+- `POST /api/encounters/[id]/prescriptions` — inline safety checks; RED→422; AMBER→201+warning
+
+### Patient Data Rights (LGPD)
+- `GET /api/patients/[id]/export` — full Habeas Data export
+- `POST /api/patients/[id]/deletion-request` — initiate erasure request
+- `POST /api/patients/[id]/erasure` — cryptographic key destruction
+
+### WebAuthn
+- `POST /api/auth/webauthn/register-options`
+- `POST /api/auth/webauthn/verify-registration`
+- `POST /api/auth/webauthn/sign-options`
+- `POST /api/auth/webauthn/verify-signature`
+
+### Health
+- `GET /api/health` — general health
+- `GET /api/health/live` — liveness probe
+- `GET /api/health/ready` — readiness probe
+
+## Audit Middleware
+
+All mutative routes fire an audit event via fire-and-forget buffer (`lib/api/audit-buffer.ts`). The buffer prevents audit overhead from blocking response latency.

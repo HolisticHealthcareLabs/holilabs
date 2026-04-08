@@ -1,0 +1,48 @@
+---
+title: "Tech Stack"
+description: "Modern, proven technologies for reliability and developer experience."
+---
+
+Modern, proven technologies for reliability and developer experience.
+
+## Application
+
+| Component | Technology |
+|-----------|-----------|
+| Frontend | Next.js 14 (App Router), React 19, Tailwind, Framer Motion |
+| API | Next.js API routes + Fastify microservice |
+| ORM | Prisma 5.x |
+| Auth | NextAuth.js v5 (JWT) |
+| Real-time | WebSockets |
+| i18n | EN / ES / PT (next-intl) |
+
+## Infrastructure
+
+| Service | Provider |
+|---------|---------|
+| Database | PostgreSQL 15 (DigitalOcean Managed) |
+| Cache | Redis 7 (Upstash) |
+| Search | Meilisearch v1.5 |
+| Storage | Cloudflare R2 |
+| PII Detection | Microsoft Presidio (Docker) |
+| DNS / CDN | Cloudflare |
+| Monitoring | Sentry + BetterStack |
+| Email | Resend + SendGrid |
+
+> **Planned migration:** Target GCP Cloud Run, `southamerica-east1` (Brazil). Workflow exists but is currently disabled.
+
+## Testing
+
+| Suite | Count |
+|-------|-------|
+| Unit + integration (Jest) | 1,900+ |
+| E2E (Playwright) | Desktop Chrome, Tablet, Mobile |
+| Load (k6) | p95 threshold 500ms |
+
+## Key Libraries
+
+- `@simplewebauthn/server` + `@simplewebauthn/browser` v13 — biometric signing
+- `microsoft/presidio` — PII detection and anonymization
+- `bemi` — PostgreSQL WAL-level audit trail
+- `json-logic-js` — deterministic clinical rules engine
+- `next-intl` — trilingual i18n

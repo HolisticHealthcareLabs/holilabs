@@ -1,0 +1,36 @@
+---
+title: "Architecture"
+description: "Turborepo monorepo. Next.js 14 + Fastify. Prisma ORM. PostgreSQL 15."
+---
+
+Turborepo monorepo. Next.js 14 + Fastify. Prisma ORM. PostgreSQL 15.
+
+**Client (Next.js) → API Layer → Prisma ORM → PostgreSQL**
+
+## Monorepo Structure
+
+```
+cortex/
+├ apps/web/       # Next.js 14 (App Router)
+├ apps/api/       # Fastify microservice
+├ packages/       # Shared types, UI components
+├ infra/          # Docker, GCP configs
+├ docs/           # Documentation
+└ .cursor/rules/  # Cortex Boardroom profiles
+```
+
+## Protocol Stack
+
+**Layer 1 — Safety Engine**
+Drug interactions (RxNorm/DCB), renal dose adjustment (eGFR), formulary compliance, billing risk. Deterministic JSON-Logic. Traffic-light alerts.
+
+**Layer 2 — Prevention Hub**
+7 health domains. 50+ protocols (WHO, NHS, ESC). AI risk scoring. Automated screening. WebSocket real-time condition detection.
+
+**Layer 3 — Governance Console**
+Live validation stream. Trust score (0–100). Override detection. Hash-chain audit trail (Bemi). Fleet management.
+
+**Layer ↓ — FHIR / RNDS Interop Layer**
+FHIR R4. Brazil RNDS. ICD-10, SNOMED CT, LOINC, RxNorm, DCB, TUSS. Trilingual (EN/ES/PT).
+
+> **Critical design rule:** AI is never used for safety-critical decisions. All prescribing, dosing, and compliance logic is deterministic JSON-Logic with full provenance metadata. This earns ANVISA Class I classification and clinician trust.

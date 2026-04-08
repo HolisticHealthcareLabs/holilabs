@@ -1,0 +1,41 @@
+---
+title: "Security & RBAC"
+description: "Zero-trust architecture. Role-based access control. Encrypted at every layer."
+---
+
+Zero-trust architecture. Role-based access control. Encrypted at every layer.
+
+## Authentication
+
+NextAuth.js v5 / JWT. 15-min idle timeout. 8-hour absolute expiry. WebAuthn biometric signing available for prescription authorization.
+
+## Role-Based Access Control
+
+Every route is protected by `createProtectedRoute`. Cross-tenant access requires `verifyPatientAccess()`.
+
+```typescript
+export const GET = createProtectedRoute({
+  roles: ['ADMIN', 'CLINICIAN'],
+  handler: async (req, ctx) => {
+    // Route logic
+  },
+});
+```
+
+## Encryption
+
+PII fields (CPF, CNS, RG) encrypted via `encryptPHIWithVersion`. Versioned keys enable rotation without downtime. AES-256 at rest and in transit.
+
+## Security Invariants (CYRUS-enforced)
+
+These are enforced at the code level and cannot be overridden:
+
+- Routes without RBAC guard: **blocked**
+- Cross-tenant access without verification: **blocked**
+- PII without encryption: **blocked**
+- Audit log deletion: **blocked**
+- Hash-chain weakening: **blocked**
+
+## WebAuthn Biometric Signing
+
+Prescriptions can require biometric authorization via WebAuthn. `@simplewebauthn/server` + `@simplewebauthn/browser` v13. Challenge store backed by Redis with Map fallback.

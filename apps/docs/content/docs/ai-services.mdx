@@ -1,0 +1,37 @@
+---
+title: "AI Services"
+description: "Intelligent where it helps. Deterministic where it matters."
+---
+
+Intelligent where it helps. Deterministic where it matters.
+
+AI powers the non-safety-critical layers: note summarization, context gathering, risk score explanation, patient communication drafting.
+
+> **AI Kill Switch:** `DISABLE_ALL_AI` gates all AI feature flags. Safety capabilities are never dependent on AI availability.
+
+## Providers
+
+| Provider | Use |
+|----------|-----|
+| Anthropic (Claude) | Clinical note summarization |
+| Google Vertex AI | Medical entity extraction |
+| OpenAI | Patient comms & translation |
+| AssemblyAI / Deepgram | Voice transcription |
+
+## BYOK (Bring Your Own Key)
+
+Workspaces can configure their own LLM provider keys via the `WorkspaceLLMConfig` model. Priority chain: local Ollama → workspace BYOK → user BYOK → env vars. Redis cache with 300s TTL.
+
+## Anonymization
+
+All patient data is anonymized via Microsoft Presidio before reaching any external LLM provider. No raw PHI leaves the consent boundary.
+
+## Boundaries
+
+AI is **never** used for:
+- Drug interaction decisions
+- Dosing calculations
+- Safety-critical clinical recommendations
+- Billing compliance determinations
+
+These are handled exclusively by deterministic JSON-Logic rules with full provenance metadata.

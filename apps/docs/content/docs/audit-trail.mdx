@@ -1,0 +1,41 @@
+---
+title: "Audit Trail"
+description: "Tamper-evident. Hash-chained. Immutable."
+---
+
+Tamper-evident. Hash-chained. Immutable.
+
+Built on Bemi (PostgreSQL WAL-level auditing). Each entry contains the cryptographic hash of the previous entry. Any alteration is immediately detectable.
+
+## Entry Schema
+
+```json
+{
+  "entryId": "audit-2026-04-06-001",
+  "previousHash": "sha256:a1b2c3...",
+  "action": "OVERRIDE_ALERT",
+  "actor": "dr.silva@clinic.br",
+  "justification": "Patient allergy resolved...",
+  "timestamp": "2026-04-06T14:23:00Z",
+  "hash": "sha256:d4e5f6..."
+}
+```
+
+## Retention
+
+Audit logs are retained indefinitely per LGPD Article 37. They **cannot** be deleted by erasure requests. When a patient exercises their right to erasure, only the patient-controlled encryption key is destroyed—the audit record of every access to that patient's data remains.
+
+## LGPD `accessReason` Field
+
+Every audit entry records an `accessReason` field documenting the legal basis for data access. This satisfies LGPD Art. 37 accountability requirements and enables regulatory audit responses.
+
+## Override Audit
+
+When a clinician overrides a safety alert, the override is recorded with:
+- The alert that was overridden
+- The structured justification provided
+- The clinician's identity and role
+- The timestamp and session context
+- The hash linking it to the chain
+
+Override patterns are surfaced in the Governance Console for systematic review.

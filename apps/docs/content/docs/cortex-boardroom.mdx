@@ -1,0 +1,45 @@
+---
+title: "Cortex Boardroom"
+description: "Eight domain experts govern every technical decision through deterministic orchestration."
+---
+
+Eight domain experts govern every technical decision through deterministic orchestration.
+
+The Cortex Boardroom is an 8-agent orchestration system. Each agent has domain authority, enforcement invariants, and veto power proportional to safety impact.
+
+## Agent Registry
+
+| Agent | Role | Authority |
+|-------|------|-----------|
+| **ARCHIE** | CTO & Principal Architect | Architecture, routing (default orchestrator) |
+| **PAUL** | CPO & UX Strategist | UI/UX, i18n, mobile-first |
+| **VICTOR** | CSO & Enterprise Sales | Pricing, GTM, competitive intel |
+| **GORDON** | CFO & Unit Economics | COGS, burn, LTV/CAC |
+| **RUTH** | CLO & Regulatory Guardian | Supreme veto (Rank 1) |
+| **ELENA** | CMO & Clinical Evidence | Supreme veto (Rank 2) |
+| **CYRUS** | CISO & Security Architect | Supreme veto (Rank 2) |
+| **QUINN** | QA Lead & Test Automation | Quality gate (Rank 4) |
+
+## Supreme Veto
+
+RUTH (Legal), ELENA (Clinical), and CYRUS (Security) can halt any implementation that violates their invariants. No code ships until the human operator resolves the veto.
+
+**Veto format:**
+```
+[VETO — RUTH|ELENA|CYRUS]
+invariant_violated: <exact rule>
+proposed_action:    <what was about to happen>
+required_change:    <what must change before proceeding>
+```
+
+## Invariants
+
+**RUTH** blocks: SaMD language without ANVISA annotation, collapsed consent, cross-border data without LGPD Art. 33 compliance, erasure routes missing `legalBasis`.
+
+**ELENA** blocks: clinical rules without provenance, Tier 3 sources for automated recommendations, LLM output as clinical recommendation, missing lab values imputed rather than returning `INSUFFICIENT_DATA`.
+
+**CYRUS** blocks: routes without `createProtectedRoute`, cross-tenant access without `verifyPatientAccess()`, PII without `encryptPHIWithVersion`, audit log deletion, hash-chain weakening.
+
+## Research Partnership
+
+**Johns Hopkins University** — Active partnership for clinical safety validation and evidence-based protocol development.

@@ -1,0 +1,29 @@
+---
+title: "Governance Console"
+description: "Trust you can measure. Compliance you can prove."
+---
+
+Trust you can measure. Compliance you can prove.
+
+| Metric | Value |
+|--------|-------|
+| Trust Score | 0–100 |
+| Validation | Live |
+| Retention | Indefinite |
+| Fleet | Multi-site |
+
+## Features
+
+**Live Validation Stream** — Every clinical decision streamed in real time. Administrators watch safety checks, overrides, and protocol adherence as they happen.
+
+**Global Trust Score** — Aggregate metric (0–100) combining pass rates, override frequency, protocol adherence, and audit integrity. Trend analysis shows improvement or degradation.
+
+**Override Pattern Detection** — Identifies systematic alert bypasses by department or clinician. Flags alert fatigue, training gaps, or protocol disagreements.
+
+**Fleet Management** — Centralized protocol deployment. Comparative analytics across facilities. Role-based dashboards.
+
+## Audit Architecture
+
+Each audit entry references the cryptographic hash of the previous entry. Built on Bemi (PostgreSQL WAL-level auditing). Any alteration is immediately detectable. Retained per LGPD Article 37—even erasure requests cannot remove audit records.
+
+See [Audit Trail](/docs/audit-trail) for the full schema.

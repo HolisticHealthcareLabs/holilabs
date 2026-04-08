@@ -1,0 +1,51 @@
+---
+title: "Safety Engine"
+description: "Real-time clinical guard rails. Deterministic. Auditable. Instant."
+---
+
+Real-time clinical guard rails. Deterministic. Auditable. Instant.
+
+Tags: Deterministic · RxNorm / DCB · JSON-Logic · Traffic-Light UX
+
+## Capabilities
+
+### Drug-Drug Interaction Checking
+
+Cross-references prescriptions against RxNorm and DCB (Brazilian drug code) ontologies. Detects contraindications, major interactions, and moderate cautions. Each alert includes the clinical source authority, evidence tier, and suggested alternatives.
+
+### Renal Dose Adjustment
+
+Calculates eGFR from the latest creatinine lab values and adjusts drug doses for impaired renal function. Flags stale labs (>72 hours) and recommends re-testing before confirming.
+
+### Formulary Compliance
+
+Checks prescribed medications against facility formulary. Suggests in-formulary alternatives with estimated cost savings. Integrates with TUSS billing codes for claim preparation.
+
+### Billing Risk Scoring (Glosa Prevention)
+
+Scores claims before submission for glosa (denial) probability. Identifies coding mismatches, missing authorizations, and documentation gaps.
+
+## Alert System
+
+**Prescription → Rule Evaluation → Interaction + Dose → Alert + Audit**
+
+- **RED** = hard brake (contraindication)
+- **YELLOW** = review recommended
+- **GREEN** = safe to proceed
+
+Overrides require structured justification logged to the immutable audit trail.
+
+## Rule Provenance
+
+Every rule carries full provenance metadata. No black boxes. No unexplainable recommendations.
+
+```json
+{
+  "ruleId": "DDI-DOAC-NSAID-001",
+  "sourceAuthority": "ESC Guidelines 2023",
+  "evidenceTier": 1,
+  "citationUrl": "https://doi.org/...",
+  "severity": "RED",
+  "lastReviewed": "2026-01-15"
+}
+```

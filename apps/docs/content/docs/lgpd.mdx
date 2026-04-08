@@ -1,0 +1,36 @@
+---
+title: "LGPD"
+description: "Brazil's General Data Protection Law. Built in, not bolted on."
+---
+
+Brazil's General Data Protection Law. Built in, not bolted on.
+
+## Key Articles
+
+### Art. 7 — Legal Bases
+
+Every processing operation records its legal basis. Consent is granular (Service/Research/Marketing). Legitimate interest documented with balancing tests.
+
+### Art. 9 — Sensitive Data
+
+Health data classified as sensitive. Requires explicit consent or legal basis. All records encrypted at rest with versioned keys.
+
+### Art. 18 — Data Subject Rights
+
+Access, correction, deletion, portability, consent withdrawal. Right to Be Forgotten with audited erasure workflows. Habeas Data endpoints:
+
+- `GET /api/patients/[id]/export` — full data export
+- `POST /api/patients/[id]/deletion-request` — erasure request
+- `POST /api/patients/[id]/erasure` — cryptographic key destruction
+
+### Art. 33 — Cross-Border Transfers
+
+Patient data stays in deployment region by default. Cross-border transfers require explicit consent and documented adequacy assessment.
+
+### Art. 37 — Record Retention
+
+Audit logs retained indefinitely. Cannot be deleted by erasure requests. Hash-chain integrity prevents tampering. This is a CYRUS-enforced invariant—no code path can remove audit records.
+
+## Cryptographic Erasure
+
+When a patient exercises their right to erasure, Cortex destroys the patient-controlled encryption key. The data becomes cryptographically inaccessible without physical deletion. Audit logs of the erasure itself are preserved per Art. 37.

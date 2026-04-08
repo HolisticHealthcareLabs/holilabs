@@ -1,0 +1,32 @@
+---
+title: "Data Sovereignty"
+description: "Your body, your data, your revenue."
+---
+
+Your body, your data, your revenue.
+
+## Granular Consent
+
+Three distinct consent types that can never be collapsed into a single checkbox:
+
+| Type | Description |
+|------|-------------|
+| Service | Permission for clinical care. Required for treatment. |
+| Research | Anonymized data for studies. Optional, revocable, time-bounded. |
+| Marketing | Health communications. Separate, optional, independently revocable. |
+
+A patient can consent to sharing their cardiogram with their cardiologist but not their insurer. They can approve their data for a specific diabetes study but revoke it if the study parameters change. Every access is logged. Every grant is auditable.
+
+## The Ownership Model
+
+Under Cortex, patients retain cryptographic ownership of their health data. All patient data is encrypted with patient-controlled keys. An anonymization proxy (Microsoft Presidio) strips PII before any data leaves the consent boundary. Consent contracts enforce terms automatically—when a grant expires, access revokes without manual intervention.
+
+## Patient Data Marketplace
+
+As the platform scales, patients contribute anonymized health data to research studies and pharmaceutical trials on their own terms. This is data ownership economics: patients generate the data, patients set the terms, patients capture the value.
+
+**Patient Owns → Consent + Anonymize → Researcher Access → Value Returns**
+
+## The Sovereignty Principle
+
+Every architectural decision in Cortex—where we store data, how we encrypt it, who holds the keys, what audit trails we keep, how quickly we revoke access—is a downstream consequence of a single upstream conviction: **health data belongs to the person whose body generated it.**

@@ -1,0 +1,46 @@
+---
+title: "Quickstart"
+description: "Get Cortex running locally in under 30 minutes."
+---
+
+Get Cortex running locally in under 30 minutes.
+
+## Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | 18+ | Runtime |
+| pnpm | 8+ | Package manager |
+| Docker | 24+ | PostgreSQL, Redis, Presidio |
+| PostgreSQL | 15 | Primary database |
+
+## Installation
+
+```bash
+# Clone and install
+git clone https://github.com/holilabs/cortex.git
+cd cortex && pnpm install
+
+# Environment setup
+cp .env.example .env.local
+
+# Start infrastructure
+docker compose up -d
+
+# Database setup
+pnpm prisma migrate dev
+pnpm prisma db seed
+
+# Start dev server
+pnpm dev
+```
+
+Open `http://localhost:3000` for the dashboard. API at `http://localhost:3001`.
+
+## Health Checks
+
+```
+GET /api/health       # General health
+GET /api/health/live  # Liveness probe
+GET /api/health/ready # Readiness probe
+```

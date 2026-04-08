@@ -1,0 +1,49 @@
+---
+title: "Deployment"
+description: "CI/CD via GitHub Actions. Auto-deploy on push to main."
+---
+
+CI/CD via GitHub Actions. Auto-deploy on push to main.
+
+## Pipeline
+
+**Lint → Type Check → Test → Secret Scan → Deploy → Smoke**
+
+## Environments
+
+**Production** — DigitalOcean App Platform (NYC). Auto-deploy on `main`.
+
+**Staging** — Docker → DigitalOcean Container Registry → staging app.
+
+## Cron Jobs
+
+| Job | Schedule |
+|-----|---------|
+| Reminders + email queue | Every 5 minutes |
+| Escalations | Every 5 minutes |
+| Daily screening | 00:00 UTC |
+| Consent workflow sweep | 00:00 UTC |
+
+## Environment Variables
+
+Key variables required:
+
+```
+DATABASE_URL           # PostgreSQL connection string
+NEXTAUTH_SECRET        # JWT signing secret
+NEXTAUTH_URL           # App base URL
+REDIS_URL              # Upstash Redis URL
+PRESIDIO_URL           # Microsoft Presidio endpoint
+WEBAUTHN_RP_ID         # WebAuthn relying party ID
+WEBAUTHN_RP_NAME       # WebAuthn relying party name
+```
+
+Never commit `.env` or `.env.local`. Use DigitalOcean App Platform environment variable management for production secrets.
+
+## Docker
+
+```bash
+docker compose up -d   # Start PostgreSQL, Redis, Presidio
+```
+
+Standalone Next.js output (`output: 'standalone'`) enables minimal Docker images for the docs site and API microservice.
