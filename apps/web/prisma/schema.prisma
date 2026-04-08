@@ -122,7 +122,8 @@ model User {
 
   // Workspaces (Org boundary)
   workspaceMembers  WorkspaceMember[]
-  createdWorkspaces Workspace[]       @relation("WorkspaceCreatedBy")
+  createdWorkspaces      Workspace[]              @relation("WorkspaceCreatedBy")
+  createdPromptTemplates AgentPromptTemplate[]    @relation("CreatedPromptTemplates")
 
   // Escalation Queue
   assignedEscalations Escalation[] @relation("EscalationAssignee")
@@ -149,6 +150,10 @@ model User {
   // Role Assignment (delegated RBAC)
   grantedRoles    RoleAssignment[] @relation("RoleGrantor")
   receivedRoles   RoleAssignment[] @relation("RoleGrantee")
+
+  // Clinical Skills (per-clinician agent behavior config)
+  clinicianSkillConfigs  ClinicianSkillConfig[]   @relation("UserSkillConfigs")
+  createdSkillDefinitions ClinicalSkillDefinition[] @relation("CreatedSkillDefinitions")
 
   @@index([email])
   @@index([walletAddress])
@@ -6664,9 +6669,11 @@ model Workspace {
   members    WorkspaceMember[]
   apiKeys    WorkspaceAPIKey[]
   llmConfigs WorkspaceLLMConfig[]
-  devices    AgentDevice[]
-  heartbeats AgentHeartbeat[]
-  events     FleetEvent[]
+  devices          AgentDevice[]
+  heartbeats       AgentHeartbeat[]
+  events           FleetEvent[]
+  promptTemplates    AgentPromptTemplate[]
+  skillDefinitions   ClinicalSkillDefinition[]
 
   @@index([createdAt])
   @@index([isEphemeral, expiresAt])
@@ -8370,4 +8377,150 @@ model AgentIdempotencyLog {
 
   @@index([expiresAt])
   @@map("agent_idempotency_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT PROMPT TEMPLATES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Defines agent behavior as data, not code. Each template is a named prompt
+/// that shapes how the AI co-pilot responds in a specific context.
+///
+/// Resolution chain: workspace override → global default → built-in fallback.
+/// Safety-critical templates (customizable=false) cannot be overridden.
+///
+/// ANVISA note: These govern the LLM only — deterministic clinical rules
+/// live in engine.ts / JSON-Logic and are NOT affected by prompt changes.
+
+enum PromptTemplateCategory {
+  CLINICAL
+  SAFETY
+  EXTRACTION
+  ADMINISTRATIVE
+}
+
+model AgentPromptTemplate {
+  id          String                 @id @default(cuid())
+  slug        String                 /// e.g. "general", "differential", "drug-interactions"
+  name        String                 /// Human-readable: "Differential Diagnosis"
+  description String?                @db.Text
+  category    PromptTemplateCategory
+  prompt      String                 @db.Text /// The actual system prompt text
+
+  version      String  @default("1.0.0") /// Semver for audit trail
+  isActive     Boolean @default(true)     /// Soft-delete / deactivation
+  isDefault    Boolean @default(false)    /// True for built-in seed templates
+  customizable Boolean @default(true)     /// False = workspace cannot override (safety-critical)
+
+  /// null = global default. Non-null = workspace-level override.
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User? @relation("CreatedPromptTemplates", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, workspaceId])
+  @@index([workspaceId])
+  @@index([category])
+  @@index([isActive])
+  @@map("agent_prompt_templates")
+}
+
+// ============================================================================
+// CLINICAL SKILLS — Per-clinician agent behavior configuration
+// ============================================================================
+
+enum SkillCategory {
+  DIAGNOSIS
+  TREATMENT
+  DOCUMENTATION
+  PREVENTION
+  WORKFLOW
+}
+
+enum TreatmentApproachPreset {
+  MBE_ONLY       /// Purely conventional evidence-based medicine
+  MBE_PRIMARY    /// MBE primary, mention Grade A/B PICs only
+  INTEGRATIVE    /// Balanced conventional + PICs
+  PICS_EMPHASIS  /// PICs emphasis with MBE safety guardrails
+  PICS_LEAD      /// PICs as first line, conventional supplements
+}
+
+/// Global skill definition. Built-in seeds + optional workspace overrides.
+model ClinicalSkillDefinition {
+  id          String        @id @default(cuid())
+  slug        String        /// e.g. "differential-dx", "rx-prescriptions"
+  name        String        /// Display name (pt-BR default)
+  namePtBr    String?       /// Brazilian Portuguese
+  nameEn      String?       /// English fallback
+  description String?       @db.Text
+  icon        String        /// Emoji: "\u{1F50D}"
+  color       String        @default("#3B82F6") /// Hex color for pill chip
+  category    SkillCategory
+  sortOrder   Int           @default(0)
+
+  /// Whether the treatment approach selector (MBE <-> PICs) is relevant
+  supportsTreatmentApproach Boolean @default(false)
+
+  /// Prompt suffix appended when this skill is active.
+  /// Supports {{treatmentApproach}} and {{customInstructions}} template vars.
+  skillPromptSuffix String @db.Text
+
+  /// MCP tool categories this skill filters for (e.g. ["medications", "prescriptions"])
+  toolCategories String[] @default([])
+
+  /// Default sub-options (JSON). UI renders toggles from this.
+  defaultSubOptions Json?
+
+  version  String  @default("1.0.0")
+  isActive Boolean @default(true)
+  isBuiltIn Boolean @default(true)
+
+  /// null = global default. Non-null = workspace-level override.
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User? @relation("CreatedSkillDefinitions", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinicianConfigs ClinicianSkillConfig[]
+
+  @@unique([slug, workspaceId])
+  @@index([workspaceId])
+  @@index([category])
+  @@index([isActive, sortOrder])
+  @@map("clinical_skill_definitions")
+}
+
+/// Per-clinician configuration of a skill.
+model ClinicianSkillConfig {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserSkillConfigs", fields: [userId], references: [id], onDelete: Cascade)
+
+  skillDefinitionId String
+  skillDefinition   ClinicalSkillDefinition @relation(fields: [skillDefinitionId], references: [id], onDelete: Cascade)
+
+  enabled  Boolean @default(true)
+  priority Int     @default(3) /// 1 (background) to 5 (dominant)
+
+  /// Treatment approach preset. Null = skill does not support it.
+  treatmentApproach TreatmentApproachPreset?
+
+  customInstructions String? @db.Text /// Free-text additions to the skill prompt
+  subOptions         Json?             /// Skill-specific toggles (overrides definition defaults)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, skillDefinitionId])
+  @@index([userId])
+  @@index([skillDefinitionId])
+  @@map("clinician_skill_configs")
 }

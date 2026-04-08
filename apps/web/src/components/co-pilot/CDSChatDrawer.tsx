@@ -1,6 +1,7 @@
  'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { SkillsTray } from './SkillsTray';
 
 type Provider = 'gemini' | 'claude' | 'openai';
 
@@ -57,6 +58,8 @@ export function CDSChatDrawer({
   const lastSyncedTranscriptRef = useRef<string>('');
   const [showPromptPreview, setShowPromptPreview] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const [skillsTrayOpen, setSkillsTrayOpen] = useState(false);
+  const [sessionSkills, setSessionSkills] = useState<string[]>([]);
   const importMenuRef = useRef<HTMLDivElement | null>(null);
   const [imageLightbox, setImageLightbox] = useState<{
     id: string;
@@ -81,7 +84,7 @@ export function CDSChatDrawer({
     if (!open) return;
     setContextError('');
 
-    // Prefill prompt with latest context + transcript for “during interview” workflow.
+    // Prefill prompt with latest context + transcript for "during interview" workflow.
     (async () => {
       if (!patientId) return;
       try {
@@ -267,6 +270,7 @@ export function CDSChatDrawer({
           patientId,
           messages: nextMessages,
           temperature: 0.4,
+          sessionSkills,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -553,8 +557,52 @@ export function CDSChatDrawer({
           ) : (
             <>
           {messages.length === 0 ? (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Tip: ask for “top 5 differentials + red flags + 3 clarifying questions” while you interview.
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  What can your Co-Pilot do?
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Click any suggestion or type your own question
+                </p>
+              </div>
+
+              {/* Suggested prompts grouped by category */}
+              <div className="space-y-2">
+                {[
+                  { label: 'Diagnosis', prompt: 'Top 5 differentials + red flags + 3 clarifying questions', icon: '\u{1F50D}' },
+                  { label: 'Medications', prompt: 'Review current medications for interactions and suggest adjustments', icon: '\u{1F48A}' },
+                  { label: 'Lab Orders', prompt: 'Recommend labs based on the current assessment', icon: '\u{1F9EA}' },
+                  { label: 'Prevention', prompt: 'What screenings are due or overdue for this patient?', icon: '\u{1F6E1}' },
+                  { label: 'SOAP Note', prompt: 'Generate a SOAP note from the current session', icon: '\u{1F4DD}' },
+                ].map((s) => (
+                  <button
+                    key={s.label}
+                    onClick={() => {
+                      const el = draftRef.current;
+                      if (el) {
+                        el.value = s.prompt;
+                        setDraftNonEmpty(true);
+                        el.focus();
+                      }
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+                  >
+                    <span className="text-sm mr-2">{s.icon}</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                      {s.label}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                      {`\u2014 ${s.prompt}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center">
+                The agent can also manage allergies, referrals, appointments, documents, and more.
+                Type <span className="font-mono">/help</span> for the full list.
+              </p>
             </div>
           ) : null}
 
@@ -619,15 +667,38 @@ export function CDSChatDrawer({
             placeholder="Ask a clinical question…"
           />
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                if (draftRef.current) draftRef.current.value = '';
-                setDraftNonEmpty(false);
-              }}
-              className="px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              Clear
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (draftRef.current) draftRef.current.value = '';
+                  setDraftNonEmpty(false);
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                Clear
+              </button>
+              <SkillsTray
+                open={skillsTrayOpen}
+                onToggle={() => setSkillsTrayOpen((v) => !v)}
+                sessionSkills={sessionSkills}
+                onSessionSkillToggle={(slug) =>
+                  setSessionSkills((prev) =>
+                    prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+                  )
+                }
+                onPrefillPrompt={(prompt) => {
+                  const el = draftRef.current;
+                  if (el) {
+                    el.value = prompt;
+                    setDraftNonEmpty(true);
+                    el.focus();
+                  }
+                }}
+                onOpenSettings={() => {
+                  window.location.href = '/dashboard/settings?tab=skills';
+                }}
+              />
+            </div>
             <button
               disabled={loading || !draftNonEmpty}
               onClick={send}

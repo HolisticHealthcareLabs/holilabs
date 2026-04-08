@@ -8,12 +8,14 @@
  * Industry-grade settings management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Bell,
+  Brain,
   ChevronRight,
   Plus,
   CheckCircle2,
@@ -23,6 +25,7 @@ import {
   Shield,
   Settings,
 } from 'lucide-react';
+import { SkillsSettings } from '@/components/settings/SkillsSettings';
 
 type OnboardingProfile = import('@/app/api/onboarding/profile/route').OnboardingProfile;
 type ProtocolMode = NonNullable<OnboardingProfile['protocolMode']>;
@@ -77,7 +80,8 @@ type SettingsSection =
   | 'integrations'
   | 'privacy'
   | 'team'
-  | 'billing';
+  | 'billing'
+  | 'skills';
 
 function getInitials(value: string): string {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -143,7 +147,13 @@ export default function SettingsPage() {
   const canManageClinic = tenantRole === 'ORG_ADMIN';
   const canEditRolloutContext = canManageClinic;
 
-  const [activeTab, setActiveTab] = useState<SettingsSection>('home');
+  const searchParams = useSearchParams();
+  const initialTab = useMemo(() => {
+    const tab = searchParams?.get('tab');
+    const valid: SettingsSection[] = ['home', 'personal', 'security', 'license', 'integrations', 'privacy', 'team', 'billing', 'skills'];
+    return valid.includes(tab as SettingsSection) ? (tab as SettingsSection) : 'home';
+  }, [searchParams]);
+  const [activeTab, setActiveTab] = useState<SettingsSection>(initialTab);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() =>
@@ -318,6 +328,7 @@ export default function SettingsPage() {
     { id: 'personal', label: t('personalInfo'), icon: User, accent: 'bg-emerald-100 text-emerald-700', available: true },
     { id: 'security', label: t('securitySignIn'), icon: Shield, accent: 'bg-sky-100 text-sky-700', available: false },
     { id: 'license', label: t('clinicalLicense'), icon: CheckCircle2, accent: 'bg-amber-100 text-amber-700', available: false },
+    { id: 'skills' as SettingsSection, label: 'Clinical Skills', icon: Brain, accent: 'bg-violet-100 text-violet-700', available: true },
     { id: 'integrations', label: t('thirdPartyApps'), icon: Settings, accent: 'bg-indigo-100 text-indigo-700', available: true },
     { id: 'privacy', label: t('dataPrivacy'), icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
     { id: 'team', label: t('peopleSharing'), icon: Plus, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
@@ -464,6 +475,27 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'skills' && (
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Co-Pilot</p>
+                      <h2 className="mt-3 text-2xl font-semibold text-white">Clinical Skills</h2>
+                      <p className="mt-2 text-sm text-white/60">
+                        Configure quais habilidades clínicas o agente deve usar, a prioridade de cada uma,
+                        e a abordagem terapêutica (MBE, PICs, ou integrativa).
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">
+                      {'\u{1F9E0}'} Skills
+                    </span>
+                  </div>
+                </div>
+                <SkillsSettings />
               </div>
             )}
 

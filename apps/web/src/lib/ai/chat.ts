@@ -11,7 +11,9 @@
  */
 
 import logger from '@/lib/logger';
-import { getAllRegisteredTools } from '@/lib/mcp/registry';
+import { getAllRegisteredTools, getToolsForRoles } from '@/lib/mcp/registry';
+import { ClinicalSystemPrompts, resolvePromptText } from './prompt-templates';
+import { buildSkillPromptInjection, getFilteredToolCategories, type ResolvedSkillConfig } from './skill-config.service';
 
 export type AIProvider = 'claude' | 'openai' | 'gemini' | 'ollama' | 'vllm' | 'together';
 
@@ -40,74 +42,27 @@ export interface ChatResponse {
   error?: string;
 }
 
-// ============================================================================
-// CLINICAL SYSTEM PROMPTS
-// ============================================================================
-
-export const ClinicalSystemPrompts = {
-  general: `You are a Clinical Decision Support AI assistant for healthcare professionals using Holi Labs.
-
-Your role:
-- Provide evidence-based clinical guidance
-- Help with differential diagnosis
-- Suggest treatment protocols
-- Check drug interactions
-- Analyze patient data
-- NEVER provide definitive diagnosis (only differential diagnosis)
-- ALWAYS recommend consultation with specialists when needed
-- Follow latest medical guidelines (UpToDate, ACP, etc.)
-
-Important disclaimers:
-- This is Clinical Decision Support (CDS), NOT a diagnostic device
-- All recommendations must be reviewed by a licensed physician
-- You do not replace clinical judgment
-
-Language: Respond in Spanish (LATAM medical terminology)`,
-
-  differential: `You are an expert in differential diagnosis.
-
-Given patient symptoms, history, and exam findings, provide:
-1. Most likely diagnoses (ranked by probability)
-2. Red flags to rule out immediately
-3. Recommended diagnostic workup
-4. When to refer to specialist
-
-Format your response clearly with probabilities and reasoning.`,
-
-  drugInteractions: `You are a pharmacology expert specializing in drug interactions.
-
-Analyze the patient's medication list and:
-1. Identify potential drug-drug interactions
-2. Assess severity (minor, moderate, major, contraindicated)
-3. Suggest safer alternatives if needed
-4. Recommend monitoring parameters
-
-Use evidence from Micromedex, Lexi-Comp, and FDA databases.`,
-
-  treatment: `You are a treatment protocol specialist.
-
-Given a confirmed diagnosis, provide:
-1. First-line treatment options
-2. Alternative therapies
-3. Dosing guidelines
-4. Duration of treatment
-5. Follow-up recommendations
-6. Patient education points
-
-Follow evidence-based guidelines (ACP, IDSA, ESC, etc.).`,
-};
+// ClinicalSystemPrompts imported from ./prompt-templates above
+// (DB-backed with workspace overrides + built-in fallback)
 
 // ============================================================================
 // AVAILABLE TOOLS — SYSTEM PROMPT INJECTION
 // ============================================================================
 
 /**
- * Build a prompt section that lists all registered MCP tools grouped by category.
- * Intended for injection into the agent system prompt so the LLM can reference
- * specific tool names when recommending follow-up actions.
+ * Build a prompt section that lists registered MCP tools grouped by category.
+ * When `roles` is provided, only tools the user has permission to use are included.
+ * When `categoryFilter` is provided, only tools in those categories are included
+ * (skills-based filtering to reduce prompt size and focus the agent).
  */
-export function buildAvailableToolsSection(): string {
-  const tools = getAllRegisteredTools();
+export function buildAvailableToolsSection(roles?: string[], categoryFilter?: string[] | null): string {
+  let tools = roles?.length ? getToolsForRoles(roles) : getAllRegisteredTools();
+
+  // Filter by skill-relevant categories if provided
+  if (categoryFilter && categoryFilter.length > 0) {
+    const filterSet = new Set(categoryFilter);
+    tools = tools.filter((t) => filterSet.has(t.category));
+  }
 
   if (tools.length === 0) {
     return '';
@@ -123,7 +78,7 @@ export function buildAvailableToolsSection(): string {
   const lines: string[] = [
     '',
     '## Available Tools',
-    'You have access to the following tools for patient care operations:',
+    `You have access to the following ${tools.length} tools for patient care operations:`,
     '',
   ];
 
@@ -136,20 +91,59 @@ export function buildAvailableToolsSection(): string {
   });
 
   lines.push(
-    'When recommending follow-up actions, reference the specific tool name the clinician or agent should use.'
+    'Only use tools listed above. Do not attempt tools outside this list — they will be denied by the permission system.'
   );
 
   return lines.join('\n');
 }
 
 /**
- * Assemble the full agent system prompt: base clinical prompt + available tools.
- * Accepts an optional base prompt override; defaults to the general clinical prompt.
+ * Assemble the full agent system prompt:
+ *   base clinical prompt + user context + active skills + available tools (filtered).
+ *
+ * Resolution order for the base prompt:
+ *   1. Explicit `basePrompt` parameter (caller override)
+ *   2. DB workspace template → DB global template → built-in fallback
+ *
+ * When `activeSkills` is provided, skills inject prompt suffixes between
+ * the context and tools sections, and tools are filtered to skill-relevant
+ * categories (reducing prompt size from 263 tools to the relevant subset).
+ *
+ * @param basePrompt    Override for the base clinical prompt (skips DB resolution)
+ * @param userContext   Optional user identity injected into the prompt header
+ * @param workspaceId   Workspace ID for prompt template resolution
+ * @param activeSkills  Resolved skill configs from getActiveSkillsForChat()
  */
-export function buildAgentSystemPrompt(basePrompt?: string): string {
-  const base = basePrompt ?? ClinicalSystemPrompts.general;
-  const toolsSection = buildAvailableToolsSection();
-  return `${base}\n${toolsSection}`;
+export async function buildAgentSystemPrompt(
+  basePrompt?: string,
+  userContext?: { role: string; locale?: string },
+  workspaceId?: string,
+  activeSkills?: ResolvedSkillConfig[],
+): Promise<string> {
+  const base = basePrompt ?? await resolvePromptText('general', workspaceId);
+  const roles = userContext?.role ? [userContext.role] : undefined;
+
+  // Skills injection
+  const skillsSection = activeSkills?.length
+    ? buildSkillPromptInjection(activeSkills)
+    : '';
+
+  // Filter tools to skill-relevant categories (null = show all)
+  const categoryFilter = activeSkills?.length
+    ? getFilteredToolCategories(activeSkills)
+    : null;
+  const toolsSection = buildAvailableToolsSection(roles, categoryFilter);
+
+  const contextLines: string[] = [];
+  if (userContext) {
+    contextLines.push('', '## Session Context');
+    contextLines.push(`- **Role:** ${userContext.role}`);
+    if (userContext.locale) {
+      contextLines.push(`- **Locale:** ${userContext.locale}`);
+    }
+  }
+
+  return `${base}${contextLines.join('\n')}${skillsSection}\n${toolsSection}`;
 }
 
 // ============================================================================
