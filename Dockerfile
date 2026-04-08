@@ -15,6 +15,9 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/schemas/package.json ./packages/schemas/
 COPY packages/utils/package.json ./packages/utils/
 COPY packages/deid/package.json ./packages/deid/
+COPY packages/dp/package.json ./packages/dp/
+COPY packages/data-ingestion/package.json ./packages/data-ingestion/
+COPY packages/event-bus/package.json ./packages/event-bus/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile

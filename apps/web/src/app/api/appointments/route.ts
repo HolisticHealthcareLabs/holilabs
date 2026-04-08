@@ -20,6 +20,8 @@ import {
   AppointmentQuerySchema,
 } from '@/lib/api/schemas';
 import { emitAppointmentEvent } from '@/lib/socket-server';
+import { sendAppointmentReminder } from '@/lib/notifications/appointment-reminders';
+import logger from '@/lib/logger';
 
 // ============================================================================
 // POST /api/appointments - Create appointment
@@ -139,8 +141,10 @@ export const POST = createProtectedRoute(
       userName: context.user?.name || context.user?.email,
     });
 
-    // @todo(calendar-integration): Send Google Calendar/Outlook invites
-    // @todo(appointment-reminders): Send SMS/Email reminders for new appointments
+    // Fire-and-forget appointment reminder (SMS/Email via Twilio/Resend)
+    sendAppointmentReminder(appointment.id).catch((err) =>
+      logger.error({ err, appointmentId: appointment.id }, 'Failed to send appointment reminder')
+    );
 
     return NextResponse.json(
       {

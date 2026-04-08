@@ -20,15 +20,6 @@ const DocumentsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
-const CreateDocumentSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
-  description: z.string().optional(),
-  type: z.enum(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER']).default('OTHER'),
-  fileUrl: z.string().url('URL del archivo inválida'),
-  mimeType: z.string().default('application/pdf'),
-  fileSize: z.number().int().positive('El tamaño del archivo debe ser mayor a 0'),
-});
-
 export const GET = createPatientPortalRoute(
   async (request: NextRequest, context: PatientPortalContext) => {
     const searchParams = request.nextUrl.searchParams;
@@ -125,11 +116,74 @@ export const GET = createPatientPortalRoute(
   { audit: { action: 'READ', resource: 'Documents' } }
 );
 
-// @todo(document-schema): Re-enable POST handler after aligning with Prisma Document model fields
-// The current implementation references fields (title, description, fileUrl, etc.) that don't exist in the schema
-// Document schema has: documentHash, fileName, fileType, fileSize, storageUrl, etc.
-/*
-export async function POST(request: NextRequest) {
+// ============================================================================
+// POST /api/portal/documents — Upload a document from the patient portal
+// ============================================================================
+
+const CreateDocumentSchema = z.object({
+  fileName: z.string().min(1).max(255),
+  fileType: z.string().min(1).max(100),
+  fileSize: z.number().int().positive(),
+  documentType: z.enum(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER']).default('OTHER'),
+  storageUrl: z.string().url(),
+});
+
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const body = await request.json();
+    const validation = CreateDocumentSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: 'Datos inválidos', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { fileName, fileType, fileSize, documentType, storageUrl } = validation.data;
+
+    // Generate document hash from storage URL + fileName for deduplication
+    const { createHash } = await import('crypto');
+    const documentHash = createHash('sha256')
+      .update(`${context.session.patientId}:${fileName}:${storageUrl}`)
+      .digest('hex');
+
+    const document = await prisma.document.create({
+      data: {
+        patientId: context.session.patientId,
+        documentHash,
+        fileName,
+        fileType,
+        fileSize,
+        storageUrl,
+        documentType: documentType as any,
+        isDeidentified: false,
+      },
+    });
+
+    await createAuditLog({
+      action: 'CREATE',
+      resource: 'Document',
+      resourceId: document.id,
+      details: {
+        fileName,
+        fileType,
+        fileSize,
+        documentType,
+        accessType: 'PATIENT_PORTAL_SELF_UPLOAD',
+      },
+      success: true,
+    });
+
+    logger.info({ event: 'document_uploaded', patientId: context.session.patientId, documentId: document.id });
+
+    return NextResponse.json({ success: true, data: document }, { status: 201 });
+  },
+  { audit: { action: 'CREATE', resource: 'Document' } }
+);
+
+/* REMOVED — old POST implementation with wrong field names (title/description/fileUrl)
+export async function POST_LEGACY(request: NextRequest) {
   try {
     // Authenticate patient
     const session = await requirePatientSession();

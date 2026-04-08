@@ -246,8 +246,33 @@ export const GET = createProtectedRoute(
           // Get latest pain score
           const latestPainScore = patient.painAssessments[0]?.painScore;
 
-          // Get latest vitals (would need VitalSigns model, simulating for now)
-          const latestVitals = undefined; // @todo(vital-signs-schema): Fetch from VitalSigns table
+          // Get latest vitals
+          const rawVitals = await prisma.vitalSign.findFirst({
+            where: { patientId: patient.id },
+            orderBy: { recordedAt: 'desc' },
+            select: {
+              systolicBP: true,
+              diastolicBP: true,
+              heartRate: true,
+              respiratoryRate: true,
+              temperature: true,
+              oxygenSaturation: true,
+              recordedAt: true,
+            },
+          });
+          const latestVitals = rawVitals
+            ? {
+                bloodPressure:
+                  rawVitals.systolicBP != null && rawVitals.diastolicBP != null
+                    ? `${rawVitals.systolicBP}/${rawVitals.diastolicBP}`
+                    : undefined,
+                heartRate: rawVitals.heartRate ?? undefined,
+                respiratoryRate: rawVitals.respiratoryRate ?? undefined,
+                temperature: rawVitals.temperature ?? undefined,
+                oxygenSaturation: rawVitals.oxygenSaturation ?? undefined,
+                timestamp: rawVitals.recordedAt,
+              }
+            : undefined;
           const abnormalVitals = latestVitals ? checkAbnormalVitals(latestVitals) : 0;
 
           // Count overdue notes

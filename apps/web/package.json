@@ -57,6 +57,7 @@
     "@heroicons/react": "^2.2.0",
     "@holi/data-ingestion": "workspace:*",
     "@holi/deid": "workspace:^",
+    "@holi/event-bus": "workspace:*",
     "@holi/dp": "workspace:^",
     "@holi/schemas": "workspace:^",
     "@holi/utils": "workspace:^",

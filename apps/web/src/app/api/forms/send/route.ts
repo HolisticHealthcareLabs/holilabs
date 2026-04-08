@@ -31,6 +31,12 @@ export const POST = createProtectedRoute(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
+      const clinician = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true },
+      });
+      const clinicianName = clinician ? `${clinician.firstName} ${clinician.lastName}` : undefined;
+
       const body = await request.json();
     const { patientId, templateId, expiresAt, message } = body;
 
@@ -119,7 +125,7 @@ export const POST = createProtectedRoute(
           publicUrl,
           expiresAtDate,
           message || undefined,
-          undefined // @todo(clinician-context): Resolve clinician name from session
+          clinicianName
         );
       } catch (emailError) {
         logger.error('Error sending email notification:', emailError);

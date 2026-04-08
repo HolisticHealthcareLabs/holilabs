@@ -49,6 +49,13 @@ export const POST = createPublicRoute(async (
             structure: true,
           },
         },
+        assignedByUser: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
 
@@ -109,21 +116,15 @@ export const POST = createPublicRoute(async (
     try {
       const formResponseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/forms/responses/${formInstance.id}`;
 
-      // @todo(clinician-context): Resolve clinician email from FormInstance → clinician relation
-      logger.info('Would send form completion email for:', {
-        patient: `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
-        form: formInstance.template.title,
-        url: formResponseUrl,
-      });
-
-      // Uncomment when clinician email is available:
-      // await sendFormCompletionEmail(
-      //   clinicianEmail,
-      //   `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
-      //   formInstance.template.title,
-      //   updatedForm.completedAt || new Date(),
-      //   formResponseUrl
-      // );
+      if (formInstance.assignedByUser?.email) {
+        await sendFormCompletionEmail(
+          formInstance.assignedByUser.email,
+          `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
+          formInstance.template.title,
+          updatedForm.completedAt || new Date(),
+          formResponseUrl
+        );
+      }
     } catch (emailError) {
       logger.error({ error: emailError }, 'Error sending completion email');
       // Continue even if email fails
