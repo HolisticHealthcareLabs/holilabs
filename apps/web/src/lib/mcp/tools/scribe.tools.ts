@@ -16,6 +16,7 @@ import { createHash } from 'crypto';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
 import { verifyConsentForAgentAccess } from '../consent-gate';
 import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
+import { DeleteScribeSessionSchema, type DeleteScribeSessionInput } from '../schemas/tool-schemas';
 
 // =============================================================================
 // SCRIBE SCHEMAS
@@ -928,6 +929,52 @@ async function updateTranscriptionHandler(
 }
 
 // =============================================================================
+// TOOL: delete_scribe_session
+// =============================================================================
+
+async function deleteScribeSessionHandler(
+    input: DeleteScribeSessionInput,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { sessionId, reason } = input;
+
+    const session = await prisma.scribeSession.findFirst({
+        where: { id: sessionId, clinicianId: context.clinicianId },
+    });
+
+    if (!session) {
+        return { success: false, error: 'Session not found or access denied', data: null };
+    }
+
+    if (session.status === 'CANCELLED') {
+        return { success: false, error: 'Session is already cancelled', data: null };
+    }
+
+    const updated = await prisma.scribeSession.update({
+        where: { id: sessionId },
+        data: { status: 'CANCELLED' },
+    });
+
+    logger.info({
+        event: 'scribe_session_cancelled',
+        sessionId,
+        reason,
+        agentId: context.agentId,
+        clinicianId: context.clinicianId,
+    });
+
+    return {
+        success: true,
+        data: {
+            id: updated.id,
+            status: updated.status,
+            reason,
+            cancelledAt: updated.updatedAt.toISOString(),
+        },
+    };
+}
+
+// =============================================================================
 // EXPORT: Scribe Tools
 // =============================================================================
 
@@ -1025,6 +1072,14 @@ export const scribeTools: MCPTool[] = [
         inputSchema: GetScribeTemplatesSchema,
         requiredPermissions: ['scribe:read'],
         handler: getScribeTemplatesHandler,
+    },
+    {
+        name: 'delete_scribe_session',
+        description: 'Cancel a scribe session (soft delete). Sets status to CANCELLED with a reason. Cannot cancel already-cancelled sessions.',
+        category: 'scribe',
+        inputSchema: DeleteScribeSessionSchema,
+        requiredPermissions: ['scribe:write'],
+        handler: deleteScribeSessionHandler,
     },
     {
         name: 'update_transcription',

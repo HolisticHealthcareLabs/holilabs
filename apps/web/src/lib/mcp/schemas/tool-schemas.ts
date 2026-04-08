@@ -267,6 +267,30 @@ export const DeleteAllergySchema = z.object({
     reason: z.string().min(5).describe('Reason for removal (e.g., allergy disproved by testing)'),
 });
 
+export const DeleteMedicationSchema = z.object({
+    medicationId: UUIDSchema.describe('The medication ID to deactivate'),
+    reason: z.string().min(5).describe('Reason for deactivation (e.g., adverse reaction, no longer needed)'),
+});
+export type DeleteMedicationInput = z.infer<typeof DeleteMedicationSchema>;
+
+export const DeleteLabResultSchema = z.object({
+    labResultId: UUIDSchema.describe('The lab result ID to cancel'),
+    reason: z.string().min(5).describe('Reason for cancellation (e.g., specimen issue, wrong patient)'),
+});
+export type DeleteLabResultInput = z.infer<typeof DeleteLabResultSchema>;
+
+export const DeletePreventionPlanSchema = z.object({
+    planId: UUIDSchema.describe('The prevention plan ID to deactivate'),
+    reason: z.string().min(5).describe('Reason for deactivation (e.g., patient declined, no longer applicable)'),
+});
+export type DeletePreventionPlanInput = z.infer<typeof DeletePreventionPlanSchema>;
+
+export const DeleteScribeSessionSchema = z.object({
+    sessionId: UUIDSchema.describe('The scribe session ID to cancel'),
+    reason: z.string().min(5).describe('Reason for cancellation (e.g., wrong patient, test recording)'),
+});
+export type DeleteScribeSessionInput = z.infer<typeof DeleteScribeSessionSchema>;
+
 // =============================================================================
 // FEATURE FLAG SCHEMAS
 // =============================================================================

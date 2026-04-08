@@ -24,6 +24,7 @@ const NotificationCenter = lazy(() => import('@/components/notifications/Notific
 const GlobalSearch = lazy(() => import('@/components/search/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
 const SessionTimeoutWarning = lazy(() => import('@/components/SessionTimeoutWarning').then(m => ({ default: m.SessionTimeoutWarning })));
 const DemoGuidedTour = lazy(() => import('@/components/demo/DemoGuidedTour').then(m => ({ default: m.DemoGuidedTour })));
+const AgentEventSync = lazy(() => import('@/components/AgentEventSync').then(m => ({ default: m.AgentEventSync })));
 
 interface SidebarNavItem {
   key: string;
@@ -785,6 +786,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         <Suspense fallback={null}>
           <DemoGuidedTour />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <AgentEventSync />
         </Suspense>
 
         <SessionTimeoutGuard />

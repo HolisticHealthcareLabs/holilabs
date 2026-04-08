@@ -27,6 +27,7 @@ export { mcpServer, createMCPContext, runTool } from './server';
 export {
     registry,
     getAllRegisteredTools,
+    getToolsForRoles,
     getToolByName,
     getToolsByCategory,
     searchTools,

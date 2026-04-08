@@ -24,6 +24,8 @@ import {
     UpdateLabResultSchema,
     type CreateLabResultInput,
     type UpdateLabResultInput,
+    DeleteLabResultSchema,
+    type DeleteLabResultInput,
 } from '../schemas/tool-schemas';
 import type { MCPContext, MCPResult, MCPTool } from '../types';
 import { verifyConsentForAgentAccess } from '../consent-gate';
@@ -822,6 +824,32 @@ export const labOrderTools: MCPTool[] = [
                 });
                 return { success: false, error: error.message, data: null };
             }
+        },
+    },
+    {
+        name: 'delete_lab_result',
+        description: 'Cancel a lab result (soft delete). Sets status to CANCELLED. Use for erroneous or specimen-issue results.',
+        category: 'lab',
+        inputSchema: DeleteLabResultSchema,
+        requiredPermissions: ['patient:write'],
+        handler: async (input: DeleteLabResultInput, context: MCPContext): Promise<MCPResult> => {
+            const labResult: any = await prisma.labResult.findFirst({
+                where: { id: input.labResultId },
+                include: { patient: true },
+            });
+            if (!labResult) return { success: false, error: 'Lab result not found', data: null };
+            if (labResult.patient?.assignedClinicianId !== context.clinicianId) {
+                return { success: false, error: 'Access denied', data: null };
+            }
+            if (labResult.status === 'CANCELLED') {
+                return { success: false, error: 'Lab result already cancelled', data: null };
+            }
+            const updated = await prisma.labResult.update({
+                where: { id: input.labResultId },
+                data: { status: 'CANCELLED' },
+            });
+            logger.info({ event: 'mcp_tool_executed', tool: 'delete_lab_result', labResultId: input.labResultId, agentId: context.agentId });
+            return { success: true, data: { id: updated.id, status: 'CANCELLED', reason: input.reason } };
         },
     },
 ];

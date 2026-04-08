@@ -12,8 +12,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
-import { getAllRegisteredTools, getToolsByCategory } from '@/lib/mcp';
+import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
+import { getAllRegisteredTools, getToolsForRoles, getToolsByCategory } from '@/lib/mcp';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,8 +42,11 @@ function buildCapabilitiesNarrative(tools: ReturnType<typeof getAllRegisteredToo
 }
 
 export const GET = createProtectedRoute(
-    async (_request: NextRequest) => {
-        const tools = getAllRegisteredTools();
+    async (_request: NextRequest, context: ApiContext) => {
+        const userRole = context.user?.role;
+        const tools = userRole
+            ? getToolsForRoles([userRole])
+            : getAllRegisteredTools();
 
         const categories = [...new Set(tools.map((t) => t.category))].sort();
 
@@ -63,6 +66,8 @@ export const GET = createProtectedRoute(
             tools: toolManifest,
             // Inject this string directly into a system prompt
             systemPromptFragment: narrative,
+            // User context for the agent to understand its constraints
+            userContext: userRole ? { role: userRole } : undefined,
             meta: {
                 version: '1.0.0',
                 generatedAt: new Date().toISOString(),

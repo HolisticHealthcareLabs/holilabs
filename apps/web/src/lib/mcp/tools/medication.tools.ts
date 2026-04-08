@@ -25,10 +25,12 @@ import {
     GetMedicationInteractionsSchema,
     DiscontinueMedicationSchema,
     UpdateMedicationSchema,
+    DeleteMedicationSchema,
     type PrescribeMedicationInput,
     type GetMedicationInteractionsInput,
     type DiscontinueMedicationInput,
     type UpdateMedicationInput,
+    type DeleteMedicationInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
 import { verifyConsentForAgentAccess } from '../consent-gate';
@@ -590,6 +592,32 @@ export const medicationTools: MCPTool[] = [
         inputSchema: UpdateMedicationSchema,
         requiredPermissions: ['medication:write'],
         handler: updateMedicationHandler,
+    },
+    // ==========================================================================
+    // DELETE
+    // ==========================================================================
+    {
+        name: 'delete_medication',
+        description: 'Deactivate a medication (soft delete). Sets isActive to false. Preserves record for clinical history.',
+        category: 'medication',
+        inputSchema: DeleteMedicationSchema,
+        requiredPermissions: ['medication:write'],
+        handler: async (input: DeleteMedicationInput, context: MCPContext): Promise<MCPResult> => {
+            const medication: any = await prisma.medication.findFirst({
+                where: { id: input.medicationId },
+                include: { patient: true },
+            });
+            if (!medication) return { success: false, error: 'Medication not found', data: null };
+            if (medication.patient?.assignedClinicianId !== context.clinicianId) {
+                return { success: false, error: 'Access denied', data: null };
+            }
+            const updated = await prisma.medication.update({
+                where: { id: input.medicationId },
+                data: { isActive: false },
+            });
+            logger.info({ event: 'mcp_tool_executed', tool: 'delete_medication', medicationId: input.medicationId, agentId: context.agentId });
+            return { success: true, data: { id: updated.id, isActive: false, reason: input.reason } };
+        },
     },
     // ==========================================================================
     // LEGACY TOOLS (Deprecated - use primitives)

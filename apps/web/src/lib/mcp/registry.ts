@@ -9,6 +9,7 @@ import { redactObject } from '@/lib/security/redact-phi';
 import { writeAuditEntry } from '@/lib/audit/write-audit-entry';
 import { prisma } from '@/lib/prisma';
 import { agentEventBus, deriveAffectedEntities } from './agent-event-bus';
+import { deriveAuditMeta, extractResourceId } from './audit-mapping';
 import { wrapWithConsentCheck } from './middleware/consent-middleware';
 import { patientTools } from './tools/patient.tools';
 import { patientCrudTools } from './tools/patient-crud.tools';
@@ -307,14 +308,17 @@ class MCPToolRegistry implements MCPRegistry {
                 timestamp: new Date().toISOString(),
             });
 
+            // Resource-level audit entry — matches user API route audit format
+            const auditMeta = deriveAuditMeta(toolName);
+            const resourceId = extractResourceId(toolName, result.data);
             writeAuditEntry({
-                action: `mcp.tool.${toolName}`,
-                resourceType: 'MCP_TOOL_EXECUTION',
-                resourceId: toolName,
+                action: auditMeta.action as string,
+                resourceType: auditMeta.resource,
+                resourceId,
                 userId: context.clinicianId,
                 actorType: 'AGENT',
                 agentId: context.agentId,
-                accessReason: `Agent tool execution: ${toolName}`,
+                accessReason: auditMeta.accessReason,
                 metadata: { toolName, sessionId: context.sessionId, success: true },
                 clinicId: context.clinicId,
             });
@@ -346,14 +350,15 @@ class MCPToolRegistry implements MCPRegistry {
                 timestamp: new Date().toISOString(),
             });
 
+            const errorAuditMeta = deriveAuditMeta(toolName);
             writeAuditEntry({
-                action: `mcp.tool.${toolName}.error`,
-                resourceType: 'MCP_TOOL_EXECUTION',
+                action: errorAuditMeta.action as string,
+                resourceType: errorAuditMeta.resource,
                 resourceId: toolName,
                 userId: context.clinicianId,
                 actorType: 'AGENT',
                 agentId: context.agentId,
-                accessReason: `Agent tool execution failed: ${toolName}`,
+                accessReason: errorAuditMeta.accessReason,
                 metadata: { toolName, sessionId: context.sessionId, success: false, error: errorMessage },
                 clinicId: context.clinicId,
             });
@@ -673,6 +678,18 @@ export const registry = MCPToolRegistry.getInstance();
 
 export function getAllRegisteredTools(): MCPTool[] {
     return registry.getAllTools();
+}
+
+export function getToolsForRoles(roles: string[]): MCPTool[] {
+    return registry.getAllTools().filter(tool => {
+        const { allowed } = registry.checkPermissions(tool, {
+            roles,
+            clinicianId: '',
+            agentId: '',
+            sessionId: '',
+        } as MCPContext);
+        return allowed;
+    });
 }
 
 export function getToolByName(name: string): MCPTool | undefined {

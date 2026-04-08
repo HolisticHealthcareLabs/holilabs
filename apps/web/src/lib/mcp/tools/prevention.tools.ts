@@ -28,6 +28,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import type { MCPContext, MCPResult, MCPTool } from '../types';
 import { verifyConsentForAgentAccess } from '../consent-gate';
+import { DeletePreventionPlanSchema, type DeletePreventionPlanInput } from '../schemas/tool-schemas';
 
 // =============================================================================
 // ENUMS MATCHING PRISMA SCHEMA
@@ -1242,6 +1243,61 @@ async function getPreventionRecommendationsHandler(
     }
 }
 
+// DELETE PREVENTION PLAN
+async function deletePreventionPlanHandler(
+    input: DeletePreventionPlanInput,
+    context: MCPContext
+): Promise<MCPResult> {
+    try {
+        const plan = await prisma.preventionPlan.findUnique({
+            where: { id: input.planId },
+            include: { patient: { select: { id: true, assignedClinicianId: true } } },
+        });
+
+        if (!plan) {
+            return { success: false, error: `Prevention plan not found: ${input.planId}`, data: null };
+        }
+
+        if (plan.patient.assignedClinicianId !== context.clinicianId) {
+            return { success: false, error: 'Access denied: patient not assigned to you', data: null };
+        }
+
+        if (plan.status === 'DEACTIVATED') {
+            return { success: false, error: 'Prevention plan is already deactivated', data: null };
+        }
+
+        const updated = await prisma.preventionPlan.update({
+            where: { id: input.planId },
+            data: { status: 'DEACTIVATED' },
+        });
+
+        logger.info({
+            event: 'prevention_plan_deactivated',
+            planId: input.planId,
+            reason: input.reason,
+            agentId: context.agentId,
+            clinicianId: context.clinicianId,
+        });
+
+        return {
+            success: true,
+            data: {
+                id: updated.id,
+                status: updated.status,
+                reason: input.reason,
+                deactivatedAt: updated.updatedAt.toISOString(),
+            },
+        };
+    } catch (error) {
+        logger.error({ event: 'delete_prevention_plan_error', error, input });
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to deactivate prevention plan',
+            data: null,
+        };
+    }
+}
+
 // =============================================================================
 // TOOL DEFINITIONS
 // =============================================================================
@@ -1358,6 +1414,16 @@ export const preventionTools: MCPTool[] = [
         inputSchema: UpdatePreventionTaskSchema,
         requiredPermissions: ['patient:read', 'patient:write', 'prevention:write'],
         handler: updatePreventionTaskHandler,
+    },
+
+    // Delete Operation
+    {
+        name: 'delete_prevention_plan',
+        description: 'Deactivate a prevention plan (soft delete). Sets status to DEACTIVATED with a reason. Requires write permissions.',
+        category: 'prevention',
+        inputSchema: DeletePreventionPlanSchema,
+        requiredPermissions: ['patient:read', 'patient:write', 'prevention:write'],
+        handler: deletePreventionPlanHandler,
     },
 
     // AI Operations

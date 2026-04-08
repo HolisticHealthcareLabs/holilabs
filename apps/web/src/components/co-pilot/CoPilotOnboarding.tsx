@@ -25,6 +25,12 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     icon: '/icons/artificial-intelligence (1).svg',
   },
   {
+    title: 'Your Agent Can Act',
+    description: 'The agent can manage medications, order labs, create notes, schedule appointments, and more — all from the chat. Try suggested prompts or type /help.',
+    target: 'cds-chat',
+    icon: '/icons/artificial-intelligence (1).svg',
+  },
+  {
     title: 'Customize Your Co-Pilot',
     description: 'Click [+] to add, remove, or rearrange your AI tools to match your workflow.',
     target: 'customize-button',

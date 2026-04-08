@@ -27,6 +27,11 @@ build/
 *.pem
 *.key
 
+# Tool state (oh-my-claudecode, scratchpad)
+.omc/
+**/.omc/
+.scratchpad/
+
 # Debug
 npm-debug.log*
 yarn-debug.log*

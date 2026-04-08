@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { generatePatientDataHash } from '../src/lib/blockchain/hashing';
+import { BUILTIN_DEFAULTS } from '../src/lib/ai/prompt-templates';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -465,6 +466,38 @@ async function main() {
   console.log(`
 🎉 Database seeded successfully!
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // AGENT PROMPT TEMPLATES
+  // ══════════════════════════════════════════════════════════════════════════
+
+  for (const t of BUILTIN_DEFAULTS) {
+    const existing = await prisma.agentPromptTemplate.findFirst({
+      where: { slug: t.slug, workspaceId: null },
+    });
+    if (existing) {
+      await prisma.agentPromptTemplate.update({
+        where: { id: existing.id },
+        data: { prompt: t.prompt, name: t.name, description: t.description },
+      });
+    } else {
+      await prisma.agentPromptTemplate.create({
+        data: {
+          slug: t.slug,
+          name: t.name,
+          description: t.description,
+          category: t.category,
+          prompt: t.prompt,
+          customizable: t.customizable,
+          isDefault: true,
+          isActive: true,
+          version: '1.0.0',
+        },
+      });
+    }
+  }
+  console.log(`✅ Prompt templates: ${BUILTIN_DEFAULTS.length} seeded`);
+
+  console.log(`
 📊 Base Setup:
    Clinicians  → ${clinician.email}, ${demoClinician.email}, ${drSilva.email}
    Patients    → MRN-2024-001, MRN-DEMO-2024, MRN-DEMO-SILVA-001
