@@ -14,10 +14,11 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockEnqueueGeneration = jest.fn();
 jest.mock('@/lib/services/summary.service', () => ({
-  createSummaryService: jest.fn().mockReturnValue({
-    enqueueGeneration: jest.fn(),
-  }),
+  createSummaryService: jest.fn(() => ({
+    enqueueGeneration: mockEnqueueGeneration,
+  })),
 }));
 
 jest.mock('@/lib/audit', () => ({
@@ -35,6 +36,8 @@ jest.mock('@/lib/logger', () => ({
 
 const { GET, POST } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { wrapInSafetyEnvelope } = require('@/lib/clinical/safety-envelope');
+const { createAuditLog } = require('@/lib/audit');
 const { createSummaryService } = require('@/lib/services/summary.service');
 
 const mockContext = {
@@ -42,7 +45,12 @@ const mockContext = {
 };
 
 describe('POST /api/cdss/summary', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (wrapInSafetyEnvelope as jest.Mock).mockImplementation((data: any, meta: any) => ({ data, safetyMetadata: meta }));
+    (createAuditLog as jest.Mock).mockResolvedValue({ id: 'audit-1' });
+    (createSummaryService as jest.Mock).mockReturnValue({ enqueueGeneration: mockEnqueueGeneration });
+  });
 
   it('queues summary generation (202)', async () => {
     (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({
@@ -50,7 +58,7 @@ describe('POST /api/cdss/summary', () => {
       patientId: 'patient-1',
       providerId: 'provider-1',
     });
-    createSummaryService().enqueueGeneration.mockResolvedValue('job-1');
+    mockEnqueueGeneration.mockResolvedValue('job-1');
 
     const request = new NextRequest('http://localhost:3000/api/cdss/summary', {
       method: 'POST',
@@ -100,7 +108,11 @@ describe('POST /api/cdss/summary', () => {
 });
 
 describe('GET /api/cdss/summary', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (wrapInSafetyEnvelope as jest.Mock).mockImplementation((data: any, meta: any) => ({ data, safetyMetadata: meta }));
+    (createAuditLog as jest.Mock).mockResolvedValue({ id: 'audit-1' });
+  });
 
   it('returns encounter summary (200)', async () => {
     (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({

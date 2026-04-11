@@ -36,17 +36,22 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
     const urlSecret = request.nextUrl.searchParams.get('secret');
     const expectedSecret = process.env.CRON_SECRET || process.env.INTERNAL_JOB_SECRET;
 
-    // Check authorization
-    if (expectedSecret) {
-      const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret;
+    // Fail-closed: secret MUST be configured in production
+    if (!expectedSecret) {
+      logger.error('🔒 CRON_SECRET or INTERNAL_JOB_SECRET not configured — rejecting request');
+      return NextResponse.json(
+        { error: 'Server misconfiguration: job secret required' },
+        { status: 500 }
+      );
+    }
 
-      if (providedSecret !== expectedSecret) {
-        logger.error('🔒 Unauthorized job execution attempt');
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+    const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret;
+    if (providedSecret !== expectedSecret) {
+      logger.error('🔒 Unauthorized job execution attempt');
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Get job parameters

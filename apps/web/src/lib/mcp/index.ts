@@ -1,11 +1,7 @@
 /**
  * MCP Module - Unified exports for the MCP tool layer
  * 
- * This module provides agent-accessible clinical tools with:
- * - Tenant isolation (clinician-scoped access)
- * - Input validation (Zod schemas)
- * - Permission checking (role-based)
- * - Audit logging (all actions recorded)
+ * (Removed implementation files server.ts and registry.ts)
  */
 
 // Core types
@@ -20,38 +16,11 @@ export type {
     MCPToolExample,
 } from './types';
 
-// Server
-export { mcpServer, createMCPContext, runTool } from './server';
-
-// Registry
-export {
-    registry,
-    getAllRegisteredTools,
-    getToolsForRoles,
-    getToolByName,
-    getToolsByCategory,
-    searchTools,
-    getToolSchemas,
-    executeTool,
-    // Enhanced discovery
-    getToolWithExamples,
-    getToolDependents,
-    getToolDependencies,
-    // Workflow exports
-    getWorkflows,
-    getWorkflowByIdFromRegistry,
-    getWorkflowsByCategoryFromRegistry,
-    searchWorkflowsFromRegistry,
-    getWorkflowSchemasFromRegistry,
-    executeWorkflowFromRegistry,
-} from './registry';
-
 // Workflow types and functions
 export type {
     WorkflowTemplate,
     WorkflowStep,
     WorkflowResult,
-    WorkflowStepResult,
 } from './workflows';
 
 export {
@@ -84,4 +53,3 @@ export { prescriptionTools } from './tools/prescription.tools';
 
 // Schemas (for external validation)
 export * from './schemas/tool-schemas';
-

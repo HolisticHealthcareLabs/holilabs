@@ -57,9 +57,9 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!shouldPlay) return;
 
-    const t1 = window.setTimeout(() => setPhase('dissolve'), 1500);
-    const t2 = window.setTimeout(() => setPhase('reveal'), 2300);
-    const t3 = window.setTimeout(() => setPhase('done'), 3200);
+    const t1 = window.setTimeout(() => setPhase('dissolve'), 400);
+    const t2 = window.setTimeout(() => setPhase('reveal'), 600);
+    const t3 = window.setTimeout(() => setPhase('done'), 800);
 
     return () => {
       window.clearTimeout(t1);
@@ -85,7 +85,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
             className="fixed inset-0 z-[9999] flex items-center justify-center"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
+            transition={{ duration: 0.2, ease: APPLE_EASE as unknown as Easing }}
             style={{ pointerEvents: phase === 'dissolve' ? 'none' : 'auto' }}
           >
             {/* Background layers */}
@@ -94,7 +94,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
               animate={{
                 opacity: phase === 'dissolve' ? 0 : 1,
               }}
-              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
+              transition={{ duration: 0.2, ease: APPLE_EASE as unknown as Easing }}
             />
 
             <motion.div
@@ -103,7 +103,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
               animate={{
                 opacity: phase === 'dissolve' ? 0 : 1,
               }}
-              transition={{ duration: 0.8, ease: APPLE_EASE as unknown as Easing }}
+              transition={{ duration: 0.2, ease: APPLE_EASE as unknown as Easing }}
             />
 
             {/* Bridge content */}
@@ -117,7 +117,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
                     : { opacity: 0, scale: 0.95, filter: 'blur(8px)', y: -8 }
                 }
                 transition={{
-                  duration: phase === 'bridge' ? 0.6 : 0.5,
+                  duration: phase === 'bridge' ? 0.15 : 0.1,
                   ease: APPLE_EASE as unknown as Easing,
                 }}
               >
@@ -144,8 +144,8 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
                     : { opacity: 0, y: -12, filter: 'blur(6px)' }
                 }
                 transition={{
-                  duration: phase === 'bridge' ? 0.7 : 0.5,
-                  delay: phase === 'bridge' ? 0.3 : 0,
+                  duration: phase === 'bridge' ? 0.15 : 0.1,
+                  delay: phase === 'bridge' ? 0.05 : 0,
                   ease: APPLE_EASE as unknown as Easing,
                 }}
                 className="text-[17px] font-medium text-white/50 tracking-[-0.01em] text-center"
@@ -162,10 +162,10 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
                     : { opacity: 0 }
                 }
                 transition={{
-                  duration: 2,
+                  duration: 0.8,
                   repeat: Infinity,
                   ease: 'easeInOut',
-                  delay: 0.8,
+                  delay: 0.1,
                 }}
                 className="absolute w-48 h-48 rounded-full bg-white/[0.03] -z-10"
               />
@@ -180,7 +180,7 @@ export function CinematicTransition({ children }: { children: React.ReactNode })
           className="fixed inset-0 z-[9998] pointer-events-none"
           initial={{ backdropFilter: 'blur(12px)' }}
           animate={{ backdropFilter: 'blur(0px)' }}
-          transition={{ duration: 0.9, ease: APPLE_EASE as unknown as Easing }}
+          transition={{ duration: 0.2, ease: APPLE_EASE as unknown as Easing }}
           style={{ WebkitBackdropFilter: 'blur(0px)' } as any}
         />
       )}
@@ -196,8 +196,8 @@ export const staggerContainer: Variants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.02,
+      delayChildren: 0,
     },
   },
 };
@@ -205,13 +205,13 @@ export const staggerContainer: Variants = {
 export const staggerItem: Variants = {
   hidden: {
     opacity: 0,
-    y: 16,
+    y: 4,
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
+      duration: 0.1,
       ease: [0.16, 1, 0.3, 1],
     },
   },
@@ -220,15 +220,15 @@ export const staggerItem: Variants = {
 export const scaleInCard: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.95,
-    y: 12,
+    scale: 0.98,
+    y: 3,
   },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
     transition: {
-      duration: 0.45,
+      duration: 0.08,
       ease: [0.16, 1, 0.3, 1],
     },
   },
@@ -237,13 +237,13 @@ export const scaleInCard: Variants = {
 export const slideDownHeader: Variants = {
   hidden: {
     opacity: 0,
-    y: -12,
+    y: -3,
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
+      duration: 0.08,
       ease: [0.16, 1, 0.3, 1],
     },
   },

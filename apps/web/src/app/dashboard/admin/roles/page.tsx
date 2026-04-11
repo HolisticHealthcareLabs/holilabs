@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { Shield, Star, User, CheckCircle2, X, Plus } from 'lucide-react';
+import { Shield, Star, User, CheckCircle2, X, Plus, AlertCircle, RefreshCw } from 'lucide-react';
 
 type RoleId = 'LICENSE_OWNER' | 'ADMIN' | 'COMPLIANCE_ADMIN' | 'PHYSICIAN' | 'NURSE' | 'RECEPTIONIST' | 'STAFF';
 
@@ -37,9 +37,40 @@ const MOCK_TEAM: TeamMember[] = [
 export default function RolesAdminPage() {
   const { data: session } = useSession();
   const t = useTranslations('dashboard.admin');
-  // TODO: Replace MOCK_TEAM with a real GET /api/admin/team call
-  const [team, setTeam] = useState<TeamMember[]>(MOCK_TEAM);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const fetchTeam = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await fetch('/api/admin/team');
+      if (!res.ok) throw new Error(t('fetchError'));
+      const data = await res.json();
+      if (data.success && data.data?.length > 0) {
+        setTeam(data.data.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role as RoleId,
+          assignedAt: m.assignedAt,
+        })));
+      } else {
+        setTeam([]);
+      }
+    } catch {
+      setFetchError(t('fetchError'));
+      setTeam(MOCK_TEAM);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    fetchTeam();
+  }, [fetchTeam]);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('STAFF');
@@ -64,7 +95,7 @@ export default function RolesAdminPage() {
       });
       const data = await response.json();
       if (response.ok && data.success) {
-        setInviteMessage({ type: 'success', text: `Invitation sent to ${inviteEmail}` });
+        setInviteMessage({ type: 'success', text: t('invitationSent', { email: inviteEmail }) });
         setInviteEmail('');
         setInviteRole('STAFF');
         setTimeout(() => {
@@ -72,10 +103,10 @@ export default function RolesAdminPage() {
           setInviteMessage(null);
         }, 2000);
       } else {
-        setInviteMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
+        setInviteMessage({ type: 'error', text: data.error || t('invitationFailed') });
       }
     } catch {
-      setInviteMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setInviteMessage({ type: 'error', text: t('networkError') });
     } finally {
       setInviteLoading(false);
     }
@@ -101,6 +132,49 @@ export default function RolesAdminPage() {
           {t('inviteMember')}
         </button>
       </div>
+
+      {/* Error banner */}
+      {fetchError && (
+        <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/5 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <span className="text-xs font-medium text-red-700 dark:text-red-400">{fetchError}</span>
+          </div>
+          <button
+            onClick={() => fetchTeam()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors min-h-[44px]"
+          >
+            <RefreshCw className="w-3 h-3" />
+            {t('retry')}
+          </button>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+                <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3" />
+                <div className="h-6 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="h-2.5 w-48 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+      <>
 
       {/* Role hierarchy overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -191,6 +265,9 @@ export default function RolesAdminPage() {
         </div>
       </div>
 
+      </>
+      )}
+
       {/* Invite modal placeholder */}
       {showInvite && (
         <>
@@ -224,7 +301,7 @@ export default function RolesAdminPage() {
               </div>
               <div className="flex justify-end gap-2 mt-5">
                 <button onClick={() => { setShowInvite(false); setInviteMessage(null); }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t('cancel')}</button>
-                <button onClick={handleSendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{inviteLoading ? 'Sending...' : t('sendInvitation')}</button>
+                <button onClick={handleSendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{inviteLoading ? t('sending') : t('sendInvitation')}</button>
               </div>
             </div>
           </div>

@@ -2,16 +2,29 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({ motion: new Proxy({}, { get: (_, tag: string) => tag }), AnimatePresence: ({ children }: any) => children }));
+const motionCache: Record<string, React.FC<any>> = {};
+jest.mock('framer-motion', () => ({
+  motion: new Proxy({}, {
+    get: (_: any, tag: string) => {
+      if (!motionCache[tag]) {
+        const Comp = React.forwardRef(({ children, ...props }: any, ref: any) =>
+          React.createElement(tag, { ...props, ref }, children)
+        );
+        Comp.displayName = `motion.${tag}`;
+        motionCache[tag] = Comp;
+      }
+      return motionCache[tag];
+    },
+  }),
+  AnimatePresence: ({ children }: any) => children,
+}));
 jest.mock('@heroicons/react/24/outline', () => new Proxy({}, { get: (_, k) => () => null }));
 jest.mock('@dnd-kit/core', () => ({
-  useDraggable: () => ({ attributes: {}, listeners: {}, setNodeRef: jest.fn(), transform: null }),
+  useDraggable: () => ({ attributes: {}, listeners: {}, setNodeRef: () => {}, transform: null }),
 }));
-jest.mock('@dnd-kit/utilities', () => ({ CSS: { Transform: { toString: jest.fn(() => '') } } }));
+jest.mock('@dnd-kit/utilities', () => ({ CSS: { Translate: { toString: () => '' }, Transform: { toString: () => '' } } }));
 
 import QuickActionsTile from '../QuickActionsTile';
-
-beforeEach(() => jest.clearAllMocks());
 
 describe('QuickActionsTile', () => {
   it('renders Quick Actions title', () => {

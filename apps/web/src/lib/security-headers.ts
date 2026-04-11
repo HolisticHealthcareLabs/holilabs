@@ -27,8 +27,10 @@ function getCSP(nonce?: string) {
     // Development: Allow unsafe-eval for HMR and hot-reloading
     // Production: Strict nonce-based policy (no external CDNs for security)
     isDevLike
-      // Next.js dev runtime uses some inline scripts; allow unsafe-inline in development only.
-      ? `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
+      // Dev mode: unsafe-inline + unsafe-eval for HMR. Do NOT include the nonce —
+      // per W3C CSP Level 2, a nonce silently nullifies unsafe-inline, which
+      // breaks React hydration and framer-motion on the client.
+      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
       : `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""}`,
 
     // Styles - keep unsafe-inline for Tailwind/CSS-in-JS (required for dynamic styling)
@@ -112,8 +114,8 @@ export function applySecurityHeaders(response: NextResponse, nonce?: string): Ne
   // Enable XSS protection
   response.headers.set('X-XSS-Protection', '1; mode=block');
 
-  // Referrer policy - protect privacy (more restrictive)
-  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
+  // Referrer policy - strict for healthcare to prevent PHI leakage in referrer headers // ASVS V14.4.5
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   // Permissions policy - restrict dangerous features
   response.headers.set(

@@ -12,6 +12,39 @@ datasource db {
 }
 
 // ============================================================================
+// ENUMS & TYPES
+// ============================================================================
+
+enum MedicalDiscipline {
+  CARDIOLOGY
+  ENDOCRINOLOGY
+  ONCOLOGY
+  MENTAL_HEALTH
+  PEDIATRICS
+  GERIATRICS
+  NEPHROLOGY
+  PULMONOLOGY
+  OB_GYN
+  PRIMARY_CARE
+}
+
+enum IncidentStatus {
+  REPORTED
+  TRIAGED
+  UNDER_INVESTIGATION
+  ACTIONS_PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum ActionStrengthEnum {
+  ARCHITECTURAL
+  PROCESS
+  ADMINISTRATIVE
+  TRAINING
+}
+
+// ============================================================================
 // USERS & AUTHENTICATION (Non-PHI - Can also use Supabase)
 // ============================================================================
 
@@ -191,6 +224,142 @@ enum UserRole {
   CLINICIAN // Legacy role - maps to PHYSICIAN
   STAFF // Legacy role - maps to RECEPTIONIST
   RESEARCHER // Research/analytics access - limited PHI access
+}
+
+enum CareTeamStatus {
+  ACTIVE
+  DISSOLVED
+  ON_HOLD
+}
+
+enum CareTeamMemberRole {
+  LEAD
+  SPECIALIST
+  NURSE
+  COORDINATOR
+  PHARMACIST
+  SOCIAL_WORKER
+  EXTERNAL_CONSULTANT
+}
+
+enum ConferenceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SharedCarePlanStatus {
+  DRAFT
+  ACTIVE
+  REVIEW_PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum GoalStatus {
+  PROPOSED
+  ACCEPTED
+  IN_PROGRESS
+  ACHIEVED
+  CANCELLED
+  ON_HOLD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING // Not started
+  IN_PROGRESS // Working on it
+  COMPLETED // Done
+  DISMISSED // Not relevant anymore
+}
+
+enum TaskPriority {
+  URGENT // Red - immediate attention
+  HIGH // Orange - today
+  NORMAL // Blue - this week
+  LOW // Gray - whenever
+}
+
+enum VBCOutcomeType {
+  CLINICAL_MEASURE
+  PATIENT_REPORTED
+  PROCESS_MEASURE
+  COST_MEASURE
+  READMISSION_CHECK
+  ADVERSE_EVENT_CHECK
+}
+
+enum DataSharingAgreementStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+enum DataSharingScope {
+  IDENTIFIED_PHI
+  DEIDENTIFIED_RESEARCH
+  BILLING_ONLY
+  EMERGENCY_ONLY
+}
+
+enum VBCContractType {
+  PAY_FOR_PERFORMANCE
+  SHARED_SAVINGS
+  BUNDLED_PAYMENT
+  CAPITATION
+  GLOBAL_BUDGET
+}
+
+enum MeasureCategory {
+  PROCESS
+  OUTCOME
+  PATIENT_REPORTED
+  COST
+  EFFICIENCY
+}
+
+enum MeasurePeriod {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum SharedRecordType {
+  NOTE
+  LAB_RESULT
+  IMAGING
+  PRESCRIPTION
+  REFERRAL
+  HANDOFF
+  TASK_UPDATE
+  GOAL_UPDATE
+  CONFERENCE_SUMMARY
+}
+
+enum PromptTemplateType {
+  DISCIPLINE_CONTEXT
+  SCREENING_SELECTION
+  RISK_ASSESSMENT
+  INTERVENTION_RANKING
+  MONITORING_SCHEDULE
+}
+
+enum QualityMeasureStatus {
+  MET
+  NOT_MET
+  EXCLUDED
+  PENDING
 }
 
 // ============================================================================
@@ -1108,6 +1277,16 @@ model Patient {
   // Escalation Queue
   escalations Escalation[]
 
+  // Sprint 6: Hospital-Ready Care Coordination
+  careTeams              CareTeam[]              @relation("PatientCareTeams")
+  careConferences        CareConference[]        @relation("PatientCareConferences")
+  sharedCarePlans        SharedCarePlan[]        @relation("PatientSharedCarePlans")
+  careGoals              CareGoal[]              @relation("PatientCareGoals")
+  vbcOutcomes            VBCOutcomeRecord[]      @relation("PatientVBCOutcomes")
+  sharingConsents        PatientSharingConsent[] @relation("PatientSharingConsents")
+  sharedRecords          SharedCareRecord[]      @relation("PatientSharedCareRecords")
+  qualityEvaluations     QualityMeasureEvaluation[] @relation("PatientQualityEvaluations")
+
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
@@ -1116,6 +1295,472 @@ model Patient {
   @@index([cpf])
   @@index([isPalliativeCare])
   @@map("patients")
+}
+
+// ============================================================================
+// SPRINT 6: HOSPITAL-READY CARE COORDINATION
+// ============================================================================
+
+model CareTeam {
+  id                 String               @id @default(cuid())
+  patientId          String               @map("patient_id")
+  patient            Patient              @relation("PatientCareTeams", fields: [patientId], references: [id], onDelete: Cascade)
+  name               String
+  description        String?              @db.Text
+  status             CareTeamStatus       @default(ACTIVE)
+  owningOrgId        String               @map("owning_org_id")
+  sharingAgreementId String?              @map("sharing_agreement_id")
+  createdBy          String               @map("created_by")
+  dissolvedAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  members            CareTeamMembership[]
+  tasks              CareTeamTask[]
+  conferences        CareConference[]
+  sharedCarePlans    SharedCarePlan[]
+  goals              CareGoal[]           @relation("TeamGoals")
+
+  @@index([patientId])
+  @@index([owningOrgId])
+  @@index([status])
+  @@map("care_teams")
+}
+
+model CareTeamMembership {
+  id             String             @id @default(cuid())
+  careTeamId     String             @map("care_team_id")
+  careTeam       CareTeam           @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  userId         String             @map("user_id")
+  role           CareTeamMemberRole
+  specialty      String?
+  organizationId String             @map("organization_id")
+  isExternal     Boolean            @default(false)
+  isActive       Boolean            @default(true)
+  joinedAt       DateTime           @default(now())
+  leftAt         DateTime?
+  leftReason     String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([careTeamId, userId])
+  @@index([careTeamId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("care_team_memberships")
+}
+
+model CareTeamTask {
+  id               String              @id @default(cuid())
+  careTeamId       String              @map("care_team_id")
+  careTeam         CareTeam            @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId        String              @map("patient_id")
+  title            String
+  description      String?             @db.Text
+  assignedToRole   CareTeamMemberRole?
+  assignedToUserId String?             @map("assigned_to_user_id")
+  status           TaskStatus          @default(PENDING)
+  priority         TaskPriority        @default(NORMAL)
+  dueDate          DateTime?
+  slaHours         Int?
+  completedAt      DateTime?
+  completedBy      String?             @map("completed_by")
+  escalatedAt      DateTime?
+  escalatedTo      String?             @map("escalated_to")
+  escalationReason String?
+  createdBy        String              @map("created_by")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([assignedToUserId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("care_team_tasks")
+}
+
+model CareConference {
+  id                 String           @id @default(cuid())
+  careTeamId         String           @map("care_team_id")
+  careTeam           CareTeam         @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId          String           @map("patient_id")
+  patient            Patient          @relation("PatientCareConferences", fields: [patientId], references: [id])
+  title              String
+  status             ConferenceStatus @default(SCHEDULED)
+  scheduledAt        DateTime
+  startedAt          DateTime?
+  endedAt            DateTime?
+  agendaItems        Json?            @db.JsonB
+  decisions          Json?            @db.JsonB
+  conflictsNoted     Json?            @db.JsonB
+  actionItems        Json?            @db.JsonB
+  requiredAttendees  String[]         @default([])
+  optionalAttendees  String[]         @default([])
+  actualAttendees    String[]         @default([])
+  summary            String?          @db.Text
+  nextConferenceDate DateTime?
+  triggerReason      String?
+  triggerSourceId    String?
+  scheduledBy        String           @map("scheduled_by")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("care_conferences")
+}
+
+model SharedCarePlan {
+  id              String               @id @default(cuid())
+  careTeamId      String               @map("care_team_id")
+  careTeam        CareTeam             @relation(fields: [careTeamId], references: [id], onDelete: Cascade)
+  patientId       String               @map("patient_id")
+  patient         Patient              @relation("PatientSharedCarePlans", fields: [patientId], references: [id])
+  title           String
+  description     String?              @db.Text
+  status          SharedCarePlanStatus @default(DRAFT)
+  discipline      String
+  templateId      String?              @map("template_id")
+  interventions   Json?                @db.JsonB
+  targetOutcomes  Json?                @db.JsonB
+  lastReviewedAt  DateTime?
+  nextReviewAt    DateTime?
+  reviewCycleDays Int                  @default(30)
+  createdByUserId String               @map("created_by_user_id")
+  createdByOrgId  String               @map("created_by_org_id")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  goals           CareGoal[]           @relation("SharedPlanGoals")
+  sharedRecords   SharedCareRecord[]
+
+  @@index([careTeamId])
+  @@index([patientId])
+  @@index([status])
+  @@map("shared_care_plans")
+}
+
+model CareGoal {
+  id            String             @id @default(cuid())
+  careTeamId    String?            @map("care_team_id")
+  careTeam      CareTeam?          @relation("TeamGoals", fields: [careTeamId], references: [id], onDelete: Cascade)
+  sharedPlanId  String?            @map("shared_plan_id")
+  sharedPlan    SharedCarePlan?    @relation("SharedPlanGoals", fields: [sharedPlanId], references: [id], onDelete: Cascade)
+  patientId     String             @map("patient_id")
+  patient       Patient            @relation("PatientCareGoals", fields: [patientId], references: [id])
+  title         String
+  description   String?            @db.Text
+  status        GoalStatus         @default(PROPOSED)
+  priority      Priority           @default(MEDIUM)
+  discipline    String?
+  measureCode   String?
+  measureName   String?
+  targetValue   Float?
+  targetUnit    String?
+  baselineValue Float?
+  currentValue  Float?
+  startDate     DateTime?
+  targetDate    DateTime?
+  achievedDate  DateTime?
+  proposedBy    String             @map("proposed_by")
+  acceptedBy    String?            @map("accepted_by")
+  achievedBy    String?            @map("achieved_by")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  outcomes      VBCOutcomeRecord[]
+
+  @@index([careTeamId])
+  @@index([sharedPlanId])
+  @@index([patientId])
+  @@index([status])
+  @@map("care_goals")
+}
+
+model VBCOutcomeRecord {
+  id              String         @id @default(cuid())
+  goalId          String?        @map("goal_id")
+  goal            CareGoal?      @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  patientId       String         @map("patient_id")
+  patient         Patient        @relation("PatientVBCOutcomes", fields: [patientId], references: [id])
+  outcomeType     VBCOutcomeType
+  measureCode     String?
+  measureName     String
+  value           Float?
+  unit            String?
+  valueText       String?
+  valueJson       Json?          @db.JsonB
+  encounterId     String?        @map("encounter_id")
+  providerId      String?        @map("provider_id")
+  organizationId  String?        @map("organization_id")
+  sourceAuthority String?
+  recordedAt      DateTime       @default(now())
+  recordedBy      String         @map("recorded_by")
+  createdAt       DateTime       @default(now())
+
+  @@index([goalId])
+  @@index([patientId])
+  @@index([outcomeType])
+  @@index([recordedAt])
+  @@map("vbc_outcome_records")
+}
+
+model DataSharingAgreement {
+  id               String                     @id @default(cuid())
+  requestingOrgId  String                     @map("requesting_org_id")
+  receivingOrgId   String                     @map("receiving_org_id")
+  title            String
+  description      String?                    @db.Text
+  status           DataSharingAgreementStatus @default(DRAFT)
+  scopes           DataSharingScope[]
+  legalBasis       String
+  lgpdArticle      String?
+  effectiveFrom    DateTime
+  effectiveUntil   DateTime?
+  autoRenew        Boolean                    @default(false)
+  requestedBy      String                     @map("requested_by")
+  approvedBy       String?                    @map("approved_by")
+  approvedAt       DateTime?
+  revokedBy        String?                    @map("revoked_by")
+  revokedAt        DateTime?
+  revocationReason String?                    @db.Text
+  consentHash      String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  patientConsents  PatientSharingConsent[]
+  sharedRecords    SharedCareRecord[]
+
+  @@index([requestingOrgId])
+  @@index([receivingOrgId])
+  @@index([status])
+  @@map("data_sharing_agreements")
+}
+
+model PatientSharingConsent {
+  id              String               @id @default(cuid())
+  patientId       String               @map("patient_id")
+  patient         Patient              @relation("PatientSharingConsents", fields: [patientId], references: [id], onDelete: Cascade)
+  agreementId     String               @map("agreement_id")
+  agreement       DataSharingAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  consentedScopes DataSharingScope[]
+  deniedScopes    DataSharingScope[]
+  grantedAt       DateTime
+  revokedAt       DateTime?
+  expiresAt       DateTime?
+  consentVersion  String               @default("1.0")
+  signatureData   String?              @db.Text
+  consentText     String               @db.Text
+  consentHash     String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@unique([patientId, agreementId])
+  @@index([patientId])
+  @@index([agreementId])
+  @@map("patient_sharing_consents")
+}
+
+model SharedCareRecord {
+  id                String               @id @default(cuid())
+  patientId         String               @map("patient_id")
+  patient           Patient              @relation("PatientSharedCareRecords", fields: [patientId], references: [id])
+  agreementId       String               @map("agreement_id")
+  agreement         DataSharingAgreement @relation(fields: [agreementId], references: [id])
+  sharedPlanId      String?              @map("shared_plan_id")
+  sharedPlan        SharedCarePlan?      @relation(fields: [sharedPlanId], references: [id])
+  recordType        SharedRecordType
+  scope             DataSharingScope
+  title             String
+  content           String               @db.Text
+  structuredData    Json?                @db.JsonB
+  sourceOrgId       String               @map("source_org_id")
+  sourceUserId      String               @map("source_user_id")
+  sourceEncounterId String?              @map("source_encounter_id")
+  fhirResourceType  String?              @map("fhir_resource_type")
+  fhirResourceId    String?              @map("fhir_resource_id")
+  createdAt         DateTime             @default(now())
+
+  @@index([patientId])
+  @@index([agreementId])
+  @@index([sharedPlanId])
+  @@index([recordType])
+  @@index([sourceOrgId])
+  @@index([createdAt])
+  @@map("shared_care_records")
+}
+
+model VBCPayerContract {
+  id                 String          @id @default(cuid())
+  organizationId     String          @map("organization_id")
+  payerName          String          @map("payer_name")
+  payerCode          String?         @map("payer_code")
+  contractType       VBCContractType
+  effectiveFrom      DateTime
+  effectiveUntil     DateTime
+  isActive           Boolean         @default(true)
+  baseBudgetBRL      Decimal?        @db.Decimal(12, 2)
+  savingsSharePct    Float?
+  qualityBonusPct    Float?
+  linkedMeasureCodes String[]        @default([])
+  contractHash       String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("vbc_payer_contracts")
+}
+
+model QualityMeasure {
+  id              String                 @id @default(cuid())
+  code            String                 @unique
+  name            String
+  description     String?                @db.Text
+  category        MeasureCategory
+  period          MeasurePeriod          @default(QUARTERLY)
+  numeratorRule   Json                   @db.JsonB
+  denominatorRule Json                   @db.JsonB
+  exclusionRule   Json?                  @db.JsonB
+  targetRate      Float?
+  benchmarkRate   Float?
+  sourceAuthority String
+  citationUrl     String?
+  effectiveDate   DateTime
+  jurisdiction    String                 @default("BR")
+  isActive        Boolean                @default(true)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  results         QualityMeasureResult[]
+
+  @@index([code])
+  @@index([category])
+  @@map("quality_measures")
+}
+
+model QualityMeasureResult {
+  id                     String         @id @default(cuid())
+  measureId              String         @map("measure_id")
+  measure                QualityMeasure @relation(fields: [measureId], references: [id], onDelete: Cascade)
+  organizationId         String         @map("organization_id")
+  providerId             String?        @map("provider_id")
+  payerContractId        String?        @map("payer_contract_id")
+  periodStart            DateTime       @map("period_start")
+  periodEnd              DateTime       @map("period_end")
+  numerator              Int
+  denominator            Int
+  exclusions             Int            @default(0)
+  rate                   Float
+  meetsTarget            Boolean
+  attributedPatientCount Int            @default(0)
+  gapPatientIds          String[]       @default([])
+  calculatedAt           DateTime       @default(now())
+  calculatedBy           String         @map("calculated_by")
+
+  @@index([measureId])
+  @@index([organizationId])
+  @@index([periodStart, periodEnd])
+  @@map("quality_measure_results")
+}
+
+model QualityMeasureEvaluation {
+  id          String               @id @default(cuid())
+  patientId   String               @map("patient_id")
+  patient     Patient              @relation("PatientQualityEvaluations", fields: [patientId], references: [id])
+  tenantId    String
+  measureId   String               @map("measure_id")
+  measureName String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      QualityMeasureStatus
+  score       Float?
+  gaps        Json?                @db.JsonB
+  evaluatedAt DateTime             @default(now())
+  encounterId String?              @map("encounter_id")
+  createdAt   DateTime             @default(now())
+
+  @@index([patientId])
+  @@index([tenantId])
+  @@index([measureId])
+  @@index([status])
+  @@map("quality_measure_evaluations")
+}
+
+model PromptTemplate {
+  id                String             @id @default(cuid())
+  name              String
+  type              PromptTemplateType
+  discipline        MedicalDiscipline?
+  version           Int                @default(1)
+  isActive          Boolean            @default(true)
+  templateSchema    Json               @db.JsonB
+  templateLogic     Json               @db.JsonB
+  defaultParams     Json?              @db.JsonB
+  jurisdiction      String?
+  previousVersionId String?            @map("previous_version_id")
+  changeLog         String?            @db.Text
+  useCount          Int                @default(0)
+  lastUsedAt        DateTime?
+  createdBy         String             @map("created_by")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([name, version])
+  @@index([type, discipline, isActive])
+  @@index([discipline, jurisdiction, isActive])
+  @@map("prompt_templates")
+}
+
+model SafetyIncident {
+  id               String               @id @default(cuid())
+  patientId        String?              @map("patient_id")
+  organizationId   String               @map("organization_id")
+  reporterId       String               @map("reporter_id")
+  title            String
+  description      String               @db.Text
+  incidentDate     DateTime
+  category         String
+  severity         String
+  status           IncidentStatus       @default(REPORTED)
+  location         String?
+  immediateActions String?              @db.Text
+  rootCause        String?              @db.Text
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  actions          SafetyCorrectiveAction[]
+
+  // Sprint 6: RCA fields
+  eventType        String? // 'ADVERSE_EVENT' | 'NEAR_MISS' | 'SENTINEL'
+  dateOccurred     DateTime?
+  involvedStaff    String[]             @default([])
+  involvedSystems  String[]             @default([])
+  reportedById     String?              @map("reported_by_id")
+  fishboneFindings Json?                @db.JsonB
+  isAnonymous      Boolean              @default(false)
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+  @@map("safety_incidents")
+}
+
+model SafetyCorrectiveAction {
+  id             String               @id @default(cuid())
+  incidentId     String               @map("incident_id")
+  incident       SafetyIncident       @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  description    String               @db.Text
+  assignedTo     String?
+  dueDate        DateTime?
+  completedAt    DateTime?
+  actionStrength ActionStrengthEnum?
+  status         String               @default("PENDING")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  
+  // RCA mapping
+  strength       String? // 'ARCHITECTURAL' | 'PROCESS' | 'ADMINISTRATIVE' | 'TRAINING'
+
+  @@index([incidentId])
+  @@map("safety_corrective_actions")
 }
 
 // ============================================================================
@@ -1618,6 +2263,17 @@ model Prescription {
   signatureMethod String // "pin" or "signature_pad"
   signatureData   String   @db.Text // Encrypted signature or PIN hash
   signedAt        DateTime @default(now())
+
+  // ICP-Brasil & SNCR (Brazilian Legal Requirement for Controlled Substances)
+  digitalSignatureType     String? // "PIN" | "SIGNATURE_PAD" | "ICP_BRASIL"
+  icpBrasilCertSerial      String? // Certificate serial number used for signing
+  sncrId                   String? @unique // Shared National Controlled Substance Record ID
+  sncrStatus               String? // "PENDING" | "SUBMITTED" | "APPROVED" | "REJECTED"
+  sncrSubmittedAt          DateTime?
+  prescriptionType         String? // "WHITE" | "BLUE" | "YELLOW" (controlled substance classification)
+  controlledSubstanceClass String? // "A1", "A2", "B1", "B2", "C1", "C2"
+  pharmacyDispenseId       String? // Reference to the pharmacy's dispense record
+  validUntil               DateTime? // Legal expiration date of the prescription
 
   // Status
   status         PrescriptionStatus @default(PENDING)
@@ -2203,7 +2859,15 @@ model AuditLog {
   legalBasis   String? @map("legal_basis") // LGPD Art. 7 legal basis citation
   phiAccessScore Float? @map("phi_access_score") // Risk score for this access (0.0-1.0, higher = more sensitive)
 
+  // Data Retention (HIPAA §164.530(j) — 6-month archive cycle)
+  archived   Boolean   @default(false)
+  archivedAt DateTime?
+
+  // Multi-tenant org scoping
+  organizationId String? @map("organization_id")
+
   @@index([userId])
+  @@index([organizationId])
   @@index([action])
   @@index([resourceId])
   @@index([timestamp])
@@ -4064,13 +4728,6 @@ enum CarePlanStatus {
   CANCELLED
 }
 
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
 // ============================================================================
 // PALLIATIVE CARE - PAIN ASSESSMENTS
 // ============================================================================
@@ -5045,20 +5702,6 @@ enum TaskCategory {
   REVIEW // Chart review
   CALLBACK // Call patient back
   GENERAL // General task
-}
-
-enum TaskPriority {
-  URGENT // Red - immediate attention
-  HIGH // Orange - today
-  NORMAL // Blue - this week
-  LOW // Gray - whenever
-}
-
-enum TaskStatus {
-  PENDING // Not started
-  IN_PROGRESS // Working on it
-  COMPLETED // Done
-  DISMISSED // Not relevant anymore
 }
 
 // ============================================================================

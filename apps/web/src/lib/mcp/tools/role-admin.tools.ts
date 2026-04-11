@@ -83,8 +83,8 @@ async function listRoleAssignmentsHandler(
   const assignments: any = await prisma.roleAssignment.findMany({
     where,
     include: {
-      grantee: { select: { id: true, email: true, name: true } },
-      grantor: { select: { id: true, email: true, name: true } },
+      grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
+      grantor: { select: { id: true, email: true, firstName: true, lastName: true } },
     },
     orderBy: { grantedAt: 'desc' },
   });
@@ -103,7 +103,7 @@ async function listRoleAssignmentsHandler(
       assignments: assignments.map((a: any) => ({
         id: a.id,
         granteeId: a.granteeId,
-        granteeName: a.grantee.name || a.grantee.email,
+        granteeName: `${a.grantee.firstName} ${a.grantee.lastName}`.trim() || a.grantee.email,
         role: a.role,
         scope: a.scope,
         grantedAt: a.grantedAt.toISOString(),
@@ -144,7 +144,7 @@ async function grantRoleHandler(
   // Check if grantee exists
   const grantee: any = await prisma.user.findUnique({
     where: { id: input.granteeId },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, firstName: true, lastName: true },
   });
 
   if (!grantee) {
@@ -160,13 +160,13 @@ async function grantRoleHandler(
     data: {
       granteeId: input.granteeId,
       grantorId: context.clinicianId,
-      role: input.role,
+      role: input.role as any,
       scope: input.scope,
       grantedAt: new Date(),
     },
     include: {
-      grantee: { select: { id: true, email: true, name: true } },
-      grantor: { select: { id: true, email: true, name: true } },
+      grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
+      grantor: { select: { id: true, email: true, firstName: true, lastName: true } },
     },
   });
 
@@ -208,7 +208,7 @@ async function revokeRoleHandler(
   const assignment: any = await prisma.roleAssignment.findUnique({
     where: { id: input.assignmentId },
     include: {
-      grantee: { select: { id: true, email: true, name: true } },
+      grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
     },
   });
 
@@ -236,7 +236,7 @@ async function revokeRoleHandler(
       revokedAt: new Date(),
     },
     include: {
-      grantee: { select: { id: true, email: true, name: true } },
+      grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
     },
   });
 

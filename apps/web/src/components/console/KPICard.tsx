@@ -58,8 +58,8 @@ export const KPICard: React.FC<KPICardProps> = ({
 }) => {
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/30">
-        <h3 className="text-sm font-medium text-red-900 dark:text-red-200">{label}</h3>
+      <div className="p-6 dark:border-red-800 dark:bg-red-900/30" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-danger)' }}>
+        <h3 className="text-sm font-medium dark:text-red-200" style={{ color: 'var(--text-danger)' }}>{label}</h3>
         <p className="mt-2 text-xs text-red-700 dark:text-red-300">{error}</p>
       </div>
     );
@@ -67,9 +67,9 @@ export const KPICard: React.FC<KPICardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-        <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="mt-2 h-8 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="p-6 dark:border-gray-700 dark:bg-gray-900" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-primary)' }}>
+        <div className="h-4 w-24 animate-pulse dark:bg-gray-700" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--border-default)' }} />
+        <div className="mt-2 h-8 w-16 animate-pulse dark:bg-gray-700" style={{ borderRadius: 'var(--radius-md)', backgroundColor: 'var(--border-default)' }} />
       </div>
     );
   }
@@ -95,14 +95,14 @@ export const KPICard: React.FC<KPICardProps> = ({
   );
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+    <div className="p-6 dark:border-gray-700 dark:bg-gray-900" style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-primary)' }}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</p>
+          <p className="text-sm font-medium dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>{label}</p>
           <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-3xl font-bold dark:text-white" style={{ color: 'var(--text-primary)' }}>
               {formattedValue}
-              <span className="text-lg text-gray-600 dark:text-gray-400">{unitDisplay}</span>
+              <span className="text-lg dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>{unitDisplay}</span>
             </p>
             {trend !== 'neutral' && (
               <span className={`text-sm font-medium ${trendColor}`}>
@@ -117,12 +117,12 @@ export const KPICard: React.FC<KPICardProps> = ({
             position="bottom"
             maxWidth="300px"
           >
-            <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help">
+            <div className="hover:text-gray-600 dark:hover:text-gray-300 cursor-help" style={{ color: 'var(--text-muted)' }}>
               {InfoIcon}
             </div>
           </Tooltip>
         ) : tooltip ? (
-          <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title={tooltip}>
+          <div className="hover:text-gray-600 dark:hover:text-gray-300" style={{ color: 'var(--text-muted)' }} title={tooltip}>
             {InfoIcon}
           </div>
         ) : null}

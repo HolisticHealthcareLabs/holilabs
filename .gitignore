@@ -9,6 +9,9 @@ coverage/
 dast-reports/
 playwright-report/
 test-results/
+tests/results/
+**/tests/results/
+PLAYWRIGHT_FILES_CREATED.txt
 
 # Next.js
 .next/
@@ -64,6 +67,10 @@ PRODUCTION_SECRETS_*.md
 **/*SECRET*.md
 **/*_SECRETS*.md
 
+# Secret files (NEVER commit)
+*.secret
+*.secrets
+
 # Cosign keys (NEVER commit private keys)
 cosign.key
 *.key
@@ -102,8 +109,30 @@ synthea-output/
 apps/web/public/downloads/*.dmg
 release/
 .claude/worktrees/
-CLAUDE_CODE_PROMPT.md
-HEALTH3_*.md
-INTEGRATION_TESTS_SUMMARY.md
-PROMPT_*.md
-STEP0_INSTRUCTIONS.md
+.scratchpad/
+
+# Agent session notes (root-level) — allowlist keepers
+/*.md
+!README.md
+!CHANGELOG.md
+!CLAUDE.md
+!SECURITY.md
+!CONTRIBUTING.md
+!LICENSE.md
+!MILESTONES.md
+!STATUS.md
+
+# Agent state
+.omc/
+**/.omc/
+
+# Separate repos / former worktrees
+MiroFish/
+p0-bug-fixes/
+p1-ai-validation/
+p1-model-routing/
+
+# Test output artifacts
+test_output.txt
+apps/web/test_output.txt
+apps/web/tests/e2e/screenshots/

@@ -159,7 +159,7 @@ export function CookieConsentBanner() {
       <div className="max-w-7xl mx-auto px-4 py-4 [@media(max-height:700px)]:py-3">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1">
-            <h3 className="font-semibold text-lg mb-1 [@media(max-height:700px)]:hidden">We use cookies</h3>
+            <h3 className="font-semibold text-lg mb-1 text-white [@media(max-height:700px)]:hidden">We use cookies</h3>
             <p className="text-sm text-gray-300 [@media(max-height:700px)]:text-xs">
               We use cookies to improve your experience and analyze platform usage. Essential cookies are required
               for the platform to function.{' '}

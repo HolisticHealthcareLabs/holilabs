@@ -1,7 +1,7 @@
 'use client';
 
-import { FileText, Save, AlertTriangle, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { FileText, AlertTriangle, RefreshCw } from 'lucide-react';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useLanguage } from '@/hooks/useLanguage';
 
@@ -68,23 +68,25 @@ function SoapField({ label, color, content, unlocked }: SoapFieldProps) {
       </span>
 
       {unlocked ? (
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="text-xs leading-relaxed whitespace-pre-line mt-1.5 text-slate-700 dark:text-slate-300"
+          className="text-xs leading-relaxed whitespace-pre-line mt-1.5"
+          style={{ color: 'var(--text-secondary)' }}
         >
           {content}
-        </motion.p>
+        </m.p>
       ) : (
         /* "Listening…" state — shown before this section's transcript is spoken */
         <div className="flex items-center gap-2 mt-1 py-0.5" aria-hidden="true">
-          <motion.span
-            className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 flex-shrink-0"
+          <m.span
+            className="w-1.5 h-1.5 bg-slate-300 dark:bg-slate-600 flex-shrink-0"
+            style={{ borderRadius: 'var(--radius-full)' }}
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
           />
-          <span className="text-[11px] text-slate-400 dark:text-slate-600 italic select-none">
+          <span className="text-[11px] italic select-none" style={{ color: 'var(--text-muted)' }}>
             {t('soapListening')}
           </span>
         </div>
@@ -101,9 +103,9 @@ function SoapField({ label, color, content, unlocked }: SoapFieldProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SKELETON_SECTIONS = [
-  { label: 'S', accent: 'bg-cyan-300 dark:bg-cyan-700',    delay: 0 },
-  { label: 'O', accent: 'bg-emerald-300 dark:bg-emerald-700', delay: 0.15 },
-  { label: 'A', accent: 'bg-amber-300 dark:bg-amber-700',  delay: 0.30 },
+  { label: 'H', accent: 'bg-cyan-300 dark:bg-cyan-700',    delay: 0 },
+  { label: 'F', accent: 'bg-emerald-300 dark:bg-emerald-700', delay: 0.15 },
+  { label: 'I', accent: 'bg-amber-300 dark:bg-amber-700',  delay: 0.30 },
   { label: 'P', accent: 'bg-rose-300 dark:bg-rose-700',    delay: 0.45 },
 ] as const;
 
@@ -116,7 +118,7 @@ function SoapSkeleton() {
       aria-label="Generating SOAP note"
     >
       {SKELETON_SECTIONS.map(({ label, accent, delay }) => (
-        <motion.div
+        <m.div
           key={label}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -124,37 +126,38 @@ function SoapSkeleton() {
           className="flex flex-col gap-2"
         >
           <div className="flex items-center gap-2">
-            <div className={`w-5 h-3.5 rounded-sm ${accent} animate-pulse`} />
+            <div className={`w-5 h-3.5 ${accent} animate-pulse`} style={{ borderRadius: 'var(--radius-sm)' }} />
             <div
-              className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700 animate-pulse"
-              style={{ animationDelay: `${delay * 1000}ms` }}
+              className="h-3 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse"
+              style={{ borderRadius: 'var(--radius-md)', animationDelay: `${delay * 1000}ms` }}
             />
           </div>
           <div className="space-y-1.5 pl-0.5">
             <div
-              className="h-2.5 rounded w-full bg-slate-200/80 dark:bg-slate-700/60 animate-pulse"
-              style={{ animationDelay: `${delay * 1000}ms` }}
+              className="h-2.5 w-full bg-slate-200/80 dark:bg-slate-700/60 animate-pulse"
+              style={{ borderRadius: 'var(--radius-md)', animationDelay: `${delay * 1000}ms` }}
             />
             <div
-              className="h-2.5 rounded w-5/6 bg-slate-200/60 dark:bg-slate-700/40 animate-pulse"
-              style={{ animationDelay: `${(delay + 0.1) * 1000}ms` }}
+              className="h-2.5 w-5/6 bg-slate-200/60 dark:bg-slate-700/40 animate-pulse"
+              style={{ borderRadius: 'var(--radius-md)', animationDelay: `${(delay + 0.1) * 1000}ms` }}
             />
             <div
-              className="h-2.5 rounded w-2/3 bg-slate-200/40 dark:bg-slate-700/20 animate-pulse"
-              style={{ animationDelay: `${(delay + 0.2) * 1000}ms` }}
+              className="h-2.5 w-2/3 bg-slate-200/40 dark:bg-slate-700/20 animate-pulse"
+              style={{ borderRadius: 'var(--radius-md)', animationDelay: `${(delay + 0.2) * 1000}ms` }}
             />
           </div>
-        </motion.div>
+        </m.div>
       ))}
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.3 }}
-        className="text-[10px] text-center text-slate-400 dark:text-slate-600 pt-1"
+        className="text-[10px] text-center pt-1"
+        style={{ color: 'var(--text-muted)' }}
       >
         {t('soapStructuring')}
-      </motion.p>
+      </m.p>
     </div>
   );
 }
@@ -173,48 +176,51 @@ function SoapErrorBanner({
 }) {
   const t = useTranslations('dashboard.clinicalCommand');
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="
         flex flex-col items-center gap-3 py-5 px-4
-        rounded-xl border
+        border
         bg-red-50/60 dark:bg-red-500/5
         border-red-200 dark:border-red-500/20
       "
+      style={{ borderRadius: 'var(--radius-xl)' }}
     >
       <div
         className="
-          w-9 h-9 rounded-full flex items-center justify-center
+          w-9 h-9 flex items-center justify-center
           bg-red-100 dark:bg-red-500/15
           border border-red-200 dark:border-red-500/25
         "
+        style={{ borderRadius: 'var(--radius-full)' }}
       >
         <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
       </div>
       <div className="text-center space-y-1">
-        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           {t('soapGenerationFailed')}
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
           {error}
         </p>
       </div>
       <button
         onClick={onRetry}
         className="
-          flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold
+          flex items-center gap-2 px-4 py-2 text-xs font-semibold
           bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white
-          shadow-md shadow-cyan-500/20
+          shadow-cyan-500/20
           transition-colors
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
         "
+        style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-md)' }}
       >
         <RefreshCw className="w-3.5 h-3.5" />
         {t('soapRetryGeneration')}
       </button>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -245,8 +251,8 @@ export function SoapNotePane({
   soapContent,
 }: SoapNotePaneProps) {
   const t = useTranslations('dashboard.clinicalCommand');
-  const { locale } = useLanguage();
-  const soap = soapContent ?? SOAP_DEMO_BY_LOCALE[locale] ?? SOAP_DEMO_CONTENT;
+  const { language } = useLanguage();
+  const soap = soapContent ?? SOAP_DEMO_BY_LOCALE[language] ?? SOAP_DEMO_CONTENT;
   const isPopulating = segmentCount > 0;
   const hasError     = !!soapError;
   const canSign      = patientSelected && isCompleted;
@@ -272,14 +278,13 @@ export function SoapNotePane({
 
   return (
     <div className="
-      p-4 flex flex-col gap-3 overflow-hidden h-full
-      bg-white dark:bg-gray-950
-    ">
+      p-4 flex flex-col gap-3 overflow-hidden
+    " style={{ backgroundColor: 'var(--surface-primary)' }}>
       {/* Header */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-        <h2 className="text-xs font-semibold uppercase tracking-wider
-                       text-slate-500 dark:text-slate-400">
+        <h2 className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-tertiary)' }}>
           {t('soapNote')}
         </h2>
         {statusLabel ? (
@@ -287,7 +292,7 @@ export function SoapNotePane({
             {statusLabel}
           </span>
         ) : (
-          <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-600">
+          <span className="ml-auto text-[10px]" style={{ color: 'var(--text-muted)' }}>
             {t('soapAwaiting')}
           </span>
         )}
@@ -358,23 +363,34 @@ export function SoapNotePane({
       </div>
 
       {/* Sign & Bill */}
-      <motion.button
+      <m.button
         onClick={onSignAndBill}
         disabled={!canSign}
         whileHover={canSign ? { scale: 1.02 } : {}}
         whileTap={canSign ? { scale: 0.97 } : {}}
         aria-label="Sign and bill this encounter"
         className={`
-          flex-shrink-0 w-full flex items-center justify-center gap-2.5
-          py-2.5 rounded-xl text-sm font-semibold transition-all
+          flex-shrink-0 w-full flex items-center justify-center
+          py-2 text-xs font-semibold transition-all
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
           focus-visible:ring-offset-2
           focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900
           ${canSign
-            ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-md shadow-cyan-500/20'
-            : 'bg-slate-100 dark:bg-slate-700/30 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/40 cursor-not-allowed'
+            ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-cyan-500/20'
+            : 'cursor-not-allowed'
           }
         `}
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          ...(canSign
+            ? { boxShadow: 'var(--token-shadow-md)' }
+            : {
+                backgroundColor: 'var(--surface-tertiary)',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border-default)',
+              }
+          ),
+        }}
         title={
           !patientSelected    ? t('selectPatientFirst')
           : isGeneratingSoap  ? t('soapInProgress')
@@ -382,9 +398,8 @@ export function SoapNotePane({
           : t('signAndBillEncounter')
         }
       >
-        <Save className="w-4 h-4" />
         {t('signAndBill')}
-      </motion.button>
+      </m.button>
     </div>
   );
 }

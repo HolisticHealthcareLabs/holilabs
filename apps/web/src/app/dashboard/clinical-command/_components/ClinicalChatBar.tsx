@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRef, useCallback, useMemo } from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Activity, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { MODEL_CATALOG } from '@/lib/ai/types';
 
 // Inline mic SVG — lucide-react Mic/MicOff have a TS 5.9 export-duplicate issue in this version
 const MicSvg = ({ className }: { className?: string }) => (
@@ -26,11 +27,15 @@ export type PromptMode = 'Planning' | 'Rx' | 'SOAP' | 'Referral' | 'Orders';
 
 const PROMPT_MODES: PromptMode[] = ['Planning', 'Rx', 'SOAP', 'Referral', 'Orders'];
 
-const MODEL_LABELS: Record<ModelId, string> = {
-  anthropic: 'DeepSeek-R1',
-  openai:    'GPT-120B',
-  gemini:    'Gemini 1.5',
+const DEFAULT_MODEL_ID = 'claude-sonnet-4-20250514';
+
+const TIER_LABELS: Record<string, string> = {
+  frontier: 'Frontier',
+  standard: 'Standard',
+  economy:  'Economy',
 };
+
+const TIER_ORDER: string[] = ['frontier', 'standard', 'economy'];
 
 export interface ClinicalChatBarProps {
   value:              string;
@@ -74,6 +79,23 @@ export function ClinicalChatBar({
   const textareaRef     = useRef<HTMLTextAreaElement>(null);
   const canSend         = value.trim().length > 0 && !disabled && !isReplying;
 
+  const modelsByTier = useMemo(() => {
+    const groups: Record<string, typeof MODEL_CATALOG> = {};
+    for (const tier of TIER_ORDER) groups[tier] = [];
+    for (const m of MODEL_CATALOG) {
+      if (!groups[m.tier]) groups[m.tier] = [];
+      groups[m.tier].push(m);
+    }
+    return groups;
+  }, []);
+
+  function formatModelLabel(m: typeof MODEL_CATALOG[number]): string {
+    let label = m.displayName;
+    if (m.provider === 'deepseek') label += ' \u26A0\uFE0F CN';
+    if (m.id === DEFAULT_MODEL_ID) label += ' \u2726 Recommended';
+    return label;
+  }
+
   // Auto-expand textarea height
   const handleInput = useCallback((e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
@@ -99,11 +121,11 @@ export function ClinicalChatBar({
   return (
     <div className="
       flex-shrink-0 flex flex-col
-      rounded-2xl overflow-hidden
+      overflow-hidden
       bg-slate-900 dark:bg-slate-950
       border border-slate-700/60
-      shadow-lg shadow-slate-900/30
-    ">
+      shadow-slate-900/30
+    " style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-lg)' }}>
       {/* ── Textarea row ────────────────────────────────────────────────────── */}
       <textarea
         ref={textareaRef}
@@ -135,11 +157,12 @@ export function ClinicalChatBar({
           onClick={() => fileInputRef.current?.click()}
           aria-label={t('attachFile')}
           className="
-            w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
-            text-slate-400 hover:text-slate-200 hover:bg-slate-800
+            w-7 h-7 flex items-center justify-center flex-shrink-0
+            hover:text-slate-200 hover:bg-slate-800
             transition-colors
             focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
           "
+          style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-muted)' }}
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -164,11 +187,12 @@ export function ClinicalChatBar({
             className="
               appearance-none bg-transparent
               text-[11px] font-medium text-slate-300
-              pl-1 pr-5 py-1 rounded-lg
+              pl-1 pr-5 py-1
               hover:bg-slate-800 transition-colors
               focus:outline-none focus:ring-1 focus:ring-cyan-400
               cursor-pointer
             "
+            style={{ borderRadius: 'var(--radius-lg)' }}
           >
             {PROMPT_MODES.map((m) => (
               <option key={m} value={m} className="bg-slate-900 text-slate-200">
@@ -190,18 +214,27 @@ export function ClinicalChatBar({
             aria-label={t('selectModel')}
             className="
               appearance-none bg-transparent
-              text-[11px] font-medium text-slate-400
-              pl-1 pr-5 py-1 rounded-lg
+              text-[11px] font-medium
+              pl-1 pr-5 py-1
               hover:bg-slate-800 transition-colors
               focus:outline-none focus:ring-1 focus:ring-cyan-400
-              cursor-pointer max-w-[110px] truncate
+              cursor-pointer max-w-[160px] truncate
             "
+            style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-muted)' }}
           >
-            {(Object.keys(MODEL_LABELS) as ModelId[]).map((id) => (
-              <option key={id} value={id} className="bg-slate-900 text-slate-200">
-                {MODEL_LABELS[id]}
-              </option>
-            ))}
+            {TIER_ORDER.map((tier) => {
+              const models = modelsByTier[tier];
+              if (!models || models.length === 0) return null;
+              return (
+                <optgroup key={tier} label={TIER_LABELS[tier] ?? tier}>
+                  {models.map((m: any) => (
+                    <option key={m.id} value={m.id} className="bg-slate-900 text-slate-200">
+                      {formatModelLabel(m)}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
           <ChevronDown className="pointer-events-none absolute right-0.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
         </div>
@@ -219,19 +252,23 @@ export function ClinicalChatBar({
           aria-label={isListening ? t('stopListening') : t('startVoiceInput')}
           aria-pressed={isListening}
           className={`
-            w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
+            w-7 h-7 flex items-center justify-center flex-shrink-0
             transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
             ${isListening
               ? 'text-red-400 bg-red-500/15 ring-2 ring-red-400/50 animate-pulse'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              : 'hover:text-slate-200 hover:bg-slate-800'
             }
           `}
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            ...(!isListening ? { color: 'var(--text-muted)' } : {}),
+          }}
         >
           {isListening ? <MicSvg className="w-3.5 h-3.5" /> : <MicOffSvg className="w-3.5 h-3.5" />}
         </button>
 
         {/* Send button */}
-        <motion.button
+        <m.button
           type="button"
           onClick={onSend}
           disabled={!canSend}
@@ -239,16 +276,23 @@ export function ClinicalChatBar({
           whileTap={canSend ? { scale: 0.92 } : {}}
           aria-label={t('sendMessage')}
           className={`
-            w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
+            w-7 h-7 flex items-center justify-center flex-shrink-0
             transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
             ${canSend
-              ? 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-sm shadow-cyan-500/30'
-              : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+              ? 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-cyan-500/30'
+              : 'bg-slate-800 cursor-not-allowed'
             }
           `}
+          style={{
+            borderRadius: 'var(--radius-full)',
+            ...(canSend
+              ? { boxShadow: 'var(--token-shadow-sm)' }
+              : { color: 'var(--text-muted)' }
+            ),
+          }}
         >
           <ChevronRight className="w-3.5 h-3.5" />
-        </motion.button>
+        </m.button>
       </div>
     </div>
   );
@@ -261,7 +305,7 @@ export function ClinicalChatBar({
 function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; onSync: () => void; syncEnabled: boolean }) {
   const t = useTranslations('portal.clinicalChatBar');
   return (
-    <motion.button
+    <m.button
       type="button"
       onClick={onSync}
       disabled={!syncEnabled || isSyncing}
@@ -272,13 +316,14 @@ function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; on
       whileHover="hovered"
       className="
         relative flex items-center justify-center flex-shrink-0
-        h-7 rounded-lg px-1.5
+        h-7 px-1.5
         overflow-hidden
-        text-slate-400 hover:text-cyan-400 hover:bg-slate-800
+        hover:text-cyan-400 hover:bg-slate-800
         transition-colors
         focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
         disabled:cursor-not-allowed
       "
+      style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-muted)' }}
     >
       {/* Spinner — replaces icon while syncing; contained inside the button via
           relative/absolute positioning so it never bleeds outside the bounds.  */}
@@ -297,7 +342,7 @@ function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; on
 
       {/* Expanding label — max-w prevents unbounded growth that would push
           sibling buttons during the hover-expand animation.                   */}
-      <motion.span
+      <m.span
         variants={{
           hovered: { opacity: 1, width: 'auto', maxWidth: 48, marginLeft: 4 },
         }}
@@ -307,7 +352,7 @@ function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; on
         aria-hidden="true"
       >
         {isSyncing ? t('syncing') : t('sync')}
-      </motion.span>
-    </motion.button>
+      </m.span>
+    </m.button>
   );
 }

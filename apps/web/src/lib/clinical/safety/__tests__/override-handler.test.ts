@@ -8,11 +8,17 @@ import { handleOverride, validateOverride, getAvailableReasonCodes } from '../ov
 import { logger } from '@/lib/logger';
 
 jest.mock('@/lib/logger', () => ({
-  logger: {
+  __esModule: true,
+  default: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
   },
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  }
 }));
 
 describe('Override Handler', () => {

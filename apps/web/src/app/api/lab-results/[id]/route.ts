@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -54,6 +54,14 @@ export const GET = createProtectedRoute(
         );
       }
 
+      const hasAccess = await verifyPatientAccess(context.user!.id, labResult.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json({
         success: true,
         data: labResult,
@@ -89,6 +97,14 @@ export const PATCH = createProtectedRoute(
         return NextResponse.json(
           { error: 'Lab result not found' },
           { status: 404 }
+        );
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, existing.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Access denied: no clinical relationship with this patient' },
+          { status: 403 }
         );
       }
 

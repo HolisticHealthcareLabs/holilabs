@@ -72,9 +72,6 @@ export { searchTools, SEARCH_TOOL_COUNT } from './search.tools';
 // Analytics tools (clinic statistics, reporting, trends, exports)
 export { analyticsTools, ANALYTICS_TOOL_COUNT } from './analytics.tools';
 
-// Clinical Decision Support tools (drug interactions, risk scores, care suggestions)
-export { clinicalDecisionTools, CLINICAL_DECISION_TOOL_COUNT } from './clinical-decision.tools';
-
 // Imaging tools (DICOM, radiology, study management)
 export { imagingTools, IMAGING_TOOL_COUNT } from './imaging.tools';
 

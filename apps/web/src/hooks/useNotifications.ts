@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Toast } from '@/components/notifications/NotificationToast';
+import { ToastMessage as Toast } from '@/components/notifications/NotificationToast';
 import { getSocket, connectSocket } from '@/lib/chat/socket-client';
 import { logger } from '@/lib/logger';
 
@@ -62,7 +62,6 @@ export function useNotifications(userId?: string, userType?: 'CLINICIAN' | 'PATI
       type: 'info',
       title: notification.title,
       message: notification.message,
-      action: notification.href ? { label: 'View', href: notification.href } : undefined,
     });
   }, [showToast]);
 

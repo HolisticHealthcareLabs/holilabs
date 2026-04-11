@@ -118,13 +118,13 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 border border-white/10 shadow-2xl">
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 border border-white/10" style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${overallSeverity === 'HARD_BLOCK' ? 'bg-red-500/20' :
+                        <div className={`w-10 h-10 flex items-center justify-center ${overallSeverity === 'HARD_BLOCK' ? 'bg-red-500/20' :
                             overallSeverity === 'SOFT_NUDGE' ? 'bg-amber-500/20' : 'bg-emerald-500/20'
-                            }`}>
+                            }`} style={{ borderRadius: 'var(--radius-xl)' }}>
                             {getSeverityIcon(overallSeverity)}
                         </div>
                         <div>
@@ -134,7 +134,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all"
+                        className="w-10 h-10 bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all" style={{ borderRadius: 'var(--radius-xl)' }}
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -144,7 +144,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                 <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6 space-y-4">
                     {/* Meta Info */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="px-4 py-3 bg-white/5 border border-white/10" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <p className="text-xs text-gray-400 mb-1">Timestamp</p>
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-gray-500" />
@@ -153,11 +153,11 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                 </p>
                             </div>
                         </div>
-                        <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="px-4 py-3 bg-white/5 border border-white/10" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <p className="text-xs text-gray-400 mb-1">Model</p>
                             <p className="text-sm text-white font-mono">{log.provider}</p>
                         </div>
-                        <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="px-4 py-3 bg-white/5 border border-white/10" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <p className="text-xs text-gray-400 mb-1">Safety Score</p>
                             <p className={`text-lg font-bold ${log.safetyScore >= 80 ? 'text-emerald-400' :
                                 log.safetyScore >= 50 ? 'text-amber-400' : 'text-red-400'
@@ -165,14 +165,14 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                 {log.safetyScore}%
                             </p>
                         </div>
-                        <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="px-4 py-3 bg-white/5 border border-white/10" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <p className="text-xs text-gray-400 mb-1">Latency</p>
                             <p className="text-sm text-white font-mono">{log.latencyMs}ms</p>
                         </div>
                     </div>
 
                     {/* Verdict Section (Collapsible) */}
-                    <div className="rounded-xl border border-white/10 overflow-hidden">
+                    <div className="border border-white/10 overflow-hidden" style={{ borderRadius: 'var(--radius-xl)' }}>
                         <button
                             onClick={() => toggleSection('verdict')}
                             className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
@@ -180,7 +180,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                             <div className="flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-gray-400" />
                                 <span className="text-sm font-semibold text-white">Governance Verdict</span>
-                                <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs text-gray-300">
+                                <span className="px-2 py-0.5 bg-white/10 text-xs text-gray-300" style={{ borderRadius: 'var(--radius-full)' }}>
                                     {log.events.length} event(s)
                                 </span>
                             </div>
@@ -196,14 +196,14 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                     log.events.map((event) => (
                                         <div
                                             key={event.id}
-                                            className={`p-4 rounded-xl border ${getSeverityColor(event.severity)}`}
+                                            className={`p-4 border ${getSeverityColor(event.severity)}`} style={{ borderRadius: 'var(--radius-xl)' }}
                                         >
                                             <div className="flex items-start justify-between mb-2">
                                                 <div className="flex items-center gap-2">
                                                     {getSeverityIcon(event.severity)}
                                                     <span className="font-semibold">{event.ruleName}</span>
                                                 </div>
-                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10">
+                                                <span className="px-2 py-0.5 text-xs font-medium bg-white/10" style={{ borderRadius: 'var(--radius-full)' }}>
                                                     {event.actionTaken}
                                                 </span>
                                             </div>
@@ -211,7 +211,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                                    <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400" style={{ borderRadius: 'var(--radius-xl)' }}>
                                         <CheckCircle2 className="w-5 h-5" />
                                         <span className="font-medium">All checks passed. No interventions required.</span>
                                     </div>
@@ -222,7 +222,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
 
                     {/* Transcript Section (if available) */}
                     {log.session?.transcript && (
-                        <div className="rounded-xl border border-white/10 overflow-hidden">
+                        <div className="border border-white/10 overflow-hidden" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <button
                                 onClick={() => toggleSection('transcript')}
                                 className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
@@ -239,7 +239,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                             </button>
                             {expandedSections.has('transcript') && (
                                 <div className="p-4">
-                                    <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-black/30 rounded-lg p-4 max-h-64 overflow-y-auto">
+                                    <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-black/30 p-4 max-h-64 overflow-y-auto" style={{ borderRadius: 'var(--radius-lg)' }}>
                                         {log.session.transcript}
                                     </pre>
                                 </div>
@@ -249,7 +249,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
 
                     {/* Clinical Note Section (if available) */}
                     {log.session?.clinicalNote && (
-                        <div className="rounded-xl border border-white/10 overflow-hidden">
+                        <div className="border border-white/10 overflow-hidden" style={{ borderRadius: 'var(--radius-xl)' }}>
                             <button
                                 onClick={() => toggleSection('note')}
                                 className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
@@ -266,7 +266,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                             </button>
                             {expandedSections.has('note') && (
                                 <div className="p-4">
-                                    <div className="text-sm text-gray-300 whitespace-pre-wrap bg-black/30 rounded-lg p-4 max-h-64 overflow-y-auto">
+                                    <div className="text-sm text-gray-300 whitespace-pre-wrap bg-black/30 p-4 max-h-64 overflow-y-auto" style={{ borderRadius: 'var(--radius-lg)' }}>
                                         {log.session.clinicalNote}
                                     </div>
                                 </div>
@@ -280,12 +280,12 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                 <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         {localStatus === 'VERIFIED' ? (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400" style={{ borderRadius: 'var(--radius-lg)' }}>
                                 <Check className="w-4 h-4" />
                                 <span className="text-sm font-medium">Verified by Human Expert</span>
                             </div>
                         ) : localStatus === 'REJECTED' ? (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/30 text-red-400" style={{ borderRadius: 'var(--radius-lg)' }}>
                                 <X className="w-4 h-4" />
                                 <span className="text-sm font-medium">Marked as Incorrect</span>
                             </div>
@@ -295,7 +295,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                 <button
                                     onClick={() => handleValidate('VERIFIED')}
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 transition-all disabled:opacity-50" style={{ borderRadius: 'var(--radius-lg)' }}
                                 >
                                     <ThumbsUp className="w-3.5 h-3.5" />
                                     <span className="text-sm font-medium">Yes, Verify</span>
@@ -303,7 +303,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                                 <button
                                     onClick={() => setShowRejectForm(true)}
                                     disabled={isSubmitting}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 transition-all disabled:opacity-50" style={{ borderRadius: 'var(--radius-lg)' }}
                                 >
                                     <ThumbsDown className="w-3.5 h-3.5" />
                                     <span className="text-sm font-medium">No, Flag Issue</span>
@@ -314,7 +314,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
 
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium transition-all"
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium transition-all" style={{ borderRadius: 'var(--radius-xl)' }}
                     >
                         Close
                     </button>
@@ -329,7 +329,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                             value={rejectNotes}
                             onChange={(e) => setRejectNotes(e.target.value)}
                             placeholder="e.g. False positive on PII, missed context..."
-                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm mb-4 focus:outline-none focus:border-white/30"
+                            className="w-full bg-black/30 border border-white/10 p-3 text-white text-sm mb-4 focus:outline-none focus:border-white/30" style={{ borderRadius: 'var(--radius-lg)' }}
                             rows={3}
                         />
                         <div className="flex justify-end gap-3">
@@ -342,7 +342,7 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                             <button
                                 onClick={() => handleValidate('REJECTED', rejectNotes)}
                                 disabled={isSubmitting || !rejectNotes.trim()}
-                                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ borderRadius: 'var(--radius-lg)' }}
                             >
                                 Submit Feedback
                             </button>

@@ -42,7 +42,9 @@ RUN pnpm build
 # ============================================================================
 # Production Stage
 # ============================================================================
-FROM base AS runner
+# Production runner — clean image, no package managers
+FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV production

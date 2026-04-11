@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 
 interface TourStep {
   title: string;
@@ -86,7 +86,7 @@ export function DemoGuidedTour() {
         {active && (
           <>
             {/* Backdrop */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -95,7 +95,7 @@ export function DemoGuidedTour() {
             />
 
             {/* Card */}
-            <motion.div
+            <m.div
               key={step}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -147,7 +147,7 @@ export function DemoGuidedTour() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

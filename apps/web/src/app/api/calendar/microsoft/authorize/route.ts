@@ -3,10 +3,23 @@
  *
  * GET /api/calendar/microsoft/authorize
  * Redirects user to Microsoft OAuth consent screen
+ *
+ * CVI-001: Uses HMAC-signed state token to prevent CSRF attacks.
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
+
+function signOAuthState(userId: string): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error('NEXTAUTH_SECRET required for OAuth state signing');
+  const timestamp = Math.floor(Date.now() / 1000);
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const payload = `${userId}:${timestamp}:${nonce}`;
+  const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  return `${payload}:${sig}`;
+}
 
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -21,7 +34,7 @@ export const GET = createProtectedRoute(
       'offline_access',
     ].join(' '));
     microsoftOAuthUrl.searchParams.set('response_mode', 'query');
-    microsoftOAuthUrl.searchParams.set('state', context.user.id); // Pass user ID to callback
+    microsoftOAuthUrl.searchParams.set('state', signOAuthState(context.user.id));
 
     return NextResponse.redirect(microsoftOAuthUrl.toString());
   },

@@ -389,11 +389,11 @@ function SecuritySection() {
 export default function SettingsPage() {
   const t = useTranslations('dashboard.settings');
   const { data: session } = useSession();
-  const userRole = String((session?.user as { role?: string } | undefined)?.role ?? '').toUpperCase();
-  const tenantRole = String((session?.user as { tenantRole?: string } | undefined)?.tenantRole ?? 'CLINICIAN').toUpperCase();
-  const organizationId = (session?.user as { organizationId?: string } | undefined)?.organizationId ?? 'org-demo-clinic';
-  const organizationName = (session?.user as { organizationName?: string } | undefined)?.organizationName ?? 'Demo Clinic';
-  const organizationType = (session?.user as { organizationType?: string } | undefined)?.organizationType ?? 'CLINIC';
+  const userRole = String((((session?.user as any)) as { role?: string } | undefined)?.role ?? '').toUpperCase();
+  const tenantRole = String((((session?.user as any)) as { tenantRole?: string } | undefined)?.tenantRole ?? 'CLINICIAN').toUpperCase();
+  const organizationId = (((session?.user as any)) as { organizationId?: string } | undefined)?.organizationId ?? 'org-demo-clinic';
+  const organizationName = (((session?.user as any)) as { organizationName?: string } | undefined)?.organizationName ?? 'Demo Clinic';
+  const organizationType = (((session?.user as any)) as { organizationType?: string } | undefined)?.organizationType ?? 'CLINIC';
   const canManageClinic = tenantRole === 'ORG_ADMIN';
   const canEditRolloutContext = canManageClinic;
 
@@ -621,13 +621,13 @@ export default function SettingsPage() {
           <div className="mx-auto max-w-4xl">
             <div className="mb-8 text-center">
               <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-[#014751] text-5xl font-semibold text-white shadow-lg">
-                {(session?.user?.name || session?.user?.email || 'C').charAt(0).toUpperCase()}
+                {(((session?.user as any))?.name || ((session?.user as any))?.email || 'C').charAt(0).toUpperCase()}
               </div>
               <h1 className="text-5xl font-semibold tracking-tight text-white">
-                {session?.user?.name || t('yourAccount')}
+                {((session?.user as any))?.name || t('yourAccount')}
               </h1>
               <p className="mt-2 text-lg text-white/65">
-                {session?.user?.email || t('noEmail')}
+                {((session?.user as any))?.email || t('noEmail')}
               </p>
             </div>
 
@@ -696,15 +696,15 @@ export default function SettingsPage() {
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Full name</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || '—'}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{((session?.user as any))?.name || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Email</p>
-                      <p className="mt-2 text-base font-semibold text-white break-all">{session?.user?.email || '—'}</p>
+                      <p className="mt-2 text-base font-semibold text-white break-all">{((session?.user as any))?.email || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Username</p>
-                      <p className="mt-2 text-base font-medium text-white">{session?.user?.username || '—'}</p>
+                      <p className="mt-2 text-base font-medium text-white">{((session?.user as any))?.username || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Role</p>
@@ -720,19 +720,19 @@ export default function SettingsPage() {
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Specialty</p>
-                      <p className="mt-2 text-base font-medium text-white">{session?.user?.specialty || 'Not set'}</p>
+                      <p className="mt-2 text-base font-medium text-white">{(((session?.user as any)) as any)?.specialty || 'Not set'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">License Number (CRM / CRO)</p>
-                      <p className="mt-2 text-base font-mono text-white">{session?.user?.licenseNumber || 'Not set'}</p>
+                      <p className="mt-2 text-base font-mono text-white">{((session?.user as any))?.licenseNumber || 'Not set'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">NPI (US only)</p>
-                      <p className="mt-2 text-base font-mono text-white">{session?.user?.npi || '—'}</p>
+                      <p className="mt-2 text-base font-mono text-white">{((session?.user as any))?.npi || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Signing PIN</p>
-                      <p className="mt-2 text-base text-white">{session?.user?.mfaEnabled ? '••••••' : 'Not configured'}</p>
+                      <p className="mt-2 text-base text-white">{((session?.user as any))?.mfaEnabled ? '••••••' : 'Not configured'}</p>
                     </div>
                   </div>
                 </div>
@@ -751,7 +751,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Permissions</p>
-                      <p className="mt-2 text-sm text-white/70">{session?.user?.permissions?.length ? `${(session.user as any)?.permissions?.length} active` : 'Default role permissions'}</p>
+                      <p className="mt-2 text-sm text-white/70">{((session?.user as any))?.permissions?.length ? `${((session?.user as any))?.permissions?.length} active` : 'Default role permissions'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Account Status</p>
@@ -769,15 +769,15 @@ export default function SettingsPage() {
                   <div className="mt-6 grid gap-4 md:grid-cols-3">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">MFA</p>
-                      <p className="mt-2 text-base font-medium text-white">{session?.user?.mfaEnabled ? 'Enabled' : 'Not enabled'}</p>
+                      <p className="mt-2 text-base font-medium text-white">{((session?.user as any))?.mfaEnabled ? 'Enabled' : 'Not enabled'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Last Login</p>
-                      <p className="mt-2 text-sm font-medium text-white">{session?.user?.lastLoginAt ? new Date(session.user.lastLoginAt).toLocaleDateString() : 'Current session'}</p>
+                      <p className="mt-2 text-sm font-medium text-white">{((session?.user as any))?.lastLoginAt ? new Date(((session?.user as any)).lastLoginAt).toLocaleDateString() : 'Current session'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <p className="text-sm text-white/50">Member Since</p>
-                      <p className="mt-2 text-sm font-medium text-white">{session?.user?.createdAt ? new Date(session.user.createdAt).toLocaleDateString() : '—'}</p>
+                      <p className="mt-2 text-sm font-medium text-white">{((session?.user as any))?.createdAt ? new Date(((session?.user as any)).createdAt).toLocaleDateString() : '—'}</p>
                     </div>
                   </div>
                 </div>

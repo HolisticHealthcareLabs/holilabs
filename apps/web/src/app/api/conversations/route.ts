@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -187,6 +187,14 @@ export const POST = createProtectedRoute(
       return NextResponse.json(
         { success: false, error: 'Patient ID is required' },
         { status: 400 }
+      );
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Access denied: no clinical relationship with this patient' },
+        { status: 403 }
       );
     }
 

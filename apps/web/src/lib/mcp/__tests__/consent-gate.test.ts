@@ -1,3 +1,5 @@
+export {};
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     consent: {

@@ -7,8 +7,8 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
-import NotificationToast from '@/components/notifications/NotificationToast';
-import NotificationBell from '@/components/notifications/NotificationBell';
+import { ToastProvider } from '@/components/notifications/NotificationToast';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface PatientPortalWrapperProps {
   children: ReactNode;
@@ -50,23 +50,19 @@ export default function PatientPortalWrapper({ children, patientId }: PatientPor
   }
 
   return (
-    <>
-      {/* Toast Notifications */}
-      <NotificationToast toasts={toasts} onDismiss={dismissToast} />
-
+    <ToastProvider>
       {/* Notification Bell */}
       {patientId && (
         <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-6">
           <NotificationBell
-            notifications={notifications}
             unreadCount={unreadCount}
-            onMarkAsRead={markAsRead}
-            onMarkAllAsRead={markAllAsRead}
+            isOpen={false}
+            onClick={() => {}}
           />
         </div>
       )}
 
       {children}
-    </>
+    </ToastProvider>
   );
 }

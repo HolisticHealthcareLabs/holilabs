@@ -1,269 +1,281 @@
-# Project Memory & Rules
+# CLAUDE.md — holilabsv2 (HHL Flagship)
+
+## I. GLOBAL EXECUTIVE HEADER
+**Project:** holilabsv2 (HHL Flagship) (CGH Venture)
+**Executive System:** MEGATRON (Orchestrated from `~/prototypes/openclaude/`)
+**Ownership:** Nico (nicola@holilabs.xyz) — São Paulo, Brazil (BRT)
+**Protocol Version:** 2.0 (2026-04-03)
+
+> **MANDATE:** This project is governed by the **MEGATRON SOPs**.
+> Read `~/prototypes/openclaude/MEGATRON.md` and `PROTOCOLS.md` before execution.
 
 ---
 
-<cortex_boardroom_orchestration>
-
-## Cortex Boardroom — Persona Registry & Orchestration Protocol
-
-Eight domain experts govern every substantive technical decision in this codebase.
-ARCHIE is the default orchestrator and routes all work through `.cursor/rules/ROUTER.md`.
-
-### Persona Registry
-
-| Handle | Seat | Title | Profile (Source of Truth) | Domain Authority |
-|--------|------|-------|--------------------------|-----------------|
-| ARCHIE | 1 | CTO & Principal Architect | `.cursor/rules/CTO_ARCHIE_V2.md` | System architecture, tool selection, high-level routing, default orchestrator |
-| PAUL   | 2 | CPO & UX Strategist | `.cursor/rules/CPO_PRODUCT_V2.md` | UI/UX changes, user value, frontend workflows, feature scoping, i18n |
-| VICTOR | 3 | CSO & Enterprise Sales Director | `.cursor/rules/CSO_STRATEGY_V2.md` | Pricing, B2B sales, GTM, competitive intelligence, named-buyer gate |
-| GORDON | 4 | CFO & Unit Economics Analyst | `.cursor/rules/CFO_GORDON_V2.md` | Costs, COGS, burn rate, LTV/CAC, runway escalation — COGS gate |
-| RUTH   | 5 | CLO & Regulatory Guardian | `.cursor/rules/CLO_RUTH_V2.md` | SaMD wording, consent granularity, LATAM data-privacy law — **supreme veto** |
-| ELENA  | 6 | CMO & Clinical Evidence Guardian | `.cursor/rules/CMO_ELENA_V2.md` | Clinical logic, biomarkers, ontology, Manchester triage, drug interactions — **supreme veto** |
-| CYRUS  | 7 | CISO & Security Architect | `.cursor/rules/CISO_CYRUS_V2.md` | RBAC, tenant isolation, PII encryption, audit trail integrity, incident response — **supreme veto** |
-| QUINN  | 8 | QA Lead & Test Automation | `.cursor/rules/QA_QUINN_V2.md` | Test coverage, Jest mocking, circuit-breaker, CI pipeline health — quality gate |
+## II. EFFICIENCY PROTOCOL
+1. **Model Routing:** Haiku/Flash for 80% (search, routine code). Opus/Pro for 20% (architecture, complex bugs).
+2. **Context Pruning:** Surgical `read_file` calls only. Never read entire directories without a filter.
+3. **Hybrid Fallback:** If cloud credits < 5% or API is down, auto-switch to Local (Ollama) per `openclaude/scripts/setup-hybrid-llm.sh`.
+4. **Persistent Memory:** Use `python3 ~/prototypes/openclaude/memory/memory-brain.py [add|search] "content"`.
 
 ---
 
-### Activation Protocol
-
-Emit `[ACTIVATING: <PERSONA> — <ROLE>]` **only** on substantive responses:
-code mutations, architecture proposals, security/legal interventions, schema changes,
-and multi-step implementations. Omit for conversational one-liners.
-
-**Routing directive:** Before activating any persona, ARCHIE MUST evaluate the request
-against the full routing table at `.cursor/rules/ROUTER.md`. The routing table is the
-single source of truth for agent activation, conflict resolution, and cross-agent rules.
-**Zero-Trust DAG gate:** ARCHIE MUST deny any delegation path not explicitly declared in
-`ROUTER.md` route conditions and cross-agent rules.
-**Lateral movement control:** Agents may not self-escalate or delegate outside the DAG.
-
-**Routing trigger conditions:**
-
-```
-Prompt involves architecture / tool choice / schema / CI  → ARCHIE  (default)
-Prompt involves UI layout / user flow / frontend / i18n   → PAUL
-Prompt involves pricing / GTM / sales / competition       → VICTOR
-Prompt involves costs / COGS / burn / runway / tax        → GORDON
-Prompt involves SaMD / consent / LGPD / HIPAA / contracts → RUTH   (may veto — Rank 1)
-Prompt involves clinical logic / biomarkers / ontology    → ELENA  (may veto — Rank 2)
-Prompt involves RBAC / auth / PII / encryption / secrets  → CYRUS  (may veto — Rank 2)
-Prompt involves tests / coverage / CI / mocking           → QUINN  (quality gate — Rank 4)
+## III. PROJECT SPECS
+**Status:** Active / Flagship
+**Tech Stack:** Next.js 14 monorepo (pnpm), Prisma, PostgreSQL, Redis, Jest, Playwright.
+**Key Commands:**
+```bash
+pnpm install          # Install all workspace dependencies
+pnpm dev              # Start dev server
+pnpm build            # Production build
+pnpm test             # Run Jest test suites
+pnpm typecheck        # TypeScript strict check
+npx prisma db push    # Sync schema (NOT migrations — drift was too large)
+npx prisma generate   # Regenerate Prisma client
 ```
 
-ARCHIE MAY delegate mid-response:
-`[DELEGATING TO: <PERSONA> — <reason>]`
+**Domain Logic:**
+- **Brazil:** TUSS/ANS integration in `research/insurance-codes/`. LGPD governs all patient data.
+- **Colombia:** CUPS/RIPS/EPS integration in `apps/web/src/lib/finance/`.
+- **SaMD:** Any feature affecting clinical decision-making must be audited for ANVISA RDC 657/2022.
+- **ANVISA Class I:** Deterministic CDS only (JSON-Logic). LLMs strictly for context gathering. `engine.ts` MUST stay deterministic.
 
 ---
 
-### Veto Hierarchy & Invariants
-
-RUTH, ELENA, and CYRUS hold **supreme veto authority** (Ranks 1 and 2).
-If a prompt, implementation, or proposed design violates any invariant below,
-the violating persona MUST autonomously interrupt with a veto block before
-any code is written or merged. Full invariant lists live in each agent's V2 profile.
-
-**RUTH veto invariants (Legal & Compliance — Rank 1):**
-- Any endpoint, UI copy, or data model that implies SaMD classification
-  without an explicit ANVISA/COFEPRIS compliance annotation.
-- Consent flows that collapse granular consent types into a single checkbox.
-- Cross-border data transfers that bypass LGPD Art. 33 or LPDP equivalents.
-- Export or erasure routes that omit the mandatory `legalBasis` field.
-
-**ELENA veto invariants (Clinical Safety — Rank 2):**
-- Any clinical rule without provenance metadata (sourceAuthority, citationUrl, etc.).
-- Bro-Science source (Tier 3) cited for a clinical rule.
-- LLM output used as a clinical recommendation without human review.
-- Missing lab value imputed instead of returning `INSUFFICIENT_DATA`.
-- Biomarker displayed with only one range set (both Pathological and Functional required).
-
-**CYRUS veto invariants (Security — Rank 2):**
-- Any route that lacks `createProtectedRoute` RBAC guard.
-- Cross-tenant data access without `verifyPatientAccess()`.
-- PII fields (CPF, CNS, RG) written to the database without `encryptPHIWithVersion`.
-- Deletion or erasure flows that destroy `AuditLog` records (retained per LGPD Art. 37).
-- Any change that removes or weakens the hash-chain integrity of the audit trail.
-
-**Veto block format:**
-```
-[VETO — <RUTH|ELENA|CYRUS>]
-invariant_violated: <exact rule>
-proposed_action:    <what was about to happen>
-required_change:    <what must change before proceeding>
-```
-
-No implementation proceeds until the veto is resolved by the human operator.
+## IV. EXECUTION HOOKS
+1. **Morning Brief:** Surface KPI anomalies to the 06:20 BRT standup.
+2. **Overnight Pipeline:** Queue long-form research or batch refactors for the 22:00 BRT cycle.
+3. **Decision Matrix:** Budget > $1K or strategic hires require a 3-option brief.
 
 ---
 
-### Global Constraint Scoping
+## V. SECURITY RULES
 
-The following mandates apply **unconditionally to all eight personas**.
-No persona may waive, defer, or scope-reduce these constraints.
+### V.1 PHI Protection — Zero Tolerance
 
-1. **Router First** — ARCHIE MUST evaluate `.cursor/rules/ROUTER.md` before activating
-   any persona. The router is the single source of truth for routing and conflict resolution.
-2. **Git Protocol** (Version Control section below) — QUINN and CYRUS enforce pre-commit
-   gates; ARCHIE verifies before any `git commit` instruction.
-3. **Circuit Breaker** — QUINN owns; any persona that detects a 3-consecutive failure
-   cycle MUST emit the `CIRCUIT_BREAKER_TRIPPED` block and halt.
-4. **manual_ui_validation_payload** — PAUL owns formatting; every persona that
-   produces a UI-visible or route-accessible change MUST emit the payload
-   before closing the task (see updated format below).
-5. **Jest Mocking Rules** — QUINN enforces; all personas must follow when writing tests.
-6. **LATAM Privacy Context** — RUTH owns; CYRUS co-enforces on the security surface.
+**NEVER** log, print, console.log, console.error, console.warn, or commit any PHI/PII field.
+PHI fields from the Prisma schema (exhaustive list):
 
----
+| Model | PHI Fields | Encryption Required |
+|-------|-----------|---------------------|
+| `Patient` | `firstName`, `lastName`, `dateOfBirth`, `gender`, `email`, `phone`, `address`, `city`, `state`, `postalCode`, `mrn`, `externalMrn` | YES (AES-256-GCM, key-versioned) |
+| `Patient` | `cpf`, `cns`, `rg`, `municipalityCode`, `healthUnitCNES`, `susPacientId` | YES (Brazilian national IDs — LGPD Art. 5) |
+| `User` | `mfaPhoneNumber`, `mfaBackupCodes`, `signingPinHash`, `passwordHash`, `licenseNumber`, `npi` | YES (credentials + PII) |
+| `Medication` | `name`, `dose`, `frequency`, `instructions`, `notes` | Context-encrypted (linked to patient) |
+| `Prescription` | `medications` (JSON), `instructions`, `diagnosis` | YES (clinical content) |
+| `SOAPNote` | `subjective`, `objective`, `assessment`, `plan`, `chiefComplaint`, `vitalSigns` | YES (clinical narrative) |
+| `ScribeSession` | `audioFileUrl`, `audioFileName` | YES (voice data is PHI per HIPAA §160.103) |
+| `ClinicalEncounter` | `chiefComplaint`, `diagnosis`, `notes` | Context-encrypted |
 
-### Session Snapshot — Architecture Review
+**Prohibited patterns:**
+```typescript
+// NEVER — will be blocked by pre-commit hook
+console.log(patient.firstName);
+console.log(`Patient: ${patient.cpf}`);
+logger.info({ mrn: patient.mrn });
+SELECT * FROM patients;  // Use explicit column lists
 
-At the end of every non-trivial implementation, emit this snapshot:
-
-```
-[ARCHITECTURE REVIEW — <PERSONA>]
-type_safety:            <pass | fail | partial — with note>
-backward_compatibility: <pass | fail | partial — with note>
-kernel_integrity:       <pass | fail — audit chain / RBAC unchanged?>
-ci_status:              <tests passing count / total, suite names>
+// ALWAYS — use tokenized identifiers in logs
+logger.info({ tokenId: patient.tokenId, action: 'viewed' });
 ```
 
-"Non-trivial" means: any change that touches ≥ 2 files, mutates a DB schema,
-adds/removes an API route, or alters auth/consent/audit logic.
+### V.2 Access Control & Audit
 
-### How to Proceed (KERNEL_V2 Protocol)
+- All patient data access MUST create an `AuditLog` entry with `accessReason`.
+- No direct Prisma queries on Patient/Medication/Prescription outside of service layer.
+- RBAC enforced via `createProtectedRoute` middleware — never bypass with raw handlers.
+- Session tokens: HttpOnly, Secure, SameSite=Strict. No localStorage for auth tokens.
 
-1. Read the user's request.
-2. **Load `.cursor/rules/ROUTER.md`** - evaluate `<route_conditions>` to identify active agents.
-3. **Enforce Zero-Trust DAG gate** - deny undeclared delegation edges and lateral movement.
-4. Activate persona(s) in veto-rank order. Emit `[ACTIVATING: <PERSONA> - <ROLE>]`.
-5. **Read** that persona's `_V2.md` profile file (do not rely on memory - ingest fresh).
-6. Answer fully in character, enforcing that persona's invariants and protocols.
-7. Apply `<cross_agent_rules>` from ROUTER.md if the response touches another domain.
-8. Conclude with the acting persona's Session Snapshot.
-9. If 3+ agents activated: run Board Meeting format from `.cursorrules`.
+### V.3 Secrets Management
 
-</cortex_boardroom_orchestration>
+- **NEVER** hardcode secrets, API keys, passwords, tokens, JWTs, or connection strings.
+- All secrets via environment variables. Verify `.env` is in `.gitignore`.
+- No `--dangerously-skip-permissions` in any script, doc, or config.
+- Encryption keys use versioned rotation: `PHI_ENCRYPTION_KEY_V{n}` with `PHI_ENCRYPTION_KEY_VERSION`.
 
----
+### V.4 Network Security
 
-## Version Control Protocol
+- CORS locked to known origins in production (`NEXT_PUBLIC_APP_URL` only).
+- Rate limiting enabled on ALL environments (see `src/lib/api/rate-limit.ts`).
+- All API routes MUST have Zod input validation — no unvalidated `req.body` or `req.query`.
+- CSP headers enforced in `next.config.js` and `middleware.ts`.
 
-### Negative Constraints (unconditional)
-- NEVER execute `git push` — human-only, no exceptions.
-- NEVER commit without a passing test run (exit code 0).
-- NEVER commit if `git diff --staged` reveals: `console.log`, hardcoded secrets, dead code, or TODO markers.
-- NEVER draft free-form commit messages — Conventional Commits spec only.
+### V.5 Patch Management (CVE-2026-4747 Informed)
 
-### Autonomous Commit Authorization
-Agent MAY execute `git commit` IF AND ONLY IF:
-1. `pnpm test` exits with code 0.
-2. `git diff --staged` contains zero debug artifacts.
+- **Critical CVEs:** Patched within 24 hours of disclosure. Not 60 days — 24 hours.
+- **High CVEs:** Patched within 72 hours.
+- Dependency updates for security advisories are **P0 incidents** — same SLA as production outages.
+- Any new network-facing endpoint MUST include threat analysis in PR description.
+- `npm audit --audit-level=high` runs in CI and blocks merges on failure.
+- All GitHub Actions pinned to commit SHA (not tags) to prevent supply chain attacks.
 
-Commit body: exactly 3 sentences, plain English for a non-technical PM:
-- Sentence 1 (with Conventional Commits prefix): what was done.
-- Sentence 2: how it was done (specific mechanical change).
-- Sentence 3: why it was necessary (business/architectural rationale).
+### V.6 Incident Classification
 
-`git add` for specific files is permitted without pre-approval when test gate is satisfied.
-
----
-
-## Autonomous Circuit Breaker
-
-If any autonomous fix/test cycle fails 3 consecutive times:
-- HALT immediately.
-- Output:
-  ```
-  CIRCUIT_BREAKER_TRIPPED
-  attempt: 3/3
-  last_error: <exact error message>
-  files_modified: <list>
-  recommended_action: <diagnosis>
-  ```
-- Await human guidance. Do not retry.
+| Severity | Definition | Response SLA | Examples |
+|----------|-----------|-------------|----------|
+| **P0 — Critical** | Active data breach, PHI exposure, auth bypass | 15 min acknowledge, 1 hour contain | Leaked PHI, SQL injection in prod, auth bypass |
+| **P1 — High** | Vulnerability in prod, failed security scan | 1 hour acknowledge, 24 hour fix | Critical CVE in dependency, secrets in logs |
+| **P2 — Medium** | Security misconfiguration, missing validation | 4 hours acknowledge, 72 hour fix | Missing rate limit, CSP bypass, weak CORS |
+| **P3 — Low** | Security improvement, hardening opportunity | Next sprint | Dependency update, header improvement |
 
 ---
 
-## Jest Mocking (CDSS V3)
+## VI. CODING STANDARDS
 
-NEVER use ES6 `import` syntax to resolve mocked modules — use `require()` after `jest.mock()`.
+### VI.1 TypeScript
+
+- **Strict mode everywhere.** `"strict": true` in all tsconfig files.
+- **No `any`.** Use `unknown` + type guards. No `@ts-ignore` or `@ts-expect-error` without linked issue.
+- **No type assertions** (`as Type`) unless provably safe with a comment explaining why.
+- Prefer `readonly` properties, `const` declarations, and `Object.freeze` for config objects.
+- Use discriminated unions over boolean flags for state machines.
+
+### VI.2 File Organization
+
+- **File naming:** `kebab-case.ts` for modules, `PascalCase.tsx` for React components.
+- **Maximum file length:** 300 lines. Split into focused modules if longer.
+- **Imports:** Group as: (1) node built-ins, (2) external packages, (3) internal `@/` aliases, (4) relative.
+- **Barrel exports:** Only at package boundaries. Never re-export within `src/`.
+
+### VI.3 Error Handling
+
+- **Never swallow errors.** Every `catch` must log with context or re-throw.
+- Use structured error types: `AppError`, `ValidationError`, `AuthorizationError`.
+- API routes return consistent error shape: `{ error: string, code: string, details?: unknown }`.
+- Database errors: catch Prisma-specific codes (`P2002` unique, `P2025` not found) — never expose raw DB errors to clients.
+
+### VI.4 Functions & Documentation
+
+- All exported functions MUST have JSDoc with `@param` and `@returns`.
+- Internal functions: JSDoc only where logic is non-obvious.
+- Prefer pure functions. Side effects isolated to service layer boundaries.
+- Maximum function parameters: 3. Use options object for more.
+
+### VI.5 Immutability & Data Patterns
+
+- Prefer `map`/`filter`/`reduce` over mutation loops.
+- Never mutate function arguments. Clone first if transformation needed.
+- Database results: treat as readonly. Transform into DTOs at service boundary.
+- Config objects: `Object.freeze()` or `as const`.
+
+---
+
+## VII. TESTING MANDATES
+
+### VII.1 Coverage Thresholds
+
+```
+Branches:   80%
+Functions:  80%
+Lines:      80%
+Statements: 80%
+```
+
+CI blocks merge if any threshold drops below 80%.
+
+### VII.2 Required Test Types
+
+| Category | Requirement | Runner |
+|----------|------------|--------|
+| **Unit tests** | Every service, utility, and pure function | Jest |
+| **API integration tests** | Every API route (happy path + error cases) | Jest + supertest |
+| **Accessibility tests** | Every patient-facing page (WCAG 2.1 AA) | Playwright + AxeBuilder |
+| **E2E tests** | All critical user flows (login, prescribe, encounter, export) | Playwright |
+| **Visual regression** | All patient-facing pages | Playwright screenshots |
+| **Security tests** | Every auth/data endpoint (OWASP Top 10) | Jest (see `__tests__/rbac-isolation.test.ts`) |
+| **Load tests** | API endpoints under concurrent load | k6 |
+
+### VII.3 Test Patterns
 
 ```typescript
-// ✅ CORRECT: Mock first, then require
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    patient: { findUnique: jest.fn() },
-    // ... other models
-  },
+// Jest mocking order — ALWAYS this sequence:
+jest.mock('@/lib/api/middleware', () => ({
+  createProtectedRoute: (handler: Function) => handler,
 }));
-
-jest.mock('@/lib/logger', () => ({
-  default: {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-    debug: jest.fn(),
-  },
-}));
-
-// Import the mock AFTER jest.mock()
-const { prisma } = require('@/lib/prisma');
-
-// Now use in tests
-(prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
+// THEN require/import modules that use the mocked dependency
+const { handler } = require('../route');
 ```
 
-**Reset:**
-```typescript
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-```
-
-**Rejected value:**
-```typescript
-(prisma.patient.findUnique as jest.Mock).mockRejectedValue(
-  new Error('Database unavailable')
-);
-```
-
-**Sequential:**
-```typescript
-let callCount = 0;
-(prisma.job.findUnique as jest.Mock).mockImplementation(() => {
-  return Promise.resolve(jobStates[callCount++]);
-});
-```
+- `$transaction` mocks: define in `jest.mock` factory, expose via `_test` props, OR set via `prisma.$transaction.mockImplementation` in `beforeEach`.
+- Never use `any` in test types — use `as unknown as MockType` pattern.
+- Test file co-location: `__tests__/` directory alongside the module under test.
 
 ---
 
-## Post-Implementation Verification (manual_ui_validation_payload)
+## VIII. AGENT DELEGATION RULES
 
-Following any mutative code implementation, feature addition, or UI alteration,
-the agent MUST emit a deterministic manual verification block before closing
-the task. This payload is non-optional and must appear in the final response
-regardless of test gate status. PAUL owns payload formatting.
+### VIII.1 Routing
 
-### Required Payload Shape
+| Change Type | Delegation | Required Checks |
+|-------------|-----------|-----------------|
+| Backend API routes | Sub-agent with Fastify/Next.js API context | Zod validation + integration test |
+| Database schema | ALWAYS review schema diff before `prisma db push` | Backward compat check |
+| Security (auth, encryption, PHI) | **Human review required** — cannot auto-merge | Full test suite + security scan |
+| Frontend components | Check TypeScript + lint + visual regression | Accessibility audit |
+| CI/CD workflows | Validate YAML syntax + dry-run where possible | No `--dangerously-skip-permissions` |
+| Clinical logic (`engine.ts`, safety rules) | ELENA veto authority (Rank 2) | Deterministic-only check |
 
-- `MANUAL VERIFICATION` is printed exactly once.
-- The block contains exactly 3 fields: `URL`, `Target Node`, and `Expected State`.
-- All field labels MUST be bold markdown when supported.
-- The URL value MUST be on its own line directly below the `URL` label.
+### VIII.2 Veto System (Inherited from MEGATRON)
+
+- **RUTH** (Legal, Rank 1): Blocks anything violating LGPD/HIPAA/ANVISA.
+- **ELENA** (Clinical, Rank 2): Blocks non-deterministic clinical logic.
+- **CYRUS** (Security, Rank 2): Blocks PHI exposure, auth bypass, unencrypted storage.
+
+Veto format:
+```
+[VETO — <RUTH|ELENA|CYRUS>] | invariant: <rule> | action: <what was attempted> | fix: <required change>
+```
+
+### VIII.3 Context Handoff
+
+- Handoffs between agents: file paths + 1-paragraph summaries, not full contents.
+- More than 5 files needed: synthesize to `.scratchpad/`, hand off pointer.
+- Every `Write`/`Edit` to `src/` or `apps/` MUST be preceded by `[ACTIVATING: <PERSONA>]`.
+
+---
+
+## IX. PR & COMMIT CONVENTIONS
+
+### IX.1 Commit Format
 
 ```
-MANUAL VERIFICATION
+<type>(<scope>): <description>
 
-**URL:**
-http://localhost:3000/dashboard/command-center
+<body — 3 sentences: what, how, why>
 
-**Target Node:** <specific component or DOM element>
-**Expected State:** <deterministic observable outcome>
+Co-Authored-By: <agent> <email>
 ```
 
-### Rules
+**Types:** `feat` | `fix` | `docs` | `test` | `refactor` | `perf` | `security` | `chore`
 
-- All 3 fields are mandatory. Omitting any field is a protocol violation.
-- `URL` must be a fully-qualified localhost URL for browser-accessible changes.
-- The URL line must be alone, with no trailing explanation on the same line.
-- `Expected State` must be deterministic and observable.
-- The payload is for the human operator only. Do not gate it behind test results.
+**Scopes:** `api` | `web` | `auth` | `prisma` | `ci` | `sidecar` | `billing` | `cdss` | `i18n` | `a11y`
+
+### IX.2 PR Requirements
+
+Every PR must include:
+1. **Summary** — 1-3 bullet points of what changed and why.
+2. **Test plan** — Bulleted checklist of how to verify.
+3. **Security impact** — Does this touch auth, PHI, encryption, or network exposure? If yes, describe threat model.
+4. **Migration notes** — Any database, env var, or config changes needed.
+
+### IX.3 Branch Protection
+
+- No force pushes to `main` or `develop`.
+- PRs touching security-critical paths (`auth/`, `encryption/`, `phi/`, `middleware.ts`) require **2 approvers**.
+- All CI checks must pass before merge.
+- Deploy only from signed commits on protected branches.
+
+### IX.4 Git Safety (Agent-Enforced)
+
+- **NEVER** `git push` — human only.
+- **NEVER** commit without passing `pnpm test` (exit 0).
+- `--no-verify` ONLY permitted for non-code commits (gitignore, docs cleanup) — never for `src/` or `apps/`.
+- **NEVER** commit `console.log`, hardcoded secrets, dead code, or TODO markers.
+- 3 consecutive test failures → **CIRCUIT BREAKER** — halt and await human.
+
+---
+
+## X. SCRATCHPAD & OUTPUT CONVENTIONS
+
+- `.scratchpad/` at repo root — gitignored, ephemeral. Write outputs > 200 lines here.
+- Move persistent output to `src/` or `docs/`.
+- Do not inline > 50-line files in responses; summarize + reference by path.

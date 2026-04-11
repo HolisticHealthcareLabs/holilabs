@@ -1,0 +1,336 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "description": "HoliLabs Design Token System — canonical token definitions, Tailwind migration map, CSS custom properties, and file-by-file migration guide.",
+
+  "tokens": {
+    "spacing": {
+      "xs":  { "value": "4px",  "tailwind": "spacing-xs",  "rem": "0.25rem", "usage": "Micro gaps between inline elements, icon-text padding" },
+      "sm":  { "value": "8px",  "tailwind": "spacing-sm",  "rem": "0.5rem",  "usage": "Component internal padding, small gaps, button padding-y" },
+      "md":  { "value": "16px", "tailwind": "spacing-md",  "rem": "1rem",    "usage": "Card padding, section gaps, standard margins" },
+      "lg":  { "value": "24px", "tailwind": "spacing-lg",  "rem": "1.5rem",  "usage": "Large gaps, major layout margins, panel padding" },
+      "xl":  { "value": "32px", "tailwind": "spacing-xl",  "rem": "2rem",    "usage": "Page margins, hero section spacing" },
+      "2xl": { "value": "48px", "tailwind": "spacing-2xl", "rem": "3rem",    "usage": "Full section dividers, empty state vertical spacing" }
+    },
+
+    "typography": {
+      "caption":    { "fontSize": "12px", "lineHeight": "16px", "fontWeight": 400, "tailwind": "text-caption",    "usage": "Timestamps, metadata, badges, help text. Minimum visible text size." },
+      "body":       { "fontSize": "14px", "lineHeight": "20px", "fontWeight": 400, "tailwind": "text-body",       "usage": "Default body text, table cells, form inputs, secondary descriptions" },
+      "body-lg":    { "fontSize": "16px", "lineHeight": "24px", "fontWeight": 400, "tailwind": "text-body-lg",    "usage": "Primary body text, clinical values, lab results. WCAG AAA minimum for body." },
+      "heading-sm": { "fontSize": "18px", "lineHeight": "24px", "fontWeight": 600, "tailwind": "text-heading-sm", "usage": "Card titles, section sub-headers, widget titles" },
+      "heading-md": { "fontSize": "20px", "lineHeight": "28px", "fontWeight": 600, "tailwind": "text-heading-md", "usage": "Page section headers, modal titles, alert text" },
+      "heading-lg": { "fontSize": "24px", "lineHeight": "32px", "fontWeight": 600, "tailwind": "text-heading-lg", "usage": "Page titles, major section headers" },
+      "display":    { "fontSize": "32px", "lineHeight": "40px", "fontWeight": 700, "tailwind": "text-display",    "usage": "Hero text, KPI large numbers, dashboard greeting" }
+    },
+
+    "clinicalSeverity": {
+      "minimal":  { "value": "#22C55E", "darkValue": "#4ADE80", "tailwind": "severity-minimal",  "label": "Normal / Safe",     "icon": "check-circle",   "usage": "Normal lab values, cleared screening, safe status" },
+      "mild":     { "value": "#EAB308", "darkValue": "#FACC15", "tailwind": "severity-mild",     "label": "Mild / Caution",    "icon": "alert-triangle",  "usage": "Borderline lab values, low-risk screening, attention needed" },
+      "moderate": { "value": "#F97316", "darkValue": "#FB923C", "tailwind": "severity-moderate", "label": "Moderate / Warning", "icon": "alert-triangle",  "usage": "Abnormal values, moderate screening score, pending items" },
+      "severe":   { "value": "#EF4444", "darkValue": "#F87171", "tailwind": "severity-severe",   "label": "Severe / Critical",  "icon": "alert-octagon",   "usage": "Critical lab values, severe screening, drug interactions" },
+      "critical": { "value": "#DC2626", "darkValue": "#FCA5A5", "tailwind": "severity-critical", "label": "Emergency",          "icon": "zap",             "usage": "Life-threatening values, code blue, immediate action" },
+      "accessibilityRule": "ALWAYS use COLOR + ICON + TEXT LABEL together. Never color alone (8% male color vision deficiency)."
+    },
+
+    "surface": {
+      "primary":   { "light": "#FFFFFF", "dark": "#0A0A0F", "tailwind": "surface-primary",   "usage": "Main page background, card background" },
+      "secondary": { "light": "#F9FAFB", "dark": "#111118", "tailwind": "surface-secondary", "usage": "Sidebar, section backgrounds, table stripe" },
+      "elevated":  { "light": "#FFFFFF", "dark": "#1A1A24", "tailwind": "surface-elevated",  "usage": "Cards, modals, dropdowns, popovers" },
+      "overlay":   { "light": "rgba(0,0,0,0.5)", "dark": "rgba(0,0,0,0.7)", "tailwind": "surface-overlay", "usage": "Modal backdrop, drawer overlay" }
+    },
+
+    "borderRadius": {
+      "sm": { "value": "6px",  "tailwind": "rounded-sm",  "usage": "Badges, small chips, inline tags" },
+      "md": { "value": "8px",  "tailwind": "rounded-md",  "usage": "Inputs, buttons, table cells" },
+      "lg": { "value": "12px", "tailwind": "rounded-lg",  "usage": "Cards, panels, modals" },
+      "xl": { "value": "16px", "tailwind": "rounded-xl",  "usage": "Large cards, hero sections, feature cards" },
+      "full": { "value": "9999px", "tailwind": "rounded-full", "usage": "Avatars, badges, pills" }
+    },
+
+    "shadow": {
+      "sm": { "light": "0 1px 2px rgba(0,0,0,0.05)", "dark": "0 1px 2px rgba(0,0,0,0.3)", "tailwind": "shadow-sm", "usage": "Subtle lift: buttons, inputs" },
+      "md": { "light": "0 4px 6px -1px rgba(0,0,0,0.1)", "dark": "0 4px 6px -1px rgba(0,0,0,0.4)", "tailwind": "shadow-md", "usage": "Cards, dropdowns" },
+      "lg": { "light": "0 10px 15px -3px rgba(0,0,0,0.1)", "dark": "0 10px 15px -3px rgba(0,0,0,0.5)", "tailwind": "shadow-lg", "usage": "Modals, popovers, elevated panels" }
+    },
+
+    "touchTarget": {
+      "sm": { "value": "36px", "tailwind": "touch-sm", "usage": "Dense desktop UI: icon buttons, chips, close buttons" },
+      "md": { "value": "44px", "tailwind": "touch-md", "usage": "Standard interactive elements: buttons, inputs, links. WCAG AA minimum." },
+      "lg": { "value": "56px", "tailwind": "touch-lg", "usage": "Clinical contexts: gloved-hand targets, mobile primary actions, emergency buttons" }
+    },
+
+    "channel": {
+      "whatsapp": { "value": "#25D366", "tailwind": "channel-whatsapp", "usage": "WhatsApp conversation indicators, badges, icons" },
+      "sms":      { "value": "#3B82F6", "tailwind": "channel-sms",      "usage": "SMS conversation indicators" },
+      "email":    { "value": "#6B7280", "tailwind": "channel-email",    "usage": "Email conversation indicators" },
+      "inapp":    { "value": "#8B5CF6", "tailwind": "channel-inapp",    "usage": "In-app notification indicators" }
+    },
+
+    "deliveryStatus": {
+      "sending":   { "value": "#9CA3AF", "tailwind": "status-sending",   "icon": "clock",       "usage": "Message queued/sending" },
+      "sent":      { "value": "#6B7280", "tailwind": "status-sent",      "icon": "check",       "usage": "Single checkmark — sent to server" },
+      "delivered": { "value": "#3B82F6", "tailwind": "status-delivered", "icon": "check-check", "usage": "Double checkmark — delivered to device" },
+      "read":      { "value": "#22C55E", "tailwind": "status-read",      "icon": "check-check", "usage": "Blue double checkmark — read by recipient" },
+      "failed":    { "value": "#EF4444", "tailwind": "status-failed",    "icon": "x-circle",    "usage": "Red X — delivery failed, show retry" }
+    }
+  },
+
+  "cssCustomProperties": {
+    "root": {
+      "description": "Add to globals.css or a dedicated tokens.css file, imported before Tailwind.",
+      "lightMode": ":root {\n  /* Spacing */\n  --spacing-xs: 4px;\n  --spacing-sm: 8px;\n  --spacing-md: 16px;\n  --spacing-lg: 24px;\n  --spacing-xl: 32px;\n  --spacing-2xl: 48px;\n\n  /* Typography */\n  --text-caption: 12px;\n  --text-caption-lh: 16px;\n  --text-body: 14px;\n  --text-body-lh: 20px;\n  --text-body-lg: 16px;\n  --text-body-lg-lh: 24px;\n  --text-heading-sm: 18px;\n  --text-heading-sm-lh: 24px;\n  --text-heading-md: 20px;\n  --text-heading-md-lh: 28px;\n  --text-heading-lg: 24px;\n  --text-heading-lg-lh: 32px;\n  --text-display: 32px;\n  --text-display-lh: 40px;\n\n  /* Clinical Severity */\n  --severity-minimal: #22C55E;\n  --severity-mild: #EAB308;\n  --severity-moderate: #F97316;\n  --severity-severe: #EF4444;\n  --severity-critical: #DC2626;\n\n  /* Surface */\n  --surface-primary: #FFFFFF;\n  --surface-secondary: #F9FAFB;\n  --surface-elevated: #FFFFFF;\n  --surface-overlay: rgba(0,0,0,0.5);\n\n  /* Channel */\n  --channel-whatsapp: #25D366;\n  --channel-sms: #3B82F6;\n  --channel-email: #6B7280;\n  --channel-inapp: #8B5CF6;\n\n  /* Delivery Status */\n  --status-sending: #9CA3AF;\n  --status-sent: #6B7280;\n  --status-delivered: #3B82F6;\n  --status-read: #22C55E;\n  --status-failed: #EF4444;\n\n  /* Touch */\n  --touch-sm: 36px;\n  --touch-md: 44px;\n  --touch-lg: 56px;\n\n  /* Border Radius */\n  --radius-sm: 6px;\n  --radius-md: 8px;\n  --radius-lg: 12px;\n  --radius-xl: 16px;\n\n  /* Shadows */\n  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);\n  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);\n  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);\n\n  /* Text Colors */\n  --text-foreground: #111827;\n  --text-muted: #6B7280;\n  --text-subtle: #9CA3AF;\n  --border-default: #E5E7EB;\n}",
+      "darkMode": "[data-theme=\"dark\"], .dark {\n  --severity-minimal: #4ADE80;\n  --severity-mild: #FACC15;\n  --severity-moderate: #FB923C;\n  --severity-severe: #F87171;\n  --severity-critical: #FCA5A5;\n\n  --surface-primary: #0A0A0F;\n  --surface-secondary: #111118;\n  --surface-elevated: #1A1A24;\n  --surface-overlay: rgba(0,0,0,0.7);\n\n  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);\n  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);\n  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);\n\n  --text-foreground: #F9FAFB;\n  --text-muted: #9CA3AF;\n  --text-subtle: #6B7280;\n  --border-default: #374151;\n}"
+    },
+    "tailwindConfig": {
+      "description": "Add to tailwind.config.ts under theme.extend to make tokens available as Tailwind classes.",
+      "extend": {
+        "spacing": { "xs": "var(--spacing-xs)", "sm": "var(--spacing-sm)", "md": "var(--spacing-md)", "lg": "var(--spacing-lg)", "xl": "var(--spacing-xl)", "2xl": "var(--spacing-2xl)" },
+        "fontSize": {
+          "caption": ["var(--text-caption)", { "lineHeight": "var(--text-caption-lh)" }],
+          "body": ["var(--text-body)", { "lineHeight": "var(--text-body-lh)" }],
+          "body-lg": ["var(--text-body-lg)", { "lineHeight": "var(--text-body-lg-lh)" }],
+          "heading-sm": ["var(--text-heading-sm)", { "lineHeight": "var(--text-heading-sm-lh)" }],
+          "heading-md": ["var(--text-heading-md)", { "lineHeight": "var(--text-heading-md-lh)" }],
+          "heading-lg": ["var(--text-heading-lg)", { "lineHeight": "var(--text-heading-lg-lh)" }],
+          "display": ["var(--text-display)", { "lineHeight": "var(--text-display-lh)" }]
+        },
+        "colors": {
+          "severity": { "minimal": "var(--severity-minimal)", "mild": "var(--severity-mild)", "moderate": "var(--severity-moderate)", "severe": "var(--severity-severe)", "critical": "var(--severity-critical)" },
+          "surface": { "primary": "var(--surface-primary)", "secondary": "var(--surface-secondary)", "elevated": "var(--surface-elevated)" },
+          "channel": { "whatsapp": "var(--channel-whatsapp)", "sms": "var(--channel-sms)", "email": "var(--channel-email)", "inapp": "var(--channel-inapp)" },
+          "status": { "sending": "var(--status-sending)", "sent": "var(--status-sent)", "delivered": "var(--status-delivered)", "read": "var(--status-read)", "failed": "var(--status-failed)" }
+        },
+        "minHeight": { "touch-sm": "var(--touch-sm)", "touch-md": "var(--touch-md)", "touch-lg": "var(--touch-lg)" },
+        "minWidth": { "touch-sm": "var(--touch-sm)", "touch-md": "var(--touch-md)", "touch-lg": "var(--touch-lg)" },
+        "borderRadius": { "sm": "var(--radius-sm)", "md": "var(--radius-md)", "lg": "var(--radius-lg)", "xl": "var(--radius-xl)" },
+        "boxShadow": { "sm": "var(--shadow-sm)", "md": "var(--shadow-md)", "lg": "var(--shadow-lg)" }
+      }
+    }
+  },
+
+  "migrationMap": {
+    "description": "Find-and-replace mapping from raw Tailwind classes to design token classes. Apply with caution — some contexts may need manual review.",
+    "totalMappings": 62,
+    "spacing": [
+      { "from": "p-1",    "to": "p-xs",    "note": "4px" },
+      { "from": "p-2",    "to": "p-sm",    "note": "8px" },
+      { "from": "p-3",    "to": "p-sm",    "note": "8px (12px → 8px nearest token, review)" },
+      { "from": "p-4",    "to": "p-md",    "note": "16px" },
+      { "from": "p-5",    "to": "p-lg",    "note": "24px (20px → 24px nearest token)" },
+      { "from": "p-6",    "to": "p-lg",    "note": "24px" },
+      { "from": "p-8",    "to": "p-xl",    "note": "32px" },
+      { "from": "p-10",   "to": "p-xl",    "note": "32px (40px → 32px nearest)" },
+      { "from": "p-12",   "to": "p-2xl",   "note": "48px" },
+      { "from": "px-1",   "to": "px-xs",   "note": "" },
+      { "from": "px-2",   "to": "px-sm",   "note": "" },
+      { "from": "px-3",   "to": "px-sm",   "note": "" },
+      { "from": "px-4",   "to": "px-md",   "note": "" },
+      { "from": "px-6",   "to": "px-lg",   "note": "" },
+      { "from": "px-8",   "to": "px-xl",   "note": "" },
+      { "from": "py-1",   "to": "py-xs",   "note": "" },
+      { "from": "py-2",   "to": "py-sm",   "note": "" },
+      { "from": "py-3",   "to": "py-sm",   "note": "" },
+      { "from": "py-4",   "to": "py-md",   "note": "" },
+      { "from": "py-6",   "to": "py-lg",   "note": "" },
+      { "from": "py-8",   "to": "py-xl",   "note": "" },
+      { "from": "m-1",    "to": "m-xs",    "note": "" },
+      { "from": "m-2",    "to": "m-sm",    "note": "" },
+      { "from": "m-4",    "to": "m-md",    "note": "" },
+      { "from": "m-6",    "to": "m-lg",    "note": "" },
+      { "from": "m-8",    "to": "m-xl",    "note": "" },
+      { "from": "mb-1",   "to": "mb-xs",   "note": "" },
+      { "from": "mb-2",   "to": "mb-sm",   "note": "" },
+      { "from": "mb-4",   "to": "mb-md",   "note": "" },
+      { "from": "mb-6",   "to": "mb-lg",   "note": "" },
+      { "from": "mt-1",   "to": "mt-xs",   "note": "" },
+      { "from": "mt-2",   "to": "mt-sm",   "note": "" },
+      { "from": "mt-4",   "to": "mt-md",   "note": "" },
+      { "from": "gap-1",  "to": "gap-xs",  "note": "" },
+      { "from": "gap-2",  "to": "gap-sm",  "note": "" },
+      { "from": "gap-3",  "to": "gap-sm",  "note": "" },
+      { "from": "gap-4",  "to": "gap-md",  "note": "" },
+      { "from": "gap-6",  "to": "gap-lg",  "note": "" },
+      { "from": "gap-8",  "to": "gap-xl",  "note": "" },
+      { "from": "space-y-2", "to": "space-y-sm", "note": "" },
+      { "from": "space-y-4", "to": "space-y-md", "note": "" },
+      { "from": "space-y-6", "to": "space-y-lg", "note": "" },
+      { "from": "space-x-2", "to": "space-x-sm", "note": "" },
+      { "from": "space-x-4", "to": "space-x-md", "note": "" }
+    ],
+    "typography": [
+      { "from": "text-xs",    "to": "text-caption",    "note": "12px" },
+      { "from": "text-sm",    "to": "text-body",       "note": "14px" },
+      { "from": "text-base",  "to": "text-body-lg",    "note": "16px" },
+      { "from": "text-lg",    "to": "text-heading-sm", "note": "18px" },
+      { "from": "text-xl",    "to": "text-heading-md", "note": "20px" },
+      { "from": "text-2xl",   "to": "text-heading-lg", "note": "24px" },
+      { "from": "text-3xl",   "to": "text-display",    "note": "32px (30px → 32px)" },
+      { "from": "text-4xl",   "to": "text-display",    "note": "36px → 32px, review if too small" }
+    ],
+    "clinicalColors": [
+      { "from": "text-green-500", "to": "text-severity-minimal", "context": "Clinical severity ONLY, not general UI green" },
+      { "from": "text-green-600", "to": "text-severity-minimal", "context": "Clinical" },
+      { "from": "bg-green-50",    "to": "bg-severity-minimal/10", "context": "Clinical badge backgrounds" },
+      { "from": "bg-green-100",   "to": "bg-severity-minimal/15", "context": "" },
+      { "from": "text-yellow-500", "to": "text-severity-mild",   "context": "Clinical severity" },
+      { "from": "text-amber-500",  "to": "text-severity-mild",   "context": "Clinical severity" },
+      { "from": "bg-yellow-50",    "to": "bg-severity-mild/10",  "context": "" },
+      { "from": "bg-amber-50",     "to": "bg-severity-mild/10",  "context": "" },
+      { "from": "text-orange-500", "to": "text-severity-moderate", "context": "Clinical severity" },
+      { "from": "text-red-500",    "to": "text-severity-severe",   "context": "Clinical severity" },
+      { "from": "text-red-600",    "to": "text-severity-severe",   "context": "" },
+      { "from": "bg-red-50",       "to": "bg-severity-severe/10",  "context": "" },
+      { "from": "bg-red-100",      "to": "bg-severity-severe/15",  "context": "" }
+    ],
+    "surface": [
+      { "from": "bg-white dark:bg-gray-900", "to": "bg-surface-primary", "note": "Requires CSS var setup for dark mode auto-switch" },
+      { "from": "bg-gray-50 dark:bg-gray-800",   "to": "bg-surface-secondary", "note": "" },
+      { "from": "bg-white dark:bg-gray-800",      "to": "bg-surface-elevated",  "note": "" },
+      { "from": "text-gray-900 dark:text-white",  "to": "text-[var(--text-foreground)]", "note": "" },
+      { "from": "text-gray-500 dark:text-gray-400", "to": "text-[var(--text-muted)]", "note": "" },
+      { "from": "text-gray-400 dark:text-gray-500", "to": "text-[var(--text-subtle)]", "note": "" },
+      { "from": "border-gray-200 dark:border-gray-700", "to": "border-[var(--border-default)]", "note": "" },
+      { "from": "border-gray-200 dark:border-gray-800", "to": "border-[var(--border-default)]", "note": "" }
+    ],
+    "warnings": [
+      "DO NOT blindly replace all green/red colors — only replace in clinical severity contexts. UI accent greens (success messages, active states) may use different tokens.",
+      "spacing p-3 (12px) has no exact token match — maps to p-sm (8px). Review if 12px was intentional.",
+      "text-4xl → text-display drops from 36px to 32px. Check if any headings need to stay at 36px.",
+      "Surface tokens require CSS custom properties to be loaded. Without the :root {} block, classes will break."
+    ]
+  },
+
+  "migrationChecklist": {
+    "description": "Step-by-step adoption plan. Clinical views first (patient safety), then business views, then admin.",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation — CSS + Tailwind Config",
+        "priority": "MUST DO FIRST",
+        "steps": [
+          "Create apps/web/src/styles/tokens.css with :root {} and [data-theme='dark'] {} blocks from cssCustomProperties above",
+          "Import tokens.css in apps/web/src/app/globals.css BEFORE Tailwind directives: @import './styles/tokens.css';",
+          "Update apps/web/tailwind.config.ts with theme.extend from cssCustomProperties.tailwindConfig.extend",
+          "Verify: `pnpm build` passes. No visual changes yet — tokens just become available."
+        ],
+        "grepCommands": []
+      },
+      {
+        "phase": 2,
+        "name": "Clinical Views (Highest Priority — Patient Safety)",
+        "priority": "HIGH",
+        "files": [
+          "src/app/dashboard/clinical-command/page.tsx",
+          "src/app/dashboard/clinical-command/_components/CdssAlertsPane.tsx",
+          "src/app/dashboard/clinical-command/_components/SoapNotePane.tsx",
+          "src/app/dashboard/clinical-command/_components/TranscriptPane.tsx",
+          "src/app/dashboard/clinical-command/_components/VitalsConfirmationBanner.tsx",
+          "src/app/dashboard/patients/[id]/page.tsx",
+          "src/app/dashboard/patients/_components/PatientEditDrawer.tsx"
+        ],
+        "focus": "Replace clinical severity colors (green/yellow/red) with severity-* tokens. Ensure all severity indicators use COLOR + ICON + TEXT. Fix touch targets on clinical action buttons to min-h-touch-lg (56px).",
+        "grepCommands": [
+          "grep -rn 'text-green-\\|text-red-\\|text-yellow-\\|text-amber-\\|text-orange-' src/app/dashboard/clinical-command/ --include='*.tsx'",
+          "grep -rn 'bg-green-\\|bg-red-\\|bg-yellow-\\|bg-amber-' src/app/dashboard/clinical-command/ --include='*.tsx'",
+          "grep -rn 'text-xs\\|text-sm' src/app/dashboard/clinical-command/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Co-Pilot Panel Layout",
+        "priority": "HIGH",
+        "files": [
+          "src/app/dashboard/clinical-command/page.tsx (3-panel grid)",
+          "src/components/CommandPalette.tsx",
+          "src/app/dashboard/my-day/page.tsx"
+        ],
+        "focus": "Spacing tokens for panel padding and gaps. Typography tokens for SOAP section headers. Surface tokens for panel backgrounds.",
+        "grepCommands": [
+          "grep -rn 'p-[0-9]\\|px-[0-9]\\|py-[0-9]\\|gap-[0-9]' src/app/dashboard/clinical-command/ --include='*.tsx'",
+          "grep -rn 'bg-white\\|bg-gray-50\\|bg-gray-900' src/app/dashboard/clinical-command/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Communications Hub",
+        "priority": "MEDIUM",
+        "files": [
+          "src/app/dashboard/comunicacoes/page.tsx",
+          "src/components/messaging/ScheduleReminderModal.tsx",
+          "src/components/messaging/PatientSelectorModal.tsx",
+          "src/components/messaging/MessageTemplateEditor.tsx"
+        ],
+        "focus": "Channel color tokens (whatsapp/sms/email/inapp). Delivery status tokens. Surface tokens for conversation list and message bubbles.",
+        "grepCommands": [
+          "grep -rn '#25D366\\|#3B82F6\\|whatsapp\\|sms.*blue' src/app/dashboard/comunicacoes/ --include='*.tsx'",
+          "grep -rn 'text-xs\\|text-sm\\|p-[0-9]' src/app/dashboard/comunicacoes/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Billing / Faturamento",
+        "priority": "MEDIUM",
+        "files": [
+          "src/app/dashboard/billing/page.tsx",
+          "src/app/dashboard/faturamento/analitica/page.tsx",
+          "src/app/dashboard/faturamento/auditoria/page.tsx",
+          "src/app/dashboard/faturamento/anulacoes/page.tsx"
+        ],
+        "focus": "KPI card severity colors. Aging report color coding. Invoice status badges. Spacing in tables.",
+        "grepCommands": [
+          "grep -rn 'text-xs\\|text-sm\\|p-[0-9]' src/app/dashboard/billing/ src/app/dashboard/faturamento/ --include='*.tsx'",
+          "grep -rn 'bg-green-\\|bg-red-\\|bg-blue-' src/app/dashboard/billing/ src/app/dashboard/faturamento/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 6,
+        "name": "Prevention System",
+        "priority": "MEDIUM",
+        "files": [
+          "src/app/dashboard/prevention/page.tsx",
+          "src/app/dashboard/prevencao/*/page.tsx",
+          "src/components/prevention/*.tsx"
+        ],
+        "focus": "Screening result severity badges (PHQ-9, GAD-7 scores). Risk level color coding. Touch targets on screening question radio buttons.",
+        "grepCommands": [
+          "grep -rn 'text-green-\\|text-red-\\|text-yellow-' src/app/dashboard/prevention/ src/app/dashboard/prevencao/ src/components/prevention/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 7,
+        "name": "Settings, Admin, Portal",
+        "priority": "LOW",
+        "files": [
+          "src/app/dashboard/settings/page.tsx",
+          "src/app/portal/*/page.tsx",
+          "src/app/dashboard/governance/*/page.tsx"
+        ],
+        "focus": "General spacing and typography cleanup. Low risk — these are admin screens.",
+        "grepCommands": [
+          "grep -rn 'text-xs\\|text-sm\\|p-[0-9]' src/app/dashboard/settings/ --include='*.tsx'"
+        ]
+      },
+      {
+        "phase": 8,
+        "name": "Shared Components",
+        "priority": "LOW — DO LAST",
+        "files": [
+          "src/components/ui/*.tsx",
+          "src/components/HoliLogo.tsx",
+          "src/components/onboarding/*.tsx"
+        ],
+        "focus": "These affect every page. Test thoroughly after migration. Prefer manual review over automated find-replace.",
+        "grepCommands": [
+          "grep -rn 'p-[0-9]\\|text-xs\\|text-sm\\|bg-white' src/components/ --include='*.tsx' | head -50"
+        ]
+      }
+    ],
+    "globalGrepCommands": {
+      "allSpacingViolations": "grep -rn 'p-[0-9]\\|px-[0-9]\\|py-[0-9]\\|m-[0-9]\\|mx-[0-9]\\|my-[0-9]\\|gap-[0-9]\\|space-.-[0-9]' apps/web/src/ --include='*.tsx' | grep -v node_modules | grep -v '.next' | wc -l",
+      "allTypographyViolations": "grep -rn 'text-xs\\|text-sm\\|text-base\\|text-lg\\|text-xl\\|text-2xl\\|text-3xl\\|text-4xl' apps/web/src/ --include='*.tsx' | grep -v node_modules | grep -v '.next' | wc -l",
+      "allClinicalColorViolations": "grep -rn 'text-green-[0-9]\\|text-red-[0-9]\\|text-yellow-[0-9]\\|text-amber-[0-9]\\|text-orange-[0-9]\\|bg-green-[0-9]\\|bg-red-[0-9]\\|bg-yellow-[0-9]\\|bg-amber-[0-9]' apps/web/src/ --include='*.tsx' | grep -v node_modules | grep -v '.next' | wc -l",
+      "allSurfaceViolations": "grep -rn 'bg-white\\|bg-gray-50\\|bg-gray-900\\|bg-gray-800' apps/web/src/ --include='*.tsx' | grep -v node_modules | grep -v '.next' | wc -l",
+      "touchTargetCheck": "grep -rn 'min-h-\\[' apps/web/src/ --include='*.tsx' | grep -v node_modules | grep -v '.next' | grep -v 'touch-' | wc -l"
+    }
+  }
+}

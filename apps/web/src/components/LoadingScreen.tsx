@@ -53,19 +53,20 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
         }`}
     >
       {/* Blurred UI Preview Background */}
-      <div className="absolute inset-0 bg-gray-50 dark:bg-gray-900">
+      <div className="absolute inset-0 dark:bg-gray-900" style={{ backgroundColor: 'var(--surface-secondary)' }}>
         {/* Blurred Dashboard Preview */}
         <div className="absolute inset-0 blur-2xl opacity-30">
           {/* Header blur */}
-          <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" />
+          <div className="h-16 dark:bg-gray-800 dark:border-gray-700" style={{ backgroundColor: 'var(--surface-primary)', borderBottom: '1px solid var(--border-default)' }} />
 
           {/* Sidebar blur */}
-          <div className="absolute left-0 top-16 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+          <div className="absolute left-0 top-16 bottom-0 w-64 dark:bg-gray-800 dark:border-gray-700" style={{ backgroundColor: 'var(--surface-primary)', borderRight: '1px solid var(--border-default)' }}>
             <div className="p-4 space-y-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-14 bg-gradient-to-br from-blue-400/40 to-purple-500/40 rounded-full"
+                  className="h-14 bg-gradient-to-br from-blue-400/40 to-purple-500/40"
+                  style={{ borderRadius: 'var(--radius-full)' }}
                 />
               ))}
             </div>
@@ -78,15 +79,16 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-24 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                  className="h-24 bg-white/50 dark:bg-gray-800/50"
+                  style={{ borderRadius: 'var(--radius-lg)' }}
                 />
               ))}
             </div>
 
             {/* Large content area */}
             <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2 h-96 bg-white/50 dark:bg-gray-800/50 rounded-lg" />
-              <div className="h-96 bg-white/50 dark:bg-gray-800/50 rounded-lg" />
+              <div className="col-span-2 h-96 bg-white/50 dark:bg-gray-800/50" style={{ borderRadius: 'var(--radius-lg)' }} />
+              <div className="h-96 bg-white/50 dark:bg-gray-800/50" style={{ borderRadius: 'var(--radius-lg)' }} />
             </div>
           </div>
         </div>
@@ -124,8 +126,8 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
             onComplete();
           }
         }}
-        className="absolute bottom-12 right-12 px-6 py-3 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 rounded-full shadow-2xl hover:bg-white/20 transition-all duration-300 text-xs font-bold tracking-widest uppercase text-white hover:scale-105 opacity-0 animate-fadeIn"
-        style={{ animationDelay: '1.5s', animationFillMode: 'forwards' }}
+        className="absolute bottom-12 right-12 px-6 py-3 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 hover:bg-white/20 transition-all duration-300 text-xs font-bold tracking-widest uppercase text-white hover:scale-105 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '1.5s', animationFillMode: 'forwards', borderRadius: 'var(--radius-full)', boxShadow: 'var(--token-shadow-xl)' }}
       >
         Skip Intro
       </button>

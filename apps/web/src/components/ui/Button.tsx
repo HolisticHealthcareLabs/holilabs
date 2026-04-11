@@ -49,19 +49,33 @@ const variantStyles: Record<ButtonVariant, string> = {
   outline:
     'bg-transparent border-2 border-neutral-300 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50 active:bg-neutral-100 focus:ring-neutral-500 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900',
   danger:
-    'bg-gradient-to-r from-error-500 to-error-600 text-white hover:from-error-600 hover:to-error-700 active:from-error-700 active:to-error-800 focus:ring-error-500 shadow-sm',
+    'bg-gradient-to-r from-error-500 to-error-600 text-white hover:from-error-600 hover:to-error-700 active:from-error-700 active:to-error-800 focus:ring-error-500',
   success:
-    'bg-gradient-to-r from-success-500 to-success-600 text-white hover:from-success-600 hover:to-success-700 active:from-success-700 active:to-success-800 focus:ring-success-500 shadow-sm',
+    'bg-gradient-to-r from-success-500 to-success-600 text-white hover:from-success-600 hover:to-success-700 active:from-success-700 active:to-success-800 focus:ring-success-500',
   warning:
-    'bg-gradient-to-r from-warning-500 to-warning-600 text-white hover:from-warning-600 hover:to-warning-700 active:from-warning-700 active:to-warning-800 focus:ring-warning-500 shadow-sm',
+    'bg-gradient-to-r from-warning-500 to-warning-600 text-white hover:from-warning-600 hover:to-warning-700 active:from-warning-700 active:to-warning-800 focus:ring-warning-500',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  xs: 'text-xs px-2 py-1 rounded-md gap-1',
-  sm: 'text-sm px-3 py-1.5 rounded-md gap-1.5',
-  md: 'text-base px-4 py-2 rounded-lg gap-2',
-  lg: 'text-lg px-6 py-3 rounded-lg gap-2',
-  xl: 'text-xl px-8 py-4 rounded-xl gap-3',
+  xs: 'text-xs px-2 py-1 gap-1',
+  sm: 'text-sm px-3 py-1.5 gap-1.5',
+  md: 'text-base px-4 py-2 gap-2',
+  lg: 'text-lg px-6 py-3 gap-2',
+  xl: 'text-xl px-8 py-4 gap-3',
+};
+
+const sizeRadiusMap: Record<ButtonSize, string> = {
+  xs: 'var(--radius-md)',
+  sm: 'var(--radius-md)',
+  md: 'var(--radius-lg)',
+  lg: 'var(--radius-lg)',
+  xl: 'var(--radius-xl)',
+};
+
+const variantShadowMap: Partial<Record<ButtonVariant, string>> = {
+  danger: 'var(--token-shadow-sm)',
+  success: 'var(--token-shadow-sm)',
+  warning: 'var(--token-shadow-sm)',
 };
 
 /**
@@ -100,6 +114,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={isDisabled}
         className={buttonClasses}
+        style={{
+          borderRadius: sizeRadiusMap[size],
+          ...(variantShadowMap[variant] ? { boxShadow: variantShadowMap[variant] } : {}),
+        }}
         {...props}
       >
         {/* Loading spinner */}

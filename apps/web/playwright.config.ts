@@ -1,60 +1,75 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Cross-Browser Testing Configuration
+ * Playwright Configuration — E2E + Visual Regression
  *
- * Tests critical user flows across Chrome, Firefox, Safari (WebKit), and mobile browsers
+ * Test directories:
+ *   - tests/e2e/              → critical user flow tests
+ *   - tests/visual-regression/ → screenshot comparison at 4 viewports × 2 themes
+ *   - tests/accessibility/    → axe-core a11y audits
+ *
+ * Viewports (visual regression):
+ *   mobile  375×667  | tablet 768×1024 | laptop 1024×768 | desktop 1440×900
+ *
+ * Browsers: chromium, firefox, webkit
+ * Retries: 2 on CI, 0 locally
+ * Reporters: html + json (CI-friendly)
  */
 
-export default defineConfig({
-  testDir: './tests/e2e',
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  // Test artifacts
+/** Viewport presets used by visual regression specs */
+export const VIEWPORTS = {
+  mobile:  { width: 375,  height: 667  },
+  tablet:  { width: 768,  height: 1024 },
+  laptop:  { width: 1024, height: 768  },
+  desktop: { width: 1440, height: 900  },
+} as const;
+
+export type ViewportName = keyof typeof VIEWPORTS;
+export type ThemeName = 'light' | 'dark';
+
+export default defineConfig({
+  /* Test directories — Playwright discovers specs in all listed dirs */
+  testDir: './tests',
+  testMatch: '**/*.spec.ts',
+
+  /* Artifacts */
   outputDir: './tests/results',
 
-  // Run tests in files in parallel
   fullyParallel: true,
-
-  // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
-
-  // Retry on CI only
   retries: process.env.CI ? 2 : 0,
+  workers: 2,
 
-  // Opt out of parallel tests on CI for stability
-  workers: process.env.CI ? 1 : undefined,
-
-  // Reporter to use
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'playwright-report/results.json' }],
     ['list'],
   ],
 
-  // Shared settings for all tests
   use: {
-    // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-
-    // Collect trace when retrying the failed test
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
-
-    // Screenshot on failure
     screenshot: 'only-on-failure',
-
-    // Video on failure
     video: 'retain-on-failure',
-
-    // Maximum time for each action
-    actionTimeout: 10000,
-
-    // Navigation timeout
-    navigationTimeout: 30000,
+    actionTimeout: 10_000,
+    navigationTimeout: 30_000,
   },
 
-  // Configure projects for major browsers
+  /* Snapshot settings for visual regression (toMatchSnapshot) */
+  expect: {
+    timeout: 10_000,
+    toMatchSnapshot: {
+      maxDiffPixelRatio: 0.001,
+    },
+  },
+
+  /* ──────────────────────────────────────────────
+     Browser × Viewport Projects
+     ────────────────────────────────────────────── */
   projects: [
-    // Desktop Browsers
+    // ── Desktop browsers (E2E + visual regression) ──
     {
       name: 'chromium',
       use: {
@@ -62,7 +77,6 @@ export default defineConfig({
         viewport: { width: 1920, height: 1080 },
       },
     },
-
     {
       name: 'firefox',
       use: {
@@ -70,7 +84,6 @@ export default defineConfig({
         viewport: { width: 1920, height: 1080 },
       },
     },
-
     {
       name: 'webkit',
       use: {
@@ -79,80 +92,57 @@ export default defineConfig({
       },
     },
 
+    // ── Visual regression viewports (chromium) ──
     {
-      name: 'edge',
+      name: 'vr-mobile',
+      testDir: './tests/visual-regression',
       use: {
-        ...devices['Desktop Edge'],
-        viewport: { width: 1920, height: 1080 },
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.mobile,
+      },
+    },
+    {
+      name: 'vr-tablet',
+      testDir: './tests/visual-regression',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.tablet,
+      },
+    },
+    {
+      name: 'vr-laptop',
+      testDir: './tests/visual-regression',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.laptop,
+      },
+    },
+    {
+      name: 'vr-desktop',
+      testDir: './tests/visual-regression',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: VIEWPORTS.desktop,
       },
     },
 
-    // Mobile Browsers - iOS
+    // ── Mobile E2E ──
     {
-      name: 'mobile-safari-iphone',
-      use: {
-        ...devices['iPhone 14 Pro'],
-      },
-    },
-
-    {
-      name: 'mobile-safari-ipad',
-      use: {
-        ...devices['iPad Pro'],
-      },
-    },
-
-    // Mobile Browsers - Android
-    {
-      name: 'mobile-chrome-android',
-      use: {
-        ...devices['Pixel 5'],
-      },
-    },
-
-    {
-      name: 'mobile-chrome-tablet',
-      use: {
-        ...devices['Galaxy Tab S4'],
-      },
-    },
-
-    // Tablet Browsers
-    {
-      name: 'tablet-safari',
-      use: {
-        ...devices['iPad (gen 7)'],
-      },
-    },
-
-    // Named viewport projects for targeted smoke tests
-    {
-      name: 'Desktop Chrome',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } },
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 14 Pro'] },
     },
     {
-      name: 'Tablet',
-      use: { viewport: { width: 768, height: 1024 } },
-    },
-    {
-      name: 'Mobile',
-      use: { ...devices['iPhone 14'] },
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
     },
   ],
 
-  // Run your local dev server before starting the tests
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000, // 2 minutes
+    timeout: 120_000,
   },
 
-  // Global timeout
-  timeout: 60 * 1000, // 60 seconds per test
-
-  // Expect timeout
-  expect: {
-    timeout: 10000,
-  },
+  timeout: 45_000,
 });

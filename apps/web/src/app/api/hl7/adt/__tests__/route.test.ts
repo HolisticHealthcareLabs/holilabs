@@ -126,7 +126,7 @@ describe('POST /api/hl7/adt', () => {
     mockValidate.mockReturnValue({ valid: true, errors: [] });
     mockParseADT.mockReturnValue({
       messageType: 'ADT',
-      eventType: 'A01',
+      eventType: 'A03',
       messageControlId: 'MSG-002',
       sendingFacility: 'LAB-A',
       patient: {

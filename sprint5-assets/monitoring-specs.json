@@ -1,0 +1,278 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+
+  "healthChecks": [
+    {
+      "name": "API Health",
+      "endpoint": "GET /api/health",
+      "interval": "30s",
+      "timeout": "5s",
+      "expectedStatus": 200,
+      "expectedBody": { "status": "healthy" }
+    },
+    {
+      "name": "Database Connectivity",
+      "endpoint": "GET /api/health/db",
+      "interval": "60s",
+      "timeout": "10s",
+      "expectedStatus": 200,
+      "expectedBody": { "database": "connected", "latency_ms": "<100" }
+    },
+    {
+      "name": "System Health (Full)",
+      "endpoint": "GET /api/health/system",
+      "interval": "300s",
+      "timeout": "30s",
+      "expectedStatus": 200,
+      "checks": ["database", "redis", "deepgram", "twilio", "stripe", "presidio_analyzer", "presidio_anonymizer"]
+    }
+  ],
+
+  "slos": {
+    "api_availability": { "target": "99.9%", "measurement": "Percentage of 5-minute windows with >0 successful health checks", "alertThreshold": "99.5%" },
+    "twilio_webhook_availability": { "target": "99.95%", "measurement": "Percentage of Twilio webhook calls that return 2xx within 5 seconds", "alertThreshold": "99.9%" },
+    "database_availability": { "target": "99.99%", "measurement": "Percentage of 1-minute windows with successful DB health check", "alertThreshold": "99.95%" },
+    "copilot_latency_p95": { "target": "<3s", "measurement": "95th percentile response time for /api/copilot/suggest", "alertThreshold": "5s" },
+    "billing_processing": { "target": "<2s", "measurement": "95th percentile for invoice creation", "alertThreshold": "5s" }
+  },
+
+  "metrics": [
+    {
+      "name": "api_request_duration_seconds",
+      "type": "histogram",
+      "description": "HTTP request latency by route and status code",
+      "labels": ["method", "route", "status_code"],
+      "buckets": [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      "dashboardPanel": {
+        "title": "API Latency (p50/p95/p99)",
+        "visualization": "line_chart",
+        "queries": {
+          "p50": "histogram_quantile(0.50, rate(api_request_duration_seconds_bucket[5m]))",
+          "p95": "histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m]))",
+          "p99": "histogram_quantile(0.99, rate(api_request_duration_seconds_bucket[5m]))"
+        }
+      }
+    },
+    {
+      "name": "api_request_total",
+      "type": "counter",
+      "description": "Total HTTP requests by route, method, and status code",
+      "labels": ["method", "route", "status_code"],
+      "dashboardPanel": {
+        "title": "Request Rate & Error Rate",
+        "visualization": "line_chart",
+        "queries": {
+          "request_rate": "sum(rate(api_request_total[5m])) by (route)",
+          "error_rate": "sum(rate(api_request_total{status_code=~\"5..\"}[5m])) / sum(rate(api_request_total[5m]))"
+        }
+      }
+    },
+    {
+      "name": "twilio_message_total",
+      "type": "counter",
+      "description": "Twilio messages sent by channel and status",
+      "labels": ["channel", "status", "template_id"],
+      "dashboardPanel": {
+        "title": "Twilio Delivery Rates",
+        "visualization": "stacked_bar",
+        "queries": {
+          "delivery_rate": "sum(rate(twilio_message_total{status='delivered'}[1h])) / sum(rate(twilio_message_total[1h]))",
+          "by_channel": "sum by (channel) (rate(twilio_message_total[1h]))",
+          "failures": "sum(rate(twilio_message_total{status='failed'}[1h]))"
+        }
+      }
+    },
+    {
+      "name": "screening_completion_total",
+      "type": "counter",
+      "description": "Screening instruments completed by type and severity",
+      "labels": ["instrument_id", "severity", "triggered_rule"],
+      "dashboardPanel": {
+        "title": "Screening Completion Rates",
+        "visualization": "bar_chart",
+        "queries": {
+          "by_instrument": "sum by (instrument_id) (screening_completion_total)",
+          "severity_distribution": "sum by (severity) (screening_completion_total)",
+          "suicidal_ideation_alerts": "sum(screening_completion_total{triggered_rule='MH-002'})"
+        }
+      }
+    },
+    {
+      "name": "billing_invoice_total",
+      "type": "counter",
+      "description": "Invoices created by status and payer type",
+      "labels": ["status", "payer_type"],
+      "dashboardPanel": {
+        "title": "Invoice Processing",
+        "visualization": "stacked_bar",
+        "queries": {
+          "created": "sum(rate(billing_invoice_total[1d]))",
+          "by_status": "sum by (status) (billing_invoice_total)",
+          "void_rate": "sum(billing_invoice_total{status='VOID'}) / sum(billing_invoice_total)"
+        }
+      }
+    },
+    {
+      "name": "billing_processing_duration_seconds",
+      "type": "histogram",
+      "description": "Time to process invoice creation/void/payment",
+      "labels": ["operation"],
+      "buckets": [0.1, 0.25, 0.5, 1, 2, 5],
+      "dashboardPanel": {
+        "title": "Billing Processing Time",
+        "visualization": "heatmap",
+        "queries": {
+          "p95": "histogram_quantile(0.95, rate(billing_processing_duration_seconds_bucket[5m]))"
+        }
+      }
+    },
+    {
+      "name": "copilot_suggestion_total",
+      "type": "counter",
+      "description": "AI co-pilot suggestions generated by action type and model",
+      "labels": ["action_type", "model", "accepted"],
+      "dashboardPanel": {
+        "title": "Co-Pilot Usage",
+        "visualization": "pie_chart",
+        "queries": {
+          "by_action": "sum by (action_type) (copilot_suggestion_total)",
+          "acceptance_rate": "sum(copilot_suggestion_total{accepted='true'}) / sum(copilot_suggestion_total)",
+          "by_model": "sum by (model) (copilot_suggestion_total)"
+        }
+      }
+    },
+    {
+      "name": "copilot_suggestion_duration_seconds",
+      "type": "histogram",
+      "description": "Time for AI suggestion generation (LLM round-trip)",
+      "labels": ["model", "action_type"],
+      "buckets": [0.5, 1, 2, 3, 5, 10, 30],
+      "dashboardPanel": {
+        "title": "Co-Pilot Latency by Model",
+        "visualization": "line_chart",
+        "queries": {
+          "p95_by_model": "histogram_quantile(0.95, rate(copilot_suggestion_duration_seconds_bucket[5m])) by (model)"
+        }
+      }
+    },
+    {
+      "name": "audit_log_total",
+      "type": "counter",
+      "description": "Audit log entries by action type",
+      "labels": ["action_type", "is_phi_access"],
+      "dashboardPanel": {
+        "title": "Audit Activity",
+        "visualization": "stacked_area",
+        "queries": {
+          "phi_access": "sum(rate(audit_log_total{is_phi_access='true'}[1h]))",
+          "by_action": "sum by (action_type) (rate(audit_log_total[1h]))"
+        }
+      }
+    },
+    {
+      "name": "db_connection_pool_active",
+      "type": "gauge",
+      "description": "Active database connections",
+      "labels": [],
+      "dashboardPanel": {
+        "title": "DB Connection Pool",
+        "visualization": "gauge",
+        "queries": { "active": "db_connection_pool_active", "max": "db_connection_pool_max" }
+      }
+    }
+  ],
+
+  "alerts": [
+    {
+      "name": "HighErrorRate",
+      "condition": "sum(rate(api_request_total{status_code=~\"5..\"}[5m])) / sum(rate(api_request_total[5m])) > 0.05",
+      "severity": "warning",
+      "for": "5m",
+      "summary": "API error rate above 5% for 5 minutes",
+      "runbook": "Check /api/health/system for failing dependencies. Check logs for stack traces."
+    },
+    {
+      "name": "CriticalErrorRate",
+      "condition": "sum(rate(api_request_total{status_code=~\"5..\"}[5m])) / sum(rate(api_request_total[5m])) > 0.10",
+      "severity": "critical",
+      "for": "3m",
+      "summary": "API error rate above 10% — immediate attention required",
+      "runbook": "Page on-call. Check database connectivity. Check external API status (Deepgram, Twilio, Stripe)."
+    },
+    {
+      "name": "HighLatency",
+      "condition": "histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 2",
+      "severity": "warning",
+      "for": "5m",
+      "summary": "API p95 latency above 2 seconds",
+      "runbook": "Check DB query performance. Check LLM provider latency. Review recent deployments."
+    },
+    {
+      "name": "CriticalLatency",
+      "condition": "histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 5",
+      "severity": "critical",
+      "for": "3m",
+      "summary": "API p95 latency above 5 seconds — degraded user experience",
+      "runbook": "Check DB connection pool exhaustion. Scale up if needed. Consider circuit-breaking slow external calls."
+    },
+    {
+      "name": "TwilioDeliveryDrop",
+      "condition": "sum(rate(twilio_message_total{status='delivered'}[1h])) / sum(rate(twilio_message_total{status=~'sent|delivered'}[1h])) < 0.90",
+      "severity": "warning",
+      "for": "30m",
+      "summary": "Twilio delivery rate below 90% for 30 minutes",
+      "runbook": "Check Twilio dashboard for outages. Verify WhatsApp template approval status. Check patient phone number validity."
+    },
+    {
+      "name": "SuicidalIdeationAlert",
+      "condition": "increase(screening_completion_total{triggered_rule='MH-002'}[1h]) > 0",
+      "severity": "critical",
+      "for": "0m",
+      "summary": "PHQ-9 Q9 suicidal ideation endorsed — verify safety assessment completed",
+      "runbook": "This is a clinical alert, not an infrastructure alert. Verify the clinician completed a safety assessment. Check audit log for documentation."
+    },
+    {
+      "name": "AuditHashChainBroken",
+      "condition": "audit_hash_chain_integrity_status == 0",
+      "severity": "critical",
+      "for": "0m",
+      "summary": "Audit log hash chain integrity violation detected",
+      "runbook": "IMMEDIATE: This indicates potential tampering with audit records. Investigate the broken chain link. Contact security team. LGPD Art. 37 compliance at risk."
+    },
+    {
+      "name": "DatabaseConnectionPoolExhaustion",
+      "condition": "db_connection_pool_active / db_connection_pool_max > 0.85",
+      "severity": "warning",
+      "for": "5m",
+      "summary": "Database connection pool >85% utilized",
+      "runbook": "Check for connection leaks. Review long-running queries. Consider increasing pool size."
+    },
+    {
+      "name": "DiskSpaceWarning",
+      "condition": "node_filesystem_avail_bytes / node_filesystem_size_bytes < 0.15",
+      "severity": "warning",
+      "for": "10m",
+      "summary": "Disk space below 15% — learned from ENOSPC incident",
+      "runbook": "Clean up old prework files, overnight reports, and log files. Check for large uploads."
+    },
+    {
+      "name": "CopilotModelTimeout",
+      "condition": "histogram_quantile(0.95, rate(copilot_suggestion_duration_seconds_bucket[5m])) > 10",
+      "severity": "warning",
+      "for": "5m",
+      "summary": "AI Co-Pilot suggestion latency >10s p95 — LLM provider may be slow",
+      "runbook": "Check LLM provider status page. Consider switching to fallback model. Check if model is in user's preferredAiModel or if default needs updating."
+    }
+  ],
+
+  "dashboardLayout": {
+    "name": "HoliLabs Production Overview",
+    "rows": [
+      { "height": "200px", "panels": ["API Latency (p50/p95/p99)", "Request Rate & Error Rate", "DB Connection Pool"] },
+      { "height": "200px", "panels": ["Co-Pilot Usage", "Co-Pilot Latency by Model", "Twilio Delivery Rates"] },
+      { "height": "200px", "panels": ["Screening Completion Rates", "Invoice Processing", "Billing Processing Time"] },
+      { "height": "150px", "panels": ["Audit Activity"] }
+    ]
+  }
+}

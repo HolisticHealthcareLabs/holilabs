@@ -22,6 +22,7 @@ const { prisma } = require('@/lib/prisma');
 const mockContext = {
   session: { userId: 'pu-1', patientId: 'patient-1', email: 'patient@example.com' },
   requestId: 'req-1',
+  params: {},
 };
 
 const mockMetric = {
@@ -39,7 +40,10 @@ describe('GET /api/portal/health-metrics', () => {
   it('returns grouped metrics', async () => {
     (prisma.healthMetric.findMany as jest.Mock).mockResolvedValue([mockMetric]);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/health-metrics'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/health-metrics?metricType=WEIGHT&limit=100&startDate=2025-01-01&endDate=2027-01-01'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -53,7 +57,7 @@ describe('GET /api/portal/health-metrics', () => {
     (prisma.healthMetric.findMany as jest.Mock).mockResolvedValue([]);
 
     await GET(
-      new NextRequest('http://localhost:3000/api/portal/health-metrics?metricType=GLUCOSE'),
+      new NextRequest('http://localhost:3000/api/portal/health-metrics?metricType=GLUCOSE&limit=100&startDate=2025-01-01&endDate=2027-01-01'),
       mockContext
     );
 
@@ -67,7 +71,10 @@ describe('GET /api/portal/health-metrics', () => {
   it('returns empty when no metrics', async () => {
     (prisma.healthMetric.findMany as jest.Mock).mockResolvedValue([]);
 
-    const res = await GET(new NextRequest('http://localhost:3000/api/portal/health-metrics'), mockContext);
+    const res = await GET(
+      new NextRequest('http://localhost:3000/api/portal/health-metrics?metricType=WEIGHT&limit=100&startDate=2025-01-01&endDate=2027-01-01'),
+      mockContext
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);

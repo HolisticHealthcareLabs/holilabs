@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 
+const mockGetJob = jest.fn();
+
 jest.mock('@/lib/api/middleware', () => ({
   createPublicRoute: (handler: any) => handler,
 }));
@@ -9,14 +11,10 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
-const mockQueue = {
-  getJob: jest.fn(),
-};
-
 jest.mock('@/lib/queue/queues', () => ({
-  getDocumentParseQueue: jest.fn().mockReturnValue(mockQueue),
-  getSummaryGenerationQueue: jest.fn().mockReturnValue(mockQueue),
-  getFhirSyncQueue: jest.fn().mockReturnValue(mockQueue),
+  getDocumentParseQueue: () => ({ getJob: (...args: any[]) => mockGetJob(...args) }),
+  getSummaryGenerationQueue: () => ({ getJob: (...args: any[]) => mockGetJob(...args) }),
+  getFhirSyncQueue: () => ({ getJob: (...args: any[]) => mockGetJob(...args) }),
 }));
 
 jest.mock('@/lib/queue/config', () => ({
@@ -43,11 +41,12 @@ const mockJob = {
 describe('GET /api/jobs/[jobId]/status', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockQueue.getJob.mockResolvedValue(null);
+    mockGetJob.mockResolvedValue(null);
+    mockJob.getState = jest.fn().mockResolvedValue('active');
   });
 
   it('returns job status when job is found', async () => {
-    mockQueue.getJob.mockResolvedValueOnce(mockJob).mockResolvedValue(null);
+    mockGetJob.mockResolvedValueOnce(mockJob);
 
     const req = new NextRequest('http://localhost:3000/api/jobs/job-123/status');
     const context = { params: { jobId: 'job-123' } };
@@ -62,7 +61,7 @@ describe('GET /api/jobs/[jobId]/status', () => {
   });
 
   it('returns 404 when job is not found in any queue', async () => {
-    mockQueue.getJob.mockResolvedValue(null);
+    mockGetJob.mockResolvedValue(null);
 
     const req = new NextRequest('http://localhost:3000/api/jobs/nonexistent/status');
     const context = { params: { jobId: 'nonexistent' } };
@@ -90,7 +89,7 @@ describe('GET /api/jobs/[jobId]/status', () => {
       finishedOn: Date.now(),
       getState: jest.fn().mockResolvedValue('completed'),
     };
-    mockQueue.getJob.mockResolvedValueOnce(completedJob).mockResolvedValue(null);
+    mockGetJob.mockResolvedValueOnce(completedJob);
 
     const req = new NextRequest('http://localhost:3000/api/jobs/job-done/status');
     const context = { params: { jobId: 'job-done' } };

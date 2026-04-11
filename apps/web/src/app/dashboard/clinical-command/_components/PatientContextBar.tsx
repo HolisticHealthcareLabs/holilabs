@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import {
@@ -203,7 +203,7 @@ function SectionHeading({
   return (
     <div className="flex items-center gap-2 mb-3">
       <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
         {label}
       </h3>
     </div>
@@ -238,7 +238,7 @@ function ExternalRecordsZone() {
   }
 
   return (
-    <motion.div
+    <m.div
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -249,18 +249,19 @@ function ExternalRecordsZone() {
         : { borderColor: 'rgb(51 65 85 / 0.7)',   backgroundColor: 'rgb(15 23 42 / 0.5)'   }
       }
       transition={{ duration: 0.15 }}
-      className="border-2 border-dashed rounded-xl p-7 flex flex-col items-center justify-center gap-3
+      className="border-2 border-dashed p-7 flex flex-col items-center justify-center gap-3
                  cursor-pointer select-none"
+      style={{ borderRadius: 'var(--radius-xl)' }}
       aria-label="Drop zone for external records"
       role="button"
       tabIndex={0}
     >
-      <motion.div
+      <m.div
         animate={isDragging ? { scale: 1.15, y: -3 } : { scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 22 }}
       >
         <Upload className={`w-8 h-8 transition-colors ${isDragging ? 'text-cyan-400' : 'text-slate-600'}`} />
-      </motion.div>
+      </m.div>
 
       <div className="text-center">
         <p className={`text-xs font-medium transition-colors ${isDragging ? 'text-cyan-400' : 'text-slate-500'}`}>
@@ -270,7 +271,7 @@ function ExternalRecordsZone() {
           {t('fileFormats')}
         </p>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -318,7 +319,7 @@ function PatientChartDrawer({
   return (
     <AnimatePresence>
       {/* Backdrop */}
-      <motion.div
+      <m.div
         key="backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -330,7 +331,7 @@ function PatientChartDrawer({
       />
 
       {/* Drawer panel */}
-      <motion.aside
+      <m.aside
         key="drawer"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
@@ -340,8 +341,8 @@ function PatientChartDrawer({
           fixed top-0 right-0 h-full w-[440px] z-50
           flex flex-col
           bg-slate-900 border-l border-slate-800
-          shadow-2xl
         "
+        style={{ boxShadow: 'var(--token-shadow-xl)' }}
         aria-label="Patient chart drawer"
         role="complementary"
       >
@@ -352,8 +353,8 @@ function PatientChartDrawer({
               <FileText className="w-4 h-4 text-cyan-400" />
               <h2 className="text-base font-semibold text-white">{t('patientFacesheet')}</h2>
             </div>
-            <p className="text-sm font-medium text-slate-300">{patient.name}</p>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{patient.name}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
               DOB {patient.dob} · {patient.mrn}
             </p>
           </div>
@@ -361,10 +362,11 @@ function PatientChartDrawer({
             onClick={onClose}
             aria-label="Close chart drawer"
             className="
-              mt-0.5 p-1.5 rounded-lg text-slate-500 hover:text-white
+              mt-0.5 p-1.5 hover:text-white
               hover:bg-slate-800 transition-colors flex-shrink-0
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
             "
+            style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -381,20 +383,21 @@ function PatientChartDrawer({
             ) : (
               <div className="space-y-2">
                 {facesheet.problems.map((prob, i) => (
-                  <motion.div
+                  <m.div
                     key={i}
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.16 }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl
+                    className="flex items-center justify-between px-3 py-2.5
                                bg-slate-800 border border-slate-700/60"
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                   >
                     <div>
                       <span className="text-sm font-medium text-slate-200">{prob.description}</span>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{t('since', { date: prob.onset })}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('since', { date: prob.onset })}</p>
                     </div>
                     <StatusBadge status={prob.status} />
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}
@@ -408,21 +411,22 @@ function PatientChartDrawer({
             ) : (
               <div className="space-y-2">
                 {facesheet.medications.map((med, i) => (
-                  <motion.div
+                  <m.div
                     key={i}
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.16 }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl
+                    className="flex items-center justify-between px-3 py-2.5
                                bg-slate-800 border border-slate-700/60"
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                   >
                     <span className="text-sm font-medium text-slate-200">{med.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                       <span className="font-mono">{med.dose}</span>
                       <span>·</span>
                       <span>{med.frequency}</span>
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}
@@ -436,20 +440,21 @@ function PatientChartDrawer({
             ) : (
               <div className="space-y-2">
                 {facesheet.allergies.map((allergy, i) => (
-                  <motion.div
+                  <m.div
                     key={i}
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.16 }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl
+                    className="flex items-center justify-between px-3 py-2.5
                                bg-slate-800 border border-slate-700/60"
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                   >
                     <div>
                       <span className="text-sm font-medium text-slate-200">{allergy.allergen}</span>
-                      <p className="text-xs text-slate-500 mt-0.5">{allergy.reaction}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{allergy.reaction}</p>
                     </div>
                     <SeverityBadge severity={allergy.severity} />
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}
@@ -463,23 +468,24 @@ function PatientChartDrawer({
             ) : (
               <div className="space-y-2">
                 {facesheet.encounters.map((enc, i) => (
-                  <motion.div
+                  <m.div
                     key={i}
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.16 }}
-                    className="px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700/60"
+                    className="px-3 py-2.5 bg-slate-800 border border-slate-700/60"
+                    style={{ borderRadius: 'var(--radius-xl)' }}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-200">{enc.type}</span>
                         <span className="text-[10px] text-slate-600">·</span>
-                        <span className="text-[10px] text-slate-500">{enc.provider}</span>
+                        <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{enc.provider}</span>
                       </div>
                       <span className="text-[10px] font-mono text-slate-600">{enc.date}</span>
                     </div>
-                    <p className="text-xs text-slate-500 leading-relaxed">{enc.summary}</p>
-                  </motion.div>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>{enc.summary}</p>
+                  </m.div>
                 ))}
               </div>
             )}
@@ -488,15 +494,15 @@ function PatientChartDrawer({
           {/* External Records — drag-and-drop upload zone */}
           <section ref={recordsSectionRef}>
             <SectionHeading icon={Upload} label={t('externalRecords')} iconColor="text-cyan-400" />
-            <motion.div
+            <m.div
               animate={scrollToRecords
                 ? { boxShadow: ['0 0 0 0px rgb(34 211 238 / 0)', '0 0 0 3px rgb(34 211 238 / 0.4)', '0 0 0 0px rgb(34 211 238 / 0)'] }
                 : {}}
               transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
-              className="rounded-xl"
+              style={{ borderRadius: 'var(--radius-xl)' }}
             >
               <ExternalRecordsZone />
-            </motion.div>
+            </m.div>
           </section>
         </div>
 
@@ -506,7 +512,7 @@ function PatientChartDrawer({
             {t('facesheetReadOnly')}
           </p>
         </div>
-      </motion.aside>
+      </m.aside>
     </AnimatePresence>
   );
 }
@@ -631,36 +637,41 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
 
   return (
     <>
-      <div className={inline
-        ? 'flex-1 min-w-0 flex items-center justify-center'
-        : 'flex-shrink-0 px-4 py-2.5 border-b bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60'
-      }>
+      <div
+        className={inline
+          ? 'flex-1 min-w-0 flex items-center justify-center'
+          : 'flex-shrink-0 px-4 py-2.5'
+        }
+        style={inline ? undefined : { borderBottom: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}
+      >
         <div className={`flex items-center ${inline ? 'gap-2.5' : 'gap-3 max-w-2xl'}`}>
           {!inline && (
-            <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0
-                             text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
+                  style={{ color: 'var(--text-tertiary)' }}>
               {t('patientLabel')}
             </span>
           )}
 
           <div className={`relative ${inline ? '' : 'flex-1 max-w-xs'}`} ref={searchPillRef}>
             {selected ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg
+              <div className="flex items-center gap-1.5 px-2 py-1
                              bg-cyan-50 dark:bg-cyan-500/[0.08]
-                             border border-cyan-200/80 dark:border-cyan-500/20">
-                <User className="w-3 h-3 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                             border border-cyan-200/80 dark:border-cyan-500/20"
+                   style={{ borderRadius: 'var(--radius-lg)' }}>
+                <User className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {selected.name}
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-500">
+                <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
                   {selected.dob} · {selected.mrn}
                 </span>
                 <button
                   onClick={clear}
                   aria-label="Clear patient selection"
-                  className="ml-1 flex-shrink-0 rounded text-slate-400 hover:text-slate-600
+                  className="ml-1 flex-shrink-0 hover:text-slate-600
                              dark:hover:text-slate-200 transition-colors
                              focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400"
+                  style={{ borderRadius: 'var(--radius-md)', color: 'var(--text-muted)' }}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -668,58 +679,78 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
             ) : !showNewPatientForm ? (
               <div className="relative">
                 {/* Single-element morph: magnifying glass circle ↔ search pill */}
-                <motion.div
+                <m.div
                   className="flex items-center rounded-full cursor-pointer"
-                  style={{ willChange: 'width, background-color' }}
                   initial={false}
                   animate={searchExpanded ? {
-                    width: 260,
+                    width: 320,
                     height: 40,
-                    backgroundColor: 'rgb(17, 24, 39)',
-                    paddingLeft: 12,
-                    paddingRight: 12,
+                    paddingLeft: 14,
+                    paddingRight: 8,
                   } : {
                     width: 36,
                     height: 36,
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
                     paddingLeft: 0,
                     paddingRight: 0,
                   }}
-                  transition={{ duration: 0.15, ease: [0.32, 0.72, 0, 1] }}
+                  style={{
+                    willChange: 'width',
+                    backgroundColor: searchExpanded ? 'var(--surface-primary)' : 'var(--surface-tertiary)',
+                    border: searchExpanded ? '1.5px solid var(--border-default)' : '1px solid transparent',
+                    boxShadow: searchExpanded ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  }}
+                  transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
                   onClick={() => { if (!searchExpanded) setSearchExpanded(true); }}
                 >
                   {/* Collapsed: centered magnifying glass */}
                   <div className={`flex items-center justify-center transition-opacity duration-100 ${
                     searchExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-full h-full'
                   }`}>
-                    <Search className="w-4 h-4 text-gray-400" />
+                    <Search className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                   </div>
 
-                  {/* Expanded: search icon + input */}
+                  {/* Expanded: search icon + input + add button */}
                   <div className={`flex items-center gap-2 min-w-0 transition-opacity duration-150 ${
                     searchExpanded ? 'opacity-100 flex-1 delay-[60ms]' : 'opacity-0 w-0 overflow-hidden'
                   }`}>
-                    <Search className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
                     {searchExpanded && (
-                      <input
-                        type="text"
-                        role="combobox"
-                        autoFocus
-                        aria-label="Search patients"
-                        aria-controls="patient-search-results"
-                        aria-expanded={open}
-                        aria-autocomplete="list"
-                        placeholder={t('searchPatients')}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onFocus={() => setOpen(true)}
-                        onBlur={() => setTimeout(() => setOpen(false), 150)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 min-w-0 bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
-                      />
+                      <>
+                        <input
+                          type="text"
+                          role="combobox"
+                          autoFocus
+                          aria-label="Search patients"
+                          aria-controls="patient-search-results"
+                          aria-expanded={open}
+                          aria-autocomplete="list"
+                          placeholder={t('searchPatients')}
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          onFocus={() => setOpen(true)}
+                          onBlur={() => setTimeout(() => setOpen(false), 150)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 min-w-0 bg-transparent text-xs focus:outline-none"
+                          style={{ color: 'var(--text-primary)' }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowNewPatientForm(true);
+                            setSearchExpanded(false);
+                            setQuery('');
+                            setOpen(false);
+                          }}
+                          className="w-6 h-6 min-w-[24px] min-h-[24px] max-w-[24px] max-h-[24px] flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white shrink-0 transition-colors mr-0.5"
+                          aria-label={t('addPatient')}
+                          title={t('addPatient')}
+                        >
+                          <Plus className="w-3 h-3" strokeWidth={2.5} />
+                        </button>
+                      </>
                     )}
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* Dropdown — shows when expanded */}
                 {searchExpanded && open && (
@@ -728,12 +759,10 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                     role="listbox"
                     aria-label="Patient search results"
                     className="
-                      absolute top-full left-0 mt-1 z-50 rounded-xl overflow-hidden
+                      absolute top-full left-0 mt-1 z-50 overflow-hidden
                       min-w-[340px] w-max
-                      bg-white dark:bg-slate-800
-                      border border-slate-200 dark:border-slate-700
-                      shadow-xl
                     "
+                    style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', boxShadow: 'var(--token-shadow-xl)' }}
                   >
                     {filtered.map((p) => (
                       <li
@@ -748,11 +777,11 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                           transition-colors
                         "
                       >
-                        <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                        <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                           {p.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
+                        <span className="text-[10px] ml-1" style={{ color: 'var(--text-muted)' }}>
                           {p.dob} · {p.mrn}
                         </span>
                       </li>
@@ -771,12 +800,14 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                       }}
                       className="
                         flex items-center gap-2.5 px-3 py-2.5 cursor-pointer whitespace-nowrap
-                        border-t border-slate-200 dark:border-slate-700
                         hover:bg-blue-50 dark:hover:bg-blue-900/20
                         transition-colors
                       "
+                      style={{ borderTop: '1px solid var(--border-default)' }}
                     >
-                      <Plus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                      <span className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-white flex-shrink-0">
+                        <Plus className="w-3 h-3" strokeWidth={2.5} />
+                      </span>
                       <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                         {t('addPatient')}
                       </span>
@@ -790,13 +821,13 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
           {selected && (
             <>
               {/* View Chart */}
-              <motion.button
+              <m.button
                 onClick={() => { setAttachMode(false); setChartOpen(true); }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 aria-label="View patient chart"
                 className="
-                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
+                  flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold
                   text-cyan-700 dark:text-cyan-400
                   bg-cyan-50 dark:bg-cyan-500/10
                   border border-cyan-200 dark:border-cyan-500/25
@@ -805,13 +836,14 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                   focus-visible:ring-offset-1
                 "
+                style={{ borderRadius: 'var(--radius-lg)' }}
               >
                 <Eye className="w-3 h-3" />
                 {t('viewChart')}
-              </motion.button>
+              </m.button>
 
               {/* Attach Document — opens drawer and scrolls to External Records */}
-              <motion.button
+              <m.button
                 onClick={openAttachDocument}
                 whileHover={{
                   backgroundColor: 'rgb(30 41 59 / 0.9)', // slate-800
@@ -820,18 +852,17 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 whileTap={{ scale: 0.95 }}
                 aria-label="Attach document to patient chart"
                 className="
-                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
-                  text-slate-500 dark:text-slate-400
+                  flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold
                   bg-transparent
-                  border border-slate-200 dark:border-slate-700/60
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                   focus-visible:ring-offset-1
                 "
+                style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)', border: '1px solid var(--border-default)' }}
               >
                 <Upload className="w-3 h-3" />
                 {t('attachDocument')}
-              </motion.button>
+              </m.button>
             </>
           )}
 
@@ -845,13 +876,11 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
                 autoFocus
                 className="
-                  px-2.5 py-1.5 text-xs rounded-lg w-36
-                  bg-white dark:bg-slate-900
-                  border border-slate-200 dark:border-slate-600
-                  text-slate-700 dark:text-slate-300
+                  px-2.5 py-1.5 text-xs w-36
                   placeholder-slate-400
                   focus:outline-none focus:ring-2 focus:ring-cyan-400
                 "
+                style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
               />
               <input
                 type="text"
@@ -860,29 +889,29 @@ export function PatientContextBar({ onSelectPatient, initialPatientId, patients,
                 onChange={(e) => setNewPatientDob(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
                 className="
-                  px-2.5 py-1.5 text-xs rounded-lg w-32
-                  bg-white dark:bg-slate-900
-                  border border-slate-200 dark:border-slate-600
-                  text-slate-700 dark:text-slate-300
+                  px-2.5 py-1.5 text-xs w-32
                   placeholder-slate-400
                   focus:outline-none focus:ring-2 focus:ring-cyan-400
                 "
+                style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
               />
               <button
                 onClick={handleAddPatient}
                 disabled={!newPatientName.trim()}
                 className="
-                  px-2.5 py-1.5 text-[11px] font-semibold rounded-lg
-                  bg-cyan-600 text-white hover:bg-cyan-500
+                  px-2.5 py-1.5 text-[11px] font-semibold
+                  bg-cyan-600 hover:bg-cyan-500
                   disabled:opacity-40 disabled:cursor-not-allowed
                   transition-colors
                 "
+                style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-inverse)' }}
               >
                 {t('addButton')}
               </button>
               <button
                 onClick={() => { setShowNewPatientForm(false); setNewPatientName(''); setNewPatientDob(''); }}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 hover:text-slate-600 dark:hover:text-slate-200"
+                style={{ color: 'var(--text-muted)' }}
               >
                 <X className="w-3 h-3" />
               </button>

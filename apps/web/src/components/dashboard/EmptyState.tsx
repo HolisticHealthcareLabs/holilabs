@@ -37,10 +37,10 @@ export default function EmptyState({
       <div className="text-7xl mb-6 opacity-80">{icon}</div>
 
       {/* Title */}
-      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+      <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{title}</h3>
 
       {/* Description */}
-      <p className="text-gray-600 max-w-md mb-8">{description}</p>
+      <p className="max-w-md mb-8" style={{ color: 'var(--text-secondary)' }}>{description}</p>
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -48,14 +48,16 @@ export default function EmptyState({
           primaryAction.href ? (
             <Link
               href={primaryAction.href}
-              className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold hover:shadow-lg transition-all hover:scale-105"
+              style={{ borderRadius: 'var(--radius-lg)' }}
             >
               {primaryAction.label}
             </Link>
           ) : (
             <button
               onClick={primaryAction.onClick}
-              className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold hover:shadow-lg transition-all hover:scale-105"
+              style={{ borderRadius: 'var(--radius-lg)' }}
             >
               {primaryAction.label}
             </button>
@@ -65,7 +67,8 @@ export default function EmptyState({
         {secondaryAction && (
           <Link
             href={secondaryAction.href}
-            className="text-gray-600 hover:text-gray-900 font-medium transition underline"
+            className="hover:text-gray-900 font-medium transition underline"
+            style={{ color: 'var(--text-secondary)' }}
           >
             {secondaryAction.label}
           </Link>

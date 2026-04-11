@@ -26,6 +26,7 @@
  */
 
 import logger from '@/lib/logger';
+import { sendEmail } from '@/lib/email';
 
 export interface CronJobMetrics {
   jobName: string;
@@ -283,7 +284,6 @@ export class CronMonitor {
         message: `ALERT: Job ${jobName} has failed ${health.consecutiveFailures} times consecutively`,
       });
 
-      // TODO: Send alert via notification system (email, Slack, PagerDuty, etc.)
       this.sendAlert(jobName, health);
     }
 
@@ -300,10 +300,22 @@ export class CronMonitor {
   }
 
   /**
-   * Send alert for critical job failures
-   * TODO: Integrate with notification system (email, Slack, PagerDuty)
+   * Send alert for critical job failures.
+   * Dispatches to ops email (Resend) and Slack webhook.
+   * Both channels are fire-and-forget — a delivery failure must not
+   * crash the monitoring loop.
    */
   private sendAlert(jobName: string, health: CronJobHealth): void {
+    const subject = `[CRON ALERT] ${jobName} — ${health.consecutiveFailures} consecutive failures`;
+    const body = [
+      `Job: ${jobName}`,
+      `Consecutive failures: ${health.consecutiveFailures}`,
+      `Success rate: ${health.successRate.toFixed(1)}%`,
+      `Total runs: ${health.totalRuns}`,
+      `Last success: ${health.lastSuccess?.toISOString() ?? 'never'}`,
+      `Last failure: ${health.lastFailure?.toISOString() ?? 'n/a'}`,
+    ].join('\n');
+
     logger.error({
       event: 'cron_alert_triggered',
       jobName,
@@ -311,12 +323,39 @@ export class CronMonitor {
       message: `CRITICAL: Cron job ${jobName} requires immediate attention`,
     });
 
-    // TODO: Implement actual alerting
-    // Examples:
-    // - Send email to operations team
-    // - Post to Slack channel
-    // - Create PagerDuty incident
-    // - Send SMS to on-call engineer
+    // 1. Ops email via Resend (fire-and-forget)
+    const opsEmail = process.env.OPS_ALERT_EMAIL;
+    if (opsEmail) {
+      sendEmail({
+        to: opsEmail,
+        subject,
+        text: body,
+        html: `<pre>${body}</pre>`,
+        tags: [{ name: 'category', value: 'cron-alert' }],
+      }).catch((err) => {
+        logger.warn({ event: 'cron_alert_email_failed', jobName, error: err });
+      });
+    }
+
+    // 2. Slack webhook (fire-and-forget)
+    const slackUrl = process.env.SLACK_OPS_WEBHOOK_URL;
+    if (slackUrl) {
+      fetch(slackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: subject,
+          blocks: [
+            {
+              type: 'section',
+              text: { type: 'mrkdwn', text: `*${subject}*\n\`\`\`${body}\`\`\`` },
+            },
+          ],
+        }),
+      }).catch((err) => {
+        logger.warn({ event: 'cron_alert_slack_failed', jobName, error: err });
+      });
+    }
   }
 
   /**

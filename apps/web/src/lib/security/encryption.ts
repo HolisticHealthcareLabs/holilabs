@@ -143,10 +143,12 @@ export interface EncryptedData {
 
 /**
  * Encrypt data using AES-256-GCM
- * @param plaintext - Data to encrypt (will be JSON stringified)
+ * 
+ * @param plaintext - Data to encrypt (will be JSON stringified if not a string)
  * @returns Encrypted data with IV and auth tag
+ * @throws Error if encryption fails
  */
-export function encrypt(plaintext: any): EncryptedData {
+export function encrypt(plaintext: unknown): EncryptedData {
   try {
     const key = getEncryptionKey();
 
@@ -172,18 +174,23 @@ export function encrypt(plaintext: any): EncryptedData {
       encrypted,
       authTag: authTag.toString('hex'),
     };
-  } catch (error: any) {
-    logger.error({ error }, 'Encryption error');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'encryption_error' 
+    }, 'Encryption error');
     throw new Error('Failed to encrypt data');
   }
 }
 
 /**
  * Decrypt data using AES-256-GCM
+ * 
  * @param encryptedData - Data to decrypt
  * @returns Decrypted plaintext (parsed as JSON if possible)
+ * @throws Error if decryption fails
  */
-export function decrypt(encryptedData: EncryptedData): any {
+export function decrypt<T = unknown>(encryptedData: EncryptedData): T {
   try {
     const key = getEncryptionKey();
 
@@ -201,13 +208,16 @@ export function decrypt(encryptedData: EncryptedData): any {
 
     // Try to parse as JSON
     try {
-      return JSON.parse(decrypted);
+      return JSON.parse(decrypted) as T;
     } catch {
       // Return as string if not valid JSON
-      return decrypted;
+      return decrypted as unknown as T;
     }
-  } catch (error: any) {
-    logger.error({ error }, 'Decryption error');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'decryption_error' 
+    }, 'Decryption error');
     throw new Error('Failed to decrypt data');
   }
 }
@@ -225,7 +235,7 @@ export function encryptString(plaintext: string): string {
  */
 export function decryptString(encryptedString: string): string {
   const encrypted = JSON.parse(encryptedString) as EncryptedData;
-  return decrypt(encrypted);
+  return decrypt<string>(encrypted);
 }
 
 // ============================================================================
@@ -243,11 +253,15 @@ export function generateEncryptionKey(): string {
 /**
  * Hash a value using SHA-256 (for data integrity checks)
  * Used for blockchain hashing
+ * 
+ * @param data - Data to hash
+ * @returns SHA-256 hash in hex format
  */
-export function hash(data: any): string {
+export function hash(data: unknown): string {
   const dataString = typeof data === 'string' ? data : JSON.stringify(data);
   return crypto.createHash('sha256').update(dataString).digest('hex');
 }
+
 
 /**
  * Compare two hashes in constant time (prevents timing attacks)
@@ -315,9 +329,12 @@ export async function encryptPHIWithVersion(
 
     // Format: v{version}:iv:authTag:encryptedData
     return `v${version}:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
-  } catch (error: any) {
-    logger.error({ error }, 'PHI encryption error');
-    throw new Error(`Failed to encrypt PHI: ${error?.message || 'unknown error'}`);
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'phi_encryption_error' 
+    }, 'PHI encryption error');
+    throw new Error(`Failed to encrypt PHI: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
 }
 
@@ -391,8 +408,12 @@ export async function decryptPHIWithVersion(ciphertext: string | null): Promise<
     decrypted += decipher.final('utf8');
 
     return decrypted;
-  } catch (error: any) {
-    logger.error({ error, ciphertext: ciphertext.substring(0, 20) }, 'PHI decryption error');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      ciphertext: ciphertext.substring(0, 20),
+      event: 'phi_decryption_error'
+    }, 'PHI decryption error');
     throw new Error('Failed to decrypt PHI');
   }
 }
@@ -418,8 +439,11 @@ export function encryptPHI(plaintext: string | null): string | null {
 
     // Format: iv:authTag:encryptedData (legacy format without version)
     return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
-  } catch (error: any) {
-    logger.error({ error }, 'PHI encryption error (legacy)');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'phi_encryption_legacy_error'
+    }, 'PHI encryption error (legacy)');
     throw new Error('Failed to encrypt PHI');
   }
 }
@@ -457,8 +481,11 @@ export function decryptPHI(ciphertext: string | null): string | null {
     decrypted += decipher.final('utf8');
 
     return decrypted;
-  } catch (error: any) {
-    logger.error({ error }, 'PHI decryption error (legacy)');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'phi_decryption_legacy_error'
+    }, 'PHI decryption error (legacy)');
     throw new Error('Failed to decrypt PHI');
   }
 }
@@ -482,8 +509,11 @@ export function encryptBuffer(buffer: Buffer): Buffer {
 
     // Format: iv (16 bytes) + authTag (16 bytes) + encrypted data
     return Buffer.concat([iv, authTag, encrypted]);
-  } catch (error: any) {
-    logger.error({ error }, 'Buffer encryption error');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'buffer_encryption_error'
+    }, 'Buffer encryption error');
     throw new Error('Failed to encrypt buffer');
   }
 }
@@ -506,8 +536,11 @@ export function decryptBuffer(encryptedBuffer: Buffer): Buffer {
       decipher.update(encrypted),
       decipher.final(),
     ]);
-  } catch (error: any) {
-    logger.error({ error }, 'Buffer decryption error');
+  } catch (error: unknown) {
+    logger.error({ 
+      error: error instanceof Error ? error.message : 'Unknown',
+      event: 'buffer_decryption_error'
+    }, 'Buffer decryption error');
     throw new Error('Failed to decrypt buffer');
   }
 }

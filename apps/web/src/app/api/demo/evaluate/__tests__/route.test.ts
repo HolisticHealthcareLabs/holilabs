@@ -18,39 +18,17 @@ jest.mock('@/lib/logger', () => ({
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
+const mockEvaluate = jest.fn();
+const mockGetInstance = jest.fn(() => ({ evaluate: mockEvaluate }));
 jest.mock('@/lib/cds/engines/cds-engine', () => ({
   CDSEngine: {
-    getInstance: jest.fn(() => ({
-      evaluate: jest.fn().mockResolvedValue({
-        alerts: [
-          {
-            id: 'alert-1',
-            ruleId: 'rule-drug-interaction',
-            summary: 'Drug interaction detected',
-            detail: 'Metformin + Ibuprofen interaction',
-            severity: 'warning',
-            category: 'drug_interaction',
-            indicator: 'warning',
-            source: { label: 'CDS Engine' },
-            timestamp: new Date().toISOString(),
-          },
-        ],
-        rulesFired: 1,
-        rulesEvaluated: 5,
-        processingTimeMs: 20,
-      }),
-    })),
+    getInstance: mockGetInstance,
   },
 }));
 
+const mockEvaluateDOACRule = jest.fn();
 jest.mock('@/lib/clinical/safety/doac-evaluator', () => ({
-  evaluateDOACRule: jest.fn(() => ({
-    ruleId: 'doac-renal-v1',
-    severity: 'ATTESTATION_REQUIRED',
-    rationale: 'Missing creatinine clearance',
-    detailedRationale: 'eGFR or CrCl required before prescribing DOAC',
-    citationUrl: 'https://www.escardio.org',
-  })),
+  evaluateDOACRule: mockEvaluateDOACRule,
 }));
 
 jest.mock('@/lib/demo/demo-scenarios', () => ({
@@ -88,6 +66,32 @@ const { POST } = require('../route');
 describe('POST /api/demo/evaluate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetInstance.mockReturnValue({ evaluate: mockEvaluate });
+    mockEvaluateDOACRule.mockReturnValue({
+      ruleId: 'doac-renal-v1',
+      severity: 'ATTESTATION_REQUIRED',
+      rationale: 'Missing creatinine clearance',
+      detailedRationale: 'eGFR or CrCl required before prescribing DOAC',
+      citationUrl: 'https://www.escardio.org',
+    });
+    mockEvaluate.mockResolvedValue({
+      alerts: [
+        {
+          id: 'alert-1',
+          ruleId: 'rule-drug-interaction',
+          summary: 'Drug interaction detected',
+          detail: 'Metformin + Ibuprofen interaction',
+          severity: 'warning',
+          category: 'drug_interaction',
+          indicator: 'warning',
+          source: { label: 'CDS Engine' },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+      rulesFired: 1,
+      rulesEvaluated: 5,
+      processingTimeMs: 20,
+    });
   });
 
   it('evaluates a valid demo scenario and returns CDS alerts', async () => {
@@ -102,7 +106,7 @@ describe('POST /api/demo/evaluate', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.data.alerts).toBeInstanceOf(Array);
+    expect(Array.isArray(data.data.alerts)).toBe(true);
     expect(data.scenario.id).toBe('drug-interaction');
     expect(data.scenario.trafficLight).toBe('RED');
   });

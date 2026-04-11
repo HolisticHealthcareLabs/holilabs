@@ -82,46 +82,40 @@ async function searchClinicalNotes(
   limit: number,
   threshold: number
 ): Promise<SearchResult[]> {
-  // Convert embedding to pgvector format
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // Build parameterized WHERE clause to prevent SQL injection
-  const whereClause = patientId ? 'WHERE "patientId" = $2' : '';
-  const params = patientId ? [embeddingStr, patientId, limit] : [embeddingStr, limit];
-  const limitParam = patientId ? '$3' : '$2';
-
-  // Perform vector similarity search
-  // Uses pgvector's <-> operator (L2 distance, lower = more similar)
-  // We convert to similarity score: 1 / (1 + distance)
-  const results = await prisma.$queryRawUnsafe<Array<{
+  type EmbeddingRow = {
     id: string;
     sourceType: string;
     sourceId: string;
     patientId: string;
     contentPreview: string;
     distance: number;
-  }>>(`
-    SELECT
-      id,
-      "sourceType",
-      "sourceId",
-      "patientId",
-      "contentPreview",
-      embedding <-> $1::vector AS distance
-    FROM clinical_embeddings
-    ${whereClause}
-    ORDER BY embedding <-> $1::vector
-    LIMIT ${limitParam}
-  `, ...params);
+  };
 
-  // Convert distance to similarity score and filter by threshold
+  // CYRUS: use $queryRaw tagged templates for safe parameterization (CVI-008)
+  const results = patientId
+    ? await prisma.$queryRaw<EmbeddingRow[]>`
+        SELECT id, "sourceType", "sourceId", "patientId", "contentPreview",
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM clinical_embeddings
+        WHERE "patientId" = ${patientId}
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`
+    : await prisma.$queryRaw<EmbeddingRow[]>`
+        SELECT id, "sourceType", "sourceId", "patientId", "contentPreview",
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM clinical_embeddings
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`;
+
   return results
     .map(row => ({
       id: row.id,
       sourceType: row.sourceType,
       sourceId: row.sourceId,
       patientId: row.patientId,
-      similarity: 1 / (1 + row.distance), // Convert distance to similarity
+      similarity: 1 / (1 + row.distance),
       preview: row.contentPreview || '',
       metadata: {},
     }))
@@ -139,14 +133,7 @@ async function searchSimilarPatients(
 ): Promise<SearchResult[]> {
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // Build parameterized WHERE clause to prevent SQL injection
-  const whereClause = excludePatientId
-    ? 'WHERE "patientId" != $2'
-    : '';
-  const params = excludePatientId ? [embeddingStr, excludePatientId, limit] : [embeddingStr, limit];
-  const limitParam = excludePatientId ? '$3' : '$2';
-
-  const results = await prisma.$queryRawUnsafe<Array<{
+  type PatientRow = {
     id: string;
     patientId: string;
     ageBand: string | null;
@@ -154,20 +141,22 @@ async function searchSimilarPatients(
     isPalliativeCare: boolean;
     medicationCount: number;
     distance: number;
-  }>>(`
-    SELECT
-      id,
-      "patientId",
-      "ageBand",
-      gender,
-      "isPalliativeCare",
-      "medicationCount",
-      embedding <-> $1::vector AS distance
-    FROM patient_summary_embeddings
-    ${whereClause}
-    ORDER BY embedding <-> $1::vector
-    LIMIT ${limitParam}
-  `, ...params);
+  };
+
+  const results = excludePatientId
+    ? await prisma.$queryRaw<PatientRow[]>`
+        SELECT id, "patientId", "ageBand", gender, "isPalliativeCare", "medicationCount",
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM patient_summary_embeddings
+        WHERE "patientId" != ${excludePatientId}
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`
+    : await prisma.$queryRaw<PatientRow[]>`
+        SELECT id, "patientId", "ageBand", gender, "isPalliativeCare", "medicationCount",
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM patient_summary_embeddings
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`;
 
   return results
     .map(row => ({
@@ -198,12 +187,7 @@ async function searchSimilarDiagnoses(
 ): Promise<SearchResult[]> {
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // Build parameterized WHERE clause to prevent SQL injection
-  const whereClause = patientId ? 'WHERE "patientId" = $2' : '';
-  const params = patientId ? [embeddingStr, patientId, limit] : [embeddingStr, limit];
-  const limitParam = patientId ? '$3' : '$2';
-
-  const results = await prisma.$queryRawUnsafe<Array<{
+  type DiagnosisRow = {
     id: string;
     diagnosisId: string;
     patientId: string;
@@ -211,20 +195,22 @@ async function searchSimilarDiagnoses(
     snomedCode: string | null;
     severity: string | null;
     distance: number;
-  }>>(`
-    SELECT
-      id,
-      "diagnosisId",
-      "patientId",
-      "icdCode",
-      "snomedCode",
-      severity,
-      embedding <-> $1::vector AS distance
-    FROM diagnosis_embeddings
-    ${whereClause}
-    ORDER BY embedding <-> $1::vector
-    LIMIT ${limitParam}
-  `, ...params);
+  };
+
+  const results = patientId
+    ? await prisma.$queryRaw<DiagnosisRow[]>`
+        SELECT id, "diagnosisId", "patientId", "icdCode", "snomedCode", severity,
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM diagnosis_embeddings
+        WHERE "patientId" = ${patientId}
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`
+    : await prisma.$queryRaw<DiagnosisRow[]>`
+        SELECT id, "diagnosisId", "patientId", "icdCode", "snomedCode", severity,
+               embedding <-> ${embeddingStr}::vector AS distance
+        FROM diagnosis_embeddings
+        ORDER BY embedding <-> ${embeddingStr}::vector
+        LIMIT ${limit}`;
 
   return results
     .map(row => ({

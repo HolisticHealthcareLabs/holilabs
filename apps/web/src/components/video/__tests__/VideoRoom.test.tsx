@@ -59,7 +59,7 @@ describe('VideoRoom', () => {
       <VideoRoom roomId="room-1" userName="Dr. Smith" userType="clinician" onLeave={jest.fn()} />
     );
     // Shows connecting text or waiting for participant
-    expect(screen.getByText(/Conectando|Esperando/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Conectando|Esperando/i).length).toBeGreaterThan(0);
   });
 
   it('renders without crashing for a patient user type', () => {

@@ -14,9 +14,12 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
+const mockGenerateICS = jest.fn().mockReturnValue('BEGIN:VCALENDAR\nEND:VCALENDAR');
+const mockGenerateFilename = jest.fn().mockReturnValue('appointment-2025-06-15.ics');
+
 jest.mock('@/lib/calendar/ics-generator', () => ({
-  generateAppointmentICS: jest.fn().mockReturnValue('BEGIN:VCALENDAR\nEND:VCALENDAR'),
-  generateICSFilename: jest.fn().mockReturnValue('appointment-2025-06-15.ics'),
+  generateAppointmentICS: (...args: any[]) => mockGenerateICS(...args),
+  generateICSFilename: (...args: any[]) => mockGenerateFilename(...args),
 }));
 
 jest.mock('@/lib/logger', () => ({
@@ -44,7 +47,11 @@ const mockAppointment = {
 };
 
 describe('GET /api/appointments/[id]/export-calendar', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGenerateICS.mockReturnValue('BEGIN:VCALENDAR\nEND:VCALENDAR');
+    mockGenerateFilename.mockReturnValue('appointment-2025-06-15.ics');
+  });
 
   it('exports appointment as ICS file (200)', async () => {
     (prisma.appointment.findUnique as jest.Mock).mockResolvedValue(mockAppointment);

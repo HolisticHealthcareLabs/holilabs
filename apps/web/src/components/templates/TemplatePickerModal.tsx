@@ -183,14 +183,14 @@ export function TemplatePickerModal({
       setShowVariableForm(true);
     } else {
       // No variables, use template directly
-      useTemplate(template, {});
+      applyTemplate(template, {});
     }
   };
 
   /**
    * Use template with filled variables
    */
-  const useTemplate = async (template: Template, values: Record<string, string>) => {
+  const applyTemplate = async (template: Template, values: Record<string, string>) => {
     // Fill template content with variable values
     let filledContent = template.content;
     Object.entries(values).forEach(([key, value]) => {
@@ -224,7 +224,7 @@ export function TemplatePickerModal({
    */
   const handleVariableFormSubmit = () => {
     if (selectedTemplate) {
-      useTemplate(selectedTemplate, variableValues);
+      applyTemplate(selectedTemplate, variableValues);
     }
   };
 
@@ -287,11 +287,11 @@ export function TemplatePickerModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-2xl transition-all">
+              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden dark:bg-gray-900 transition-all" style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-primary)', boxShadow: 'var(--token-shadow-xl)' }}>
                 {!showVariableForm ? (
                   <>
                     {/* Header */}
-                    <div className="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+                    <div className="dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 p-6">
                       <div className="flex items-center justify-between">
                         <Dialog.Title className="text-2xl font-bold text-white flex items-center gap-2">
                           <SparklesIcon className="w-7 h-7" />
@@ -313,22 +313,23 @@ export function TemplatePickerModal({
                           placeholder="Search templates by name, description, or shortcut..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-white/90 dark:bg-gray-800/90 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
+                          className="w-full pl-12 pr-4 py-3 bg-white/90 dark:bg-gray-800/90 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white" style={{ border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                           autoFocus
                         />
                       </div>
                     </div>
 
                     {/* Filters */}
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                    <div className="p-4 dark:border-gray-700 dark:bg-gray-800/50" style={{ borderBottom: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}>
                       <div className="flex items-center gap-3 flex-wrap">
                         <button
                           onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium ${
+                          className={`flex items-center gap-2 px-4 py-2 transition-all text-sm font-medium ${
                             showOnlyFavorites
                               ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+                              : 'dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
                           }`}
+                          style={{ borderRadius: 'var(--radius-lg)', ...(showOnlyFavorites ? {} : { backgroundColor: 'var(--surface-primary)', color: 'var(--text-secondary)', border: '1px solid var(--border-strong)' }) }}
                         >
                           <StarSolidIcon className="w-4 h-4" />
                           Favorites Only
@@ -337,7 +338,7 @@ export function TemplatePickerModal({
                         <select
                           value={selectedCategory}
                           onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+                          className="px-4 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm focus:ring-2 focus:ring-blue-500" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                         >
                           <option value="">All Categories</option>
                           {CATEGORIES.map(cat => (
@@ -347,7 +348,7 @@ export function TemplatePickerModal({
                           ))}
                         </select>
 
-                        <span className="ml-auto text-sm text-gray-600 dark:text-gray-400">
+                        <span className="ml-auto text-sm dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
                           {filteredTemplates.length} templates
                         </span>
                       </div>
@@ -374,17 +375,17 @@ export function TemplatePickerModal({
                           <div
                             key={template.id}
                             onClick={() => handleSelectTemplate(template)}
-                            className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group"
+                            className="p-4 dark:bg-gray-800 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)' }}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   {index < 9 && (
-                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs font-mono">
+                                    <span className="px-2 py-0.5 dark:bg-gray-700 dark:text-gray-400 text-xs font-mono" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-md)' }}>
                                       {index + 1}
                                     </span>
                                   )}
-                                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                  <h3 className="text-lg font-semibold dark:text-white" style={{ color: 'var(--text-primary)' }}>
                                     {template.name}
                                   </h3>
                                   {template.isOfficial && (
@@ -392,17 +393,17 @@ export function TemplatePickerModal({
                                   )}
                                 </div>
                                 {template.description && (
-                                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                  <p className="mt-1 text-sm dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
                                     {template.description}
                                   </p>
                                 )}
                                 {/* Decorative - low contrast intentional for metadata */}
                                 <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                                  <span className="px-2 py-0.5 dark:bg-blue-900/30 dark:text-blue-300" style={{ backgroundColor: 'var(--surface-accent)', color: 'var(--text-accent)', borderRadius: 'var(--radius-md)' }}>
                                     {getCategoryLabel(template.category)}
                                   </span>
                                   {template.shortcut && (
-                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono">
+                                    <span className="px-2 py-0.5 dark:bg-gray-700 dark:text-gray-300 font-mono" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-md)' }}>
                                       {template.shortcut}
                                     </span>
                                   )}
@@ -414,7 +415,7 @@ export function TemplatePickerModal({
                               </div>
                               <button
                                 onClick={(e) => toggleFavorite(template, e)}
-                                className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" style={{ borderRadius: 'var(--radius-lg)' }}
                               >
                                 {template.isFavorite ? (
                                   <StarSolidIcon className="w-6 h-6 text-yellow-500" />
@@ -429,11 +430,11 @@ export function TemplatePickerModal({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                    <div className="p-4 dark:border-gray-700 dark:bg-gray-800/50" style={{ borderTop: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}>
+                      <div className="flex items-center justify-between text-xs dark:text-gray-400" style={{ color: 'var(--text-secondary)' }}>
                         <div className="flex items-center gap-4">
-                          <span><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">1-9</kbd> Quick select</span>
-                          <span><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> Close</span>
+                          <span><kbd className="px-2 py-1 dark:bg-gray-700" style={{ backgroundColor: 'var(--border-default)', borderRadius: 'var(--radius-md)' }}>1-9</kbd> Quick select</span>
+                          <span><kbd className="px-2 py-1 dark:bg-gray-700" style={{ backgroundColor: 'var(--border-default)', borderRadius: 'var(--radius-md)' }}>Esc</kbd> Close</span>
                         </div>
                         <span>Press number key or click to select</span>
                       </div>
@@ -443,7 +444,7 @@ export function TemplatePickerModal({
                   // Variable Form
                   selectedTemplate && (
                     <>
-                      <div className="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-pink-600 p-6">
+                      <div className="dark:border-gray-700 bg-gradient-to-r from-purple-600 to-pink-600 p-6">
                         <Dialog.Title className="text-2xl font-bold text-white">
                           Fill Template Variables
                         </Dialog.Title>
@@ -453,7 +454,7 @@ export function TemplatePickerModal({
                       <div className="p-6 max-h-[500px] overflow-y-auto space-y-4">
                         {(selectedTemplate.variables as any[] || []).map((variable: any) => (
                           <div key={variable.name}>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium dark:text-gray-300 mb-2" style={{ color: 'var(--text-secondary)' }}>
                               {variable.label || variable.name}
                               {variable.required && <span className="text-red-500 ml-1">*</span>}
                             </label>
@@ -463,7 +464,7 @@ export function TemplatePickerModal({
                                 onChange={(e) =>
                                   setVariableValues({ ...variableValues, [variable.name]: e.target.value })
                                 }
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-4 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                                 required={variable.required}
                               >
                                 <option value="">Select...</option>
@@ -480,7 +481,7 @@ export function TemplatePickerModal({
                                 onChange={(e) =>
                                   setVariableValues({ ...variableValues, [variable.name]: e.target.value })
                                 }
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-4 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                                 required={variable.required}
                               />
                             ) : variable.type === 'number' ? (
@@ -490,7 +491,7 @@ export function TemplatePickerModal({
                                 onChange={(e) =>
                                   setVariableValues({ ...variableValues, [variable.name]: e.target.value })
                                 }
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-4 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                                 required={variable.required}
                               />
                             ) : (
@@ -501,7 +502,7 @@ export function TemplatePickerModal({
                                   setVariableValues({ ...variableValues, [variable.name]: e.target.value })
                                 }
                                 placeholder={variable.default || ''}
-                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-4 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)' }}
                                 required={variable.required}
                               />
                             )}
@@ -509,20 +510,20 @@ export function TemplatePickerModal({
                         ))}
                       </div>
 
-                      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3">
+                      <div className="p-4 dark:border-gray-700 dark:bg-gray-800/50 flex items-center justify-end gap-3" style={{ borderTop: '1px solid var(--border-default)', backgroundColor: 'var(--surface-secondary)' }}>
                         <button
                           onClick={() => {
                             setShowVariableForm(false);
                             setSelectedTemplate(null);
                             setVariableValues({});
                           }}
-                          className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          className="px-4 py-2 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" style={{ color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)' }}
                         >
                           Cancel
                         </button>
                         <button
                           onClick={handleVariableFormSubmit}
-                          className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium"
+                          className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all font-medium" style={{ borderRadius: 'var(--radius-lg)' }}
                         >
                           Use Template
                         </button>

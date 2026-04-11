@@ -245,7 +245,8 @@ export function BiometricSigningModal({
     >
       {/* Animated modal panel */}
       <motion.div
-        className="relative w-full max-w-sm mx-4 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6"
+        className="relative w-full max-w-sm mx-4 bg-slate-900 border border-slate-700 p-6"
+        style={{ borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -257,13 +258,14 @@ export function BiometricSigningModal({
           disabled={isLoading}
           aria-label="Fechar modal de assinatura"
           className={`
-            absolute top-4 right-4 h-7 w-7 flex items-center justify-center rounded-md
+            absolute top-4 right-4 h-7 w-7 flex items-center justify-center
             text-slate-500 hover:text-white hover:bg-slate-800
             disabled:opacity-40 disabled:cursor-not-allowed
             transition-colors
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
             focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
           `}
+          style={{ borderRadius: 'var(--radius-md)' }}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -333,7 +335,7 @@ export function BiometricSigningModal({
           whileHover={!isLoading && step !== 'done' ? { scale: 1.015 } : {}}
           whileTap={!isLoading && step !== 'done' ? { scale: 0.985 } : {}}
           className={`
-            w-full py-3 rounded-xl text-white font-medium text-sm
+            w-full py-3 text-white font-medium text-sm
             transition-colors mb-3
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
             focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
@@ -344,6 +346,7 @@ export function BiometricSigningModal({
               : 'bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700'
             }
           `}
+          style={{ borderRadius: 'var(--radius-xl)' }}
         >
           <AnimatePresence mode="wait">
             {isLoading ? (
@@ -404,13 +407,14 @@ export function BiometricSigningModal({
           onClick={onFallback}
           disabled={isLoading}
           className={`
-            w-full text-center text-xs py-1.5 rounded-lg
+            w-full text-center text-xs py-1.5
             text-slate-500 hover:text-slate-300 hover:bg-slate-800/50
             disabled:opacity-40 disabled:cursor-not-allowed
             transition-colors
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
             focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
           `}
+          style={{ borderRadius: 'var(--radius-lg)' }}
         >
           Usar PIN em vez disso
         </button>

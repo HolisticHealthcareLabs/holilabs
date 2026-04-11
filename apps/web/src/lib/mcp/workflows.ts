@@ -18,4 +18,15 @@ export {
   type WorkflowTemplate,
 } from './workflows/index';
 
-export type { WorkflowStep, WorkflowResult } from './types';
+export type WorkflowStep = {
+  name: string;
+  toolName: string;
+  input: Record<string, any>;
+  dependsOn?: string[];
+};
+
+export type WorkflowResult = {
+  success: boolean;
+  steps: Array<{ name: string; success: boolean; data?: any; error?: string }>;
+  summary?: string;
+};

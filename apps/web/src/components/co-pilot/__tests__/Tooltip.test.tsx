@@ -1,15 +1,21 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 
+const motionCache: Record<string, React.FC<any>> = {};
 jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, className, ...props }: any) => (
-      <div className={className}>{children}</div>
-    ),
-    span: ({ children, ...props }: any) => <span>{children}</span>,
-    kbd: ({ children, ...props }: any) => <kbd>{children}</kbd>,
-  },
+  motion: new Proxy({}, {
+    get: (_: any, tag: string) => {
+      if (!motionCache[tag]) {
+        const Comp = React.forwardRef(({ children, ...props }: any, ref: any) =>
+          React.createElement(tag, { ...props, ref }, children)
+        );
+        Comp.displayName = `motion.${tag}`;
+        motionCache[tag] = Comp;
+      }
+      return motionCache[tag];
+    },
+  }),
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
@@ -49,7 +55,7 @@ describe('Tooltip', () => {
       </Tooltip>
     );
     fireEvent.mouseEnter(screen.getByText('Hover me').closest('div')!);
-    jest.advanceTimersByTime(300);
+    act(() => { jest.advanceTimersByTime(300); });
     expect(screen.getByText('Help text')).toBeInTheDocument();
   });
 });

@@ -24,12 +24,13 @@ jest.mock('@/lib/qr/generator', () => ({
 
 // Mock navigator.permissions
 Object.defineProperty(global.navigator, 'permissions', {
-  value: { query: jest.fn().mockResolvedValue({ state: 'denied' }) },
+  value: { query: () => Promise.resolve({ state: 'denied' }) },
   writable: true,
+  configurable: true,
 });
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import QRScanner from '../QRScanner';
 
 describe('QRScanner', () => {
@@ -45,8 +46,8 @@ describe('QRScanner', () => {
 
   it('shows camera access required when permission is denied', async () => {
     render(<QRScanner onScan={jest.fn()} onClose={jest.fn()} />);
-    // Wait for permission check to resolve
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByText('Camera Access Required')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Camera Access Required')).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 });

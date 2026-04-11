@@ -7,11 +7,11 @@ This system provides automated archival and retention management for audit logs 
 ## Features
 
 1. **Daily Archival**: Automatically archives logs older than 1 year to compressed JSON files
-2. **Annual Deletion**: Automatically deletes logs older than 6 years
-3. **GZIP Compression**: Reduces storage requirements by compressing archives
-4. **Atomic Operations**: Uses database transactions to ensure data integrity
-5. **Batch Processing**: Handles large datasets efficiently without memory issues
-6. **Manual Triggers**: Allows admin users to manually trigger archival or deletion
+2. **GZIP Compression**: Reduces storage requirements by compressing archives
+3. **Atomic Operations**: Uses database transactions to ensure data integrity
+4. **Batch Processing**: Handles large datasets efficiently without memory issues
+5. **Manual Triggers**: Allows admin users to manually trigger archival
+6. **LGPD/HIPAA Compliance**: Preserves immutable audit trail per CYRUS veto invariants
 
 ## Architecture
 
@@ -43,11 +43,8 @@ This system provides automated archival and retention management for audit logs 
 - **Action**: Archives logs older than 1 year (default: 365 days)
 - **Output**: Compressed JSON files in `/var/log/audit-archives/`
 
-### Annual Deletion Job
-- **Schedule**: January 1st at 3:00 AM every year
-- **Cron**: `0 3 1 1 *`
-- **Action**: Permanently deletes logs older than 6 years (default: 2190 days)
-- **Warning**: This is an irreversible operation
+### Note on Deletion
+Audit log deletion is no longer supported to maintain LGPD/HIPAA compliance. Per CYRUS veto invariants (Rank 2 security veto), audit logs cannot be deleted and must remain immutable. Archived logs provide long-term storage for historical records beyond the 6-year HIPAA minimum.
 
 ## Archive Format
 
@@ -156,22 +153,11 @@ const jobId = await triggerImmediateAuditArchival(
 );
 ```
 
-#### Trigger Immediate Deletion
-
-```typescript
-import { triggerImmediateAuditDeletion } from '@/lib/queue/scheduler';
-
-// Delete all logs older than 6 years
-const jobId = await triggerImmediateAuditDeletion();
-console.log(`Deletion job started: ${jobId}`);
-```
-
 #### Direct Function Calls (for testing)
 
 ```typescript
 import {
   archiveOldAuditLogs,
-  deleteExpiredAuditLogs,
   archiveAuditLogsByDateRange,
   getArchivalStatistics,
 } from '@/lib/jobs/audit-archival';
@@ -180,12 +166,6 @@ import {
 const result = await archiveOldAuditLogs();
 if (result.success) {
   console.log(`Archived ${result.recordCount} logs to ${result.archiveFile}`);
-}
-
-// Delete expired logs directly
-const deletionResult = await deleteExpiredAuditLogs();
-if (deletionResult.success) {
-  console.log(`Deleted ${deletionResult.deletedCount} logs`);
 }
 
 // Archive specific date range
@@ -198,7 +178,6 @@ const rangeResult = await archiveAuditLogsByDateRange(
 const stats = await getArchivalStatistics();
 console.log(`Total logs: ${stats.totalLogs}`);
 console.log(`Ready for archival: ${stats.logsReadyForArchival}`);
-console.log(`Ready for deletion: ${stats.logsReadyForDeletion}`);
 ```
 
 ## Admin API Endpoints (Optional Implementation)
@@ -249,37 +228,6 @@ export async function POST(request: Request) {
 }
 ```
 
-### POST `/api/admin/audit/delete`
-
-Manually trigger deletion (use with extreme caution):
-
-```typescript
-// apps/web/src/app/api/admin/audit/delete/route.ts
-import { NextResponse } from 'next/server';
-import { triggerImmediateAuditDeletion } from '@/lib/queue/scheduler';
-import { requireAdmin } from '@/lib/auth';
-
-export async function POST(request: Request) {
-  await requireAdmin(request);
-
-  // Add additional confirmation check
-  const body = await request.json();
-  if (body.confirmation !== 'DELETE_EXPIRED_AUDIT_LOGS') {
-    return NextResponse.json(
-      { error: 'Invalid confirmation' },
-      { status: 400 }
-    );
-  }
-
-  const jobId = await triggerImmediateAuditDeletion();
-
-  return NextResponse.json({
-    jobId,
-    warning: 'Logs older than 6 years will be permanently deleted'
-  });
-}
-```
-
 ## Monitoring and Logging
 
 All operations are logged using the application logger. Monitor these events:
@@ -288,13 +236,10 @@ All operations are logged using the application logger. Monitor these events:
 
 - `audit_archival_start`: Archival job started
 - `audit_archival_complete`: Archival completed successfully
-- `audit_deletion_start`: Deletion job started
-- `audit_deletion_complete`: Deletion completed successfully
 
 ### Error Events
 
 - `audit_archival_error`: Archival failed
-- `audit_deletion_error`: Deletion failed
 - `worker_job_failed`: Background job failed
 
 ### Example Log Queries

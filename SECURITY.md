@@ -77,8 +77,12 @@ CREATE POLICY org_isolation ON <table>
 
 ### 5. API Security (Fastify)
 
-- Rate limiting: 100 req/15min per IP/org (stricter on exports)
-- Helmet CSP: `default-src 'self'`
+- **Rate limiting**: 100 req/min per IP (adaptive — reduced to 5 req/min for flagged IPs)
+- **Adaptive probing detection**:
+  - 5+ distinct endpoints in 10s → rate reduced for 10 minutes
+  - 3+ validation errors in 1min → IP blocked for 5 minutes
+- **Helmet CSP**: Strict — `default-src 'self'`, no `unsafe-inline`, no `unsafe-eval`
+- **Security headers**: HSTS (preload, 1yr), X-Frame-Options DENY, Permissions-Policy, COOP, CORP
 - Multipart size limit: 100MB
 - JWT: ES256, 15min TTL, refresh rotation
 - Input validation: Zod schemas
@@ -137,6 +141,20 @@ Annual pentests recommended. Scope:
 - De-ID validation (re-identification attacks)
 
 Report findings to security@holilabs.xyz.
+
+## AI-Era Hardening (2026-04-03)
+
+In response to CVE-2026-4747 (AI-automated FreeBSD kernel RCE), the following defense-in-depth
+measures were implemented to address AI-speed, AI-depth attack vectors:
+
+1. **Adaptive Rate Limiting**: Dynamic probing detection with automatic IP throttling/blocking
+2. **Strict CSP**: Removed `unsafe-inline` from style-src, added `frame-ancestors: none`
+3. **Container Hardening**: Removed package managers from production images, eliminated secret build ARGs
+4. **CI Pipeline**: Added npm audit (high+ severity blocks PR) and version-pinning enforcement
+5. **HSTS Preload**: max-age 31536000, includeSubDomains, preload
+6. **Docker Build Security**: Secrets no longer passed as build ARGs (visible in image history)
+
+See `docs/SECURITY_HARDENING_REPORT.md` for the complete change log.
 
 ## Known Limitations (MVP)
 

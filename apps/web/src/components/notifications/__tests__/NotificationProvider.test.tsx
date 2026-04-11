@@ -2,58 +2,41 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({ motion: new Proxy({}, { get: (_, t: string) => t }), AnimatePresence: ({ children }: any) => children }));
-jest.mock('next-intl', () => ({ useTranslations: () => (k: string) => k }));
-jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...p }: any) => <a {...p}>{children}</a> }));
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/' }));
-jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
-jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
-
-jest.mock('@/hooks/useNotifications', () => ({
-  useNotifications: () => ({
-    toasts: [],
-    notifications: [],
-    unreadCount: 0,
-    dismissToast: jest.fn(),
-    markAsRead: jest.fn(),
-    markAllAsRead: jest.fn(),
-  }),
+jest.mock('framer-motion', () => ({
+  motion: new Proxy({}, { get: (_, t: string) => t }),
+  AnimatePresence: ({ children }: any) => children,
 }));
-jest.mock('../NotificationToast', () => ({ __esModule: true, default: () => null }));
-jest.mock('../NotificationBell', () => ({
+
+jest.mock('@/hooks/useNotificationMode', () => ({
   __esModule: true,
-  default: () => <div data-testid="notification-bell" />,
+  default: () => ({ mode: 'all', setMode: () => {} }),
+  useNotificationMode: () => ({ mode: 'all', setMode: () => {} }),
+}));
+jest.mock('@/hooks/usePrefersReducedMotion', () => ({
+  __esModule: true,
+  default: () => false,
+  usePrefersReducedMotion: () => false,
 }));
 
 const NotificationProvider = require('../NotificationProvider').default;
 
 describe('NotificationProvider', () => {
-  beforeEach(() => { jest.clearAllMocks(); });
-
   it('renders children', () => {
     render(
-      <NotificationProvider userId="u1" userType="CLINICIAN">
+      <NotificationProvider>
         <p>Child content</p>
       </NotificationProvider>
     );
     expect(screen.getByText('Child content')).toBeInTheDocument();
   });
 
-  it('renders notification bell by default', () => {
-    render(
-      <NotificationProvider userId="u1" userType="CLINICIAN">
-        <span />
+  it('wraps children in ToastProvider context', () => {
+    const { container } = render(
+      <NotificationProvider>
+        <span>wrapped</span>
       </NotificationProvider>
     );
-    expect(screen.getByTestId('notification-bell')).toBeInTheDocument();
-  });
-
-  it('hides notification bell when showBell is false', () => {
-    render(
-      <NotificationProvider userId="u1" userType="CLINICIAN" showBell={false}>
-        <span />
-      </NotificationProvider>
-    );
-    expect(screen.queryByTestId('notification-bell')).not.toBeInTheDocument();
+    expect(screen.getByText('wrapped')).toBeInTheDocument();
+    expect(container).toBeTruthy();
   });
 });

@@ -37,19 +37,6 @@ export default function DashboardError({
           {t('unexpectedError')}
         </p>
 
-        {process.env.NODE_ENV === 'development' && (
-          <details className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <summary className="cursor-pointer font-semibold text-red-900 dark:text-red-300 mb-2">
-              {t('technicalDetails')}
-            </summary>
-            <pre className="text-xs text-red-800 dark:text-red-300 overflow-auto">
-              {error.message}
-              {'\n\n'}
-              {error.stack}
-            </pre>
-          </details>
-        )}
-
         <div className="flex flex-col gap-3">
           <button
             onClick={reset}

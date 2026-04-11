@@ -29,24 +29,25 @@ export function ClinicalDisclosureModal({
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.98, y: 20, opacity: 0 }}
           transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-          className="w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden"
+          className="w-full max-w-2xl overflow-hidden"
+          style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-default)', boxShadow: 'var(--token-shadow-xl)' }}
         >
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+          <div className="p-6 border-b" style={{ borderColor: 'var(--border-default)' }}>
+            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               Clinical AI Disclosure (Required)
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               You must accept this to use AI Scribe / clinical automation features.
             </div>
           </div>
 
           <div className="p-6 max-h-[55vh] overflow-y-auto">
-            <div className="space-y-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+            <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               <p>
                 This product includes AI-assisted features (e.g., transcription, summarization, and decision-support).
                 AI output may be incomplete, inaccurate, or biased and must be reviewed by a licensed clinician.
               </p>
-              <p className="font-semibold text-gray-900 dark:text-white">
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Clinician responsibility / limitation of liability
               </p>
               <ul className="list-disc pl-5 space-y-2">
@@ -71,27 +72,30 @@ export function ClinicalDisclosureModal({
             <label className="mt-6 flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+                className="mt-1 w-5 h-5 dark:border-gray-600"
+                style={{ borderRadius: 'var(--radius-md)', borderColor: 'var(--border-strong)' }}
                 checked={acknowledged}
                 onChange={(e) => setAcknowledged(e.target.checked)}
               />
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 I have read and acknowledge the above disclosure and agree to proceed.
               </span>
             </label>
           </div>
 
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
+          <div className="p-6 border-t flex items-center justify-end gap-3" style={{ borderColor: 'var(--border-default)' }}>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700"
+              style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-primary)' }}
             >
               Close
             </button>
             <button
               onClick={onAccept}
               disabled={!acknowledged}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ borderRadius: 'var(--radius-lg)' }}
             >
               I Agree
             </button>

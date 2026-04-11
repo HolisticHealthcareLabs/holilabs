@@ -7,12 +7,12 @@ jest.mock('@/lib/api/middleware', () => ({
 }));
 jest.mock('@/lib/logger', () => ({ __esModule: true, default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } }));
 jest.mock('@/lib/rate-limit', () => ({ checkRateLimit: jest.fn() }));
-jest.mock('@/lib/storage/file-storage', () => ({ uploadFile: jest.fn() }));
+jest.mock('@/lib/storage/cloud-storage', () => ({ uploadEncryptedFile: jest.fn() }));
 jest.mock('@/lib/api/safe-error-response', () => ({ safeErrorResponse: jest.fn() }));
 
 const { POST } = require('../route');
 const { checkRateLimit } = require('@/lib/rate-limit');
-const { uploadFile } = require('@/lib/storage/file-storage');
+const { uploadEncryptedFile } = require('@/lib/storage/cloud-storage');
 
 const mockContext = {
   user: { id: 'user-1', email: 'dr@test.com', role: 'CLINICIAN' },
@@ -33,7 +33,7 @@ describe('POST /api/upload', () => {
 
   it('returns 201 when file is uploaded successfully', async () => {
     checkRateLimit.mockResolvedValue(null);
-    uploadFile.mockResolvedValue({
+    uploadEncryptedFile.mockResolvedValue({
       url: 'https://storage.example.com/file.pdf',
       fileSize: 1024,
       key: 'uploads/user-1/file.pdf',
@@ -67,7 +67,7 @@ describe('POST /api/upload', () => {
 
   it('returns 500 when upload storage throws an error', async () => {
     checkRateLimit.mockResolvedValue(null);
-    uploadFile.mockRejectedValue(new Error('Storage unavailable'));
+    uploadEncryptedFile.mockRejectedValue(new Error('Storage unavailable'));
     const file = new File(['test'], 'test.pdf', { type: 'application/pdf' });
     const req = makeFileRequest(file);
     const res = await POST(req, mockContext);

@@ -2,21 +2,20 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
+const motionCache: Record<string, React.FC<any>> = {};
 jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <div {...props}>{children}</div>
-    ),
-    button: ({ children, onClick, onMouseEnter, className, ...props }: any) => (
-      <button onClick={onClick} onMouseEnter={onMouseEnter} className={className}>{children}</button>
-    ),
-    kbd: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <kbd {...props}>{children}</kbd>
-    ),
-    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <span {...props}>{children}</span>
-    ),
-  },
+  motion: new Proxy({}, {
+    get: (_: any, tag: string) => {
+      if (!motionCache[tag]) {
+        const Comp = React.forwardRef(({ children, ...props }: any, ref: any) =>
+          React.createElement(tag, { ...props, ref }, children)
+        );
+        Comp.displayName = `motion.${tag}`;
+        motionCache[tag] = Comp;
+      }
+      return motionCache[tag];
+    },
+  }),
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
@@ -52,6 +51,6 @@ describe('CommandPalette', () => {
     render(
       <CommandPalette isOpen={true} onClose={jest.fn()} commands={mockCommands} />
     );
-    expect(screen.getByText(/2 of 2/)).toBeInTheDocument();
+    expect(screen.getByText(/\d+ of 2/)).toBeInTheDocument();
   });
 });

@@ -54,11 +54,14 @@ jest.mock('lucide-react', () => ({
   X: (props: any) => <svg data-testid="x-icon" {...props} />,
   Save: (props: any) => <svg data-testid="save-icon" {...props} />,
   User: (props: any) => <svg {...props} />,
+  Mail: (props: any) => <svg {...props} />,
   Phone: (props: any) => <svg {...props} />,
   Shield: (props: any) => <svg {...props} />,
   Heart: (props: any) => <svg {...props} />,
   Building2: (props: any) => <svg {...props} />,
   AlertTriangle: (props: any) => <svg {...props} />,
+  AlertCircle: (props: any) => <svg {...props} />,
+  CheckCircle2: (props: any) => <svg {...props} />,
 }));
 
 const { PatientEditDrawer } = require('../PatientEditDrawer');

@@ -513,7 +513,7 @@ async function getGovernanceStatsHandler(
 
     // Query with any type
     const logs: any[] = await prisma.governanceLog.findMany({
-        where: { createdAt: { gte: since } },
+        where: { timestamp: { gte: since } },
     });
 
     // Aggregate stats

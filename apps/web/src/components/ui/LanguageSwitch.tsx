@@ -55,7 +55,8 @@ export function LanguageSwitch({ onChange, className = '' }: LanguageSwitchProps
   return (
     <button
       onClick={toggleLanguage}
-      className={`flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors ${className}`}
+      className={`flex items-center gap-2 px-3 py-2 text-sm hover:text-gray-900 hover:bg-gray-100 transition-colors ${className}`}
+      style={{ color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)', backgroundColor: 'transparent' }}
       aria-label={
         language === 'en'
           ? 'Switch language'

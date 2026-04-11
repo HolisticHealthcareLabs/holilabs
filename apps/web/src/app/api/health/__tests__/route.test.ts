@@ -15,7 +15,9 @@ jest.mock('@/lib/security/encryption', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
@@ -24,11 +26,14 @@ jest.mock('@/lib/api/safe-error-response', () => ({
 
 const { GET } = require('../route');
 const { checkDatabaseHealth } = require('@/lib/prisma');
+const { encryptPHIWithVersion, decryptPHIWithVersion } = require('@/lib/security/encryption');
 
 describe('GET /api/health', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.ENCRYPTION_KEY = 'test-key-32-characters-long-xxxx';
+    (encryptPHIWithVersion as jest.Mock).mockResolvedValue('encrypted');
+    (decryptPHIWithVersion as jest.Mock).mockResolvedValue('health-check-test');
   });
 
   it('returns healthy status when all checks pass', async () => {

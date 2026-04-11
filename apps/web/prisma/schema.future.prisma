@@ -1,0 +1,47 @@
+// Models moved here from schema.prisma during Sprint 6 cleanup.
+// These had zero production code references as of 2026-04-02.
+// Move back to schema.prisma when implementation begins.
+
+// ============================================================================
+// BLOCKCHAIN AUDIT TRAIL
+// ============================================================================
+
+model BlockchainTransaction {
+  id String @id @default(cuid())
+
+  // Transaction details
+  txHash      String  @unique
+  blockNumber BigInt?
+  network     String  @default("polygon-mainnet") // or "ethereum", "base"
+
+  // What was recorded
+  recordType String // "consent", "prescription", "document"
+  recordId   String
+  dataHash   String // The hash that was recorded on-chain
+
+  // Contract details
+  contractAddress String
+  functionCalled  String
+  gasUsed         BigInt?
+  gasCost         String? // in native token
+
+  // Status
+  status        TxStatus @default(PENDING)
+  confirmations Int      @default(0)
+
+  // Timestamps
+  submittedAt DateTime  @default(now())
+  confirmedAt DateTime?
+
+  @@index([txHash])
+  @@index([recordId])
+  @@index([status])
+  @@map("blockchain_transactions")
+}
+
+enum TxStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REVERTED
+}

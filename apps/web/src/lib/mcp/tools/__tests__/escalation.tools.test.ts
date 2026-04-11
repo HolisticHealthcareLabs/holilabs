@@ -29,11 +29,17 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-    logger: {
+    __esModule: true,
+    default: {
         info: jest.fn(),
         warn: jest.fn(),
         error: jest.fn(),
     },
+    logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+    }
 }));
 
 import { escalationTools } from '../escalation.tools';

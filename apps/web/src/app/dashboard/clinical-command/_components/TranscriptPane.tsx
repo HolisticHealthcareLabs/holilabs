@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { HeartPulse, XCircle, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { m, AnimatePresence } from 'framer-motion';
+import { XCircle, Shield, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { maskPHI, PHI_TOKEN_REGEX } from '@/lib/deid';
 // useTranscriptAudio removed — TTS playback deleted per MVP session
@@ -69,7 +69,8 @@ function renderMasked(text: string): JSX.Element[] {
       output.push(
         <span
           key={keyIdx++}
-          className="bg-cyan-900/30 text-cyan-400 rounded px-1 text-[11px] font-semibold font-sans not-italic"
+          className="bg-cyan-900/30 text-cyan-400 px-1 text-[11px] font-semibold font-sans not-italic"
+          style={{ borderRadius: 'var(--radius-md)' }}
           title={`PHI masked: ${part}`}
         >
           {part}
@@ -110,7 +111,7 @@ function AudioToggleButton({
 }) {
   const t = useTranslations('portal.transcriptPane');
   return (
-    <motion.button
+    <m.button
       onClick={onToggle}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
@@ -118,7 +119,7 @@ function AudioToggleButton({
       aria-pressed={isMuted}
       title={isMuted ? t('audioMuted') : t('audioOn')}
       className={`
-        flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
+        flex-shrink-0 w-8 h-8 flex items-center justify-center
         text-base transition-colors
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
         ${isMuted
@@ -126,12 +127,13 @@ function AudioToggleButton({
           : 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/25 hover:bg-cyan-100 dark:hover:bg-cyan-500/20'
         }
       `}
+      style={{ borderRadius: 'var(--radius-lg)' }}
     >
       {/* Unicode speaker symbols — universally supported, no icon import needed */}
       <span aria-hidden="true" className="leading-none select-none">
         {isMuted ? '🔇' : '🔊'}
       </span>
-    </motion.button>
+    </m.button>
   );
 }
 
@@ -180,46 +182,49 @@ export function TranscriptPane({
 
   return (
     <div className="
-      flex flex-col h-full px-4 pt-2.5 pb-4 gap-3 overflow-hidden
-      bg-white dark:bg-gray-950
-    ">
+      flex flex-col h-full px-4 pt-2.5 pb-2 gap-2 overflow-hidden
+    " style={{ backgroundColor: 'var(--surface-primary)' }}>
       {/* Header row */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider
-                         text-slate-500 dark:text-slate-400">
+          <h2 className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}>
             {t('liveMeetingNotes')}
           </h2>
           {isRecording && (
             <div className="flex items-center gap-3">
-              <motion.span
+              <m.span
                 animate={{ opacity: [1, 0.2, 1] }}
                 transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
                 className="flex items-center gap-1 text-[10px] font-bold
-                           text-red-500 dark:text-red-400
-                           bg-red-50 dark:bg-red-400/10
-                           px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/20"
+                           px-2 py-0.5 border border-red-200 dark:border-red-500/20"
+                style={{ color: 'var(--text-danger)', backgroundColor: 'var(--surface-danger)', borderRadius: 'var(--radius-full)' }}
                 aria-label="Recording"
               >
-                <span className="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full" />
+                <span className="w-1.5 h-1.5 bg-red-500 dark:bg-red-400" style={{ borderRadius: 'var(--radius-full)' }} />
                 REC
-              </motion.span>
+              </m.span>
               {/* Waveform removed — TTS playback deleted per MVP session */}
             </div>
           )}
           {isFinalizing && (
-            <motion.span
+            <m.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex items-center gap-1.5 text-[10px] font-bold
                          text-amber-600 dark:text-amber-400
-                         bg-amber-50 dark:bg-amber-400/10
-                         px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/20"
+                         px-2.5 py-0.5 border border-amber-200 dark:border-amber-500/20"
+              style={{ backgroundColor: 'var(--surface-warning)', borderRadius: 'var(--radius-full)' }}
               aria-label="Finalizing audio"
             >
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <m.span
+                className="w-1.5 h-1.5 bg-amber-500 dark:bg-amber-400 flex-shrink-0"
+                style={{ borderRadius: 'var(--radius-full)' }}
+                animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+              />
               FINALIZING
-            </motion.span>
+            </m.span>
           )}
         </div>
 
@@ -231,12 +236,12 @@ export function TranscriptPane({
         aria-live="polite"
         aria-label="Live transcript"
         className="flex-1 overflow-y-auto min-h-0 text-[13px] leading-relaxed
-                   text-slate-700 dark:text-slate-300
                    whitespace-pre-wrap"
+        style={{ color: 'var(--text-secondary)' }}
       >
         {segments.length === 0 ? (
-          <p className="text-sm not-italic font-sans
-                        text-slate-400 dark:text-slate-600 italic">
+          <p className="text-sm not-italic font-sans italic"
+             style={{ color: 'var(--text-muted)' }}>
             {disabled
               ? t('selectPatient')
               : consentMissing
@@ -251,20 +256,21 @@ export function TranscriptPane({
               seg.kind === 'text' ? (
                 <span key={i}>{renderMasked(seg.text)}</span>
               ) : (
-                <motion.span
+                <m.span
                   key={i}
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.18 }}
-                  className="inline-flex items-center mx-0.5 px-1.5 py-0.5 rounded
+                  className="inline-flex items-center mx-0.5 px-1.5 py-0.5
                              bg-cyan-100 dark:bg-cyan-900/40
                              text-cyan-700 dark:text-cyan-400
                              border border-cyan-300 dark:border-cyan-500/30
                              text-[11px] font-sans font-semibold not-italic"
+                  style={{ borderRadius: 'var(--radius-md)' }}
                   title={`PHI de-identified: ${seg.label}`}
                 >
                   [{seg.label}]
-                </motion.span>
+                </m.span>
               )
             )}
           </>
@@ -275,13 +281,14 @@ export function TranscriptPane({
       {!(consentRecord.granted && consentBannerHidden) && (
       <div
         className={`
-          flex-shrink-0 rounded-xl p-3.5 transition-all duration-700
+          flex-shrink-0 p-3.5 transition-all duration-700
           border
           ${consentRecord.granted
             ? 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5'
             : 'border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
           }
         `}
+        style={{ borderRadius: 'var(--radius-xl)' }}
         role="region"
         aria-label="Patient consent control"
       >
@@ -295,7 +302,7 @@ export function TranscriptPane({
                 <Shield className="w-4 h-4 text-amber-500 dark:text-amber-400" />
               )}
               <div>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   {t('recordingAuthorization')}
                 </p>
                 {consentRecord.timestamp ? (
@@ -313,7 +320,8 @@ export function TranscriptPane({
               <button
                 onClick={onRevokeConsent}
                 disabled={isRecording}
-                className="text-[10px] font-semibold px-2.5 py-1 rounded-lg text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="text-[10px] font-semibold px-2.5 py-1 border border-red-200 dark:border-red-500/25 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                style={{ borderRadius: 'var(--radius-lg)', color: 'var(--text-danger)', backgroundColor: 'var(--surface-danger)' }}
                 aria-label={t('revoke')}
               >
                 {t('revoke')}
@@ -323,7 +331,7 @@ export function TranscriptPane({
 
           {/* Verbal | Digital — thin horizontal bar */}
           {!consentRecord.granted && (
-            <div className="flex rounded-lg border border-emerald-200 dark:border-emerald-500/25 overflow-hidden">
+            <div className="flex border border-emerald-200 dark:border-emerald-500/25 overflow-hidden" style={{ borderRadius: 'var(--radius-lg)' }}>
               <button
                 onClick={() => onGrantConsent('verbal')}
                 className="flex-1 text-[11px] font-semibold py-1.5 text-center text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors border-r border-emerald-200 dark:border-emerald-500/25"
@@ -345,12 +353,13 @@ export function TranscriptPane({
       {/* Verbal consent prompt — auto-fades after 15 seconds */}
       <AnimatePresence>
         {showVerbalPrompt && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-shrink-0 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20"
+            className="flex-shrink-0 p-3 border border-blue-200 dark:border-blue-500/20"
+            style={{ borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--surface-accent)' }}
           >
             <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1.5">
               Verbal Informed Consent
@@ -361,7 +370,7 @@ export function TranscriptPane({
             <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2">
               Confirm patient&apos;s verbal agreement, then press Record to begin.
             </p>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -372,12 +381,11 @@ export function TranscriptPane({
           <div
             className="
               absolute -top-8 left-1/2 -translate-x-1/2 z-10
-              px-3 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap
-              bg-amber-100 dark:bg-amber-900/80
+              px-3 py-1 text-[10px] font-semibold whitespace-nowrap
               text-amber-700 dark:text-amber-300
               border border-amber-200 dark:border-amber-600/40
-              shadow-sm
             "
+            style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-warning)', boxShadow: 'var(--token-shadow-sm)' }}
             role="tooltip"
           >
             {t('awaitingAuthorization')}
@@ -385,14 +393,15 @@ export function TranscriptPane({
         )}
 
         <div className="flex gap-2">
-          <motion.button
+          <m.button
+            layout
             onClick={onToggleRecord}
             disabled={buttonDisabled}
             whileHover={!buttonDisabled ? { scale: 1.02 } : {}}
             whileTap={!buttonDisabled ? { scale: 0.97 } : {}}
             className={`
               flex-1 flex items-center justify-center gap-2.5
-              py-3 rounded-xl text-sm font-semibold transition-colors
+              py-3 text-sm font-semibold transition-colors
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
               focus-visible:ring-offset-2
               focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900
@@ -402,9 +411,11 @@ export function TranscriptPane({
                   ? 'bg-slate-100 dark:bg-slate-700/30 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/40 cursor-not-allowed'
                   : isRecording
                     ? 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30'
-                    : 'bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-500 text-white border border-red-600 dark:border-red-500 shadow-lg shadow-red-500/20'
+                    : 'bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-500 text-white border border-red-600 dark:border-red-500 shadow-red-500/20'
               }
             `}
+            style={{ borderRadius: 'var(--radius-xl)', ...((!consentMissing || disabled) && !buttonDisabled && !isRecording ? { boxShadow: 'var(--token-shadow-lg)' } : {}) }}
+            transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
             aria-label={
               consentMissing ? t('recordingLocked') :
               isFinalizing   ? t('finalizingAudio') :
@@ -413,32 +424,46 @@ export function TranscriptPane({
             aria-pressed={isRecording}
           >
             {isFinalizing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {t('finalizing')}</>
+              <>
+                <m.span
+                  className="w-2 h-2 bg-amber-500 dark:bg-amber-400"
+                  style={{ borderRadius: 'var(--radius-full)' }}
+                  animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {t('finalizing')}
+              </>
             ) : isRecording ? (
               <><XCircle className="w-4 h-4" /> {t('stopRecording')}</>
             ) : (
-              <><HeartPulse className="w-4 h-4 text-red-500" /> {t('startRecording')}</>
+              <><span className="w-3 h-3 rounded-full bg-red-500" /> {t('startRecording')}</>
             )}
-          </motion.button>
+          </m.button>
 
-          {/* Run Demo — simulates a doctor-patient conversation */}
-          {onRunDemo && !isRecording && !isFinalizing && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onRunDemo}
-              disabled={disabled}
-              className="
-                flex items-center justify-center gap-2 py-2.5 rounded-xl
-                text-[13px] font-semibold transition-all flex-1
-                bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20
-                text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30
-                disabled:opacity-40 disabled:cursor-not-allowed
-              "
-              aria-label="Run demo conversation"
-            >
-              <span className="text-base">▶</span> Run Demo
-            </motion.button>
-          )}
+          {/* Run Demo — slides out smoothly when recording starts */}
+          <AnimatePresence>
+            {onRunDemo && !isRecording && !isFinalizing && (
+              <m.button
+                initial={{ opacity: 1, width: 'auto', marginLeft: 0 }}
+                exit={{ opacity: 0, width: 0, marginLeft: 0, paddingLeft: 0, paddingRight: 0, overflow: 'hidden' }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onRunDemo}
+                disabled={disabled}
+                className="
+                  flex items-center justify-center gap-2 py-2.5
+                  text-[13px] font-semibold transition-colors flex-1
+                  bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20
+                  text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30
+                  disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap
+                "
+                style={{ borderRadius: 'var(--radius-xl)' }}
+                aria-label="Run demo conversation"
+              >
+                <span className="text-base">▶</span> Run Demo
+              </m.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

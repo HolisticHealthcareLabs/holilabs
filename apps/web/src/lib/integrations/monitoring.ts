@@ -8,6 +8,7 @@
  */
 
 import { rxNavClient } from './rxnav-api';
+import { logger } from '../logger';
 
 /**
  * API Health Status
@@ -76,17 +77,17 @@ export function getRxNavHealth(): APIHealthStatus {
   if (status === 'down') {
     if (!downtimeTracker.rxnav) {
       downtimeTracker.rxnav = Date.now();
-      console.error('[Monitoring] RxNav API is DOWN');
+      logger.error('[Monitoring] RxNav API is DOWN');
     } else {
       const downtime = Date.now() - downtimeTracker.rxnav;
       if (downtime > MONITORING_CONFIG.downtimeAlertThreshold) {
-        console.error(`[Monitoring] ALERT: RxNav API has been down for ${Math.round(downtime / 1000)}s`);
+        logger.error({ downtimeSeconds: Math.round(downtime / 1000) }, '[Monitoring] ALERT: RxNav API down threshold exceeded');
       }
     }
   } else {
     if (downtimeTracker.rxnav) {
       const downtime = Date.now() - downtimeTracker.rxnav;
-      console.error('[Monitoring]', { event: 'rxnav_recovered', downtimeSeconds: Math.round(downtime / 1000) });
+      logger.info({ event: 'rxnav_recovered', downtimeSeconds: Math.round(downtime / 1000) }, '[Monitoring] RxNav API recovered');
       downtimeTracker.rxnav = null;
     }
   }
@@ -134,13 +135,7 @@ export function getSystemHealth(): SystemHealthStatus {
 export function logSystemHealth(): void {
   const health = getSystemHealth();
 
-  const statusEmoji = {
-    healthy: '✅',
-    degraded: '⚠️',
-    down: '❌',
-  };
-
-  console.error('[Monitoring]', {
+  logger.info({
     event: 'health_check',
     overall: health.overall,
     rxnav: {
@@ -151,14 +146,14 @@ export function logSystemHealth(): void {
       totalCalls: health.services.rxnav.totalCalls,
       lastError: health.services.rxnav.lastError,
     },
-  });
+  }, '[Monitoring] System health status');
 }
 
 /**
  * Start periodic health checks
  */
 export function startHealthMonitoring(): void {
-  console.error('[Monitoring]', { event: 'monitoring_start' });
+  logger.info('[Monitoring] starting health monitoring');
 
   // Initial health check
   logSystemHealth();

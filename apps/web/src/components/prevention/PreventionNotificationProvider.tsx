@@ -2,15 +2,13 @@
 
 /**
  * Prevention Notification Provider
- *
- * Integrates real-time prevention updates with toast notifications
- * Shows toast notifications for prevention plan and template changes
+ * Integrates Socket.io events with the notification system
  */
 
 import { ReactNode, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRealtimePreventionUpdates } from '@/hooks/useRealtimePreventionUpdates';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useRealtimePreventionUpdates as useSocket } from '@/hooks/useRealtimePreventionUpdates';
 import {
   SocketNotification,
   SocketEvent,
@@ -19,7 +17,7 @@ import {
   PreventionTemplateEvent,
   PreventionGoalEvent,
 } from '@/lib/socket/events';
-import NotificationToast, { Toast } from '@/components/notifications/NotificationToast';
+import { ToastProvider, type ToastMessage } from '@/components/notifications/NotificationToast';
 
 interface PreventionNotificationProviderProps {
   children: ReactNode;
@@ -38,13 +36,13 @@ export default function PreventionNotificationProvider({
   const { data: session } = useSession();
   const { showToast, dismissToast, toasts } = useNotifications(
     session?.user?.id,
-    session?.user?.role === 'CLINICIAN' ? 'CLINICIAN' : 'PATIENT'
+    (session?.user as any)?.role === 'CLINICIAN' ? 'CLINICIAN' : 'PATIENT'
   );
 
-  // Convert SocketNotification to Toast
-  const convertToToast = useCallback((notification: SocketNotification): Omit<Toast, 'id'> => {
+  // Convert SocketNotification to ToastMessage
+  const convertToToast = useCallback((notification: SocketNotification): Omit<ToastMessage, 'id'> => {
     // Map notification priority to toast type
-    let toastType: Toast['type'] = 'info';
+    let toastType: ToastMessage['type'] = 'info';
     if (notification.priority === NotificationPriority.HIGH || notification.priority === NotificationPriority.URGENT) {
       toastType = 'warning';
     } else if (notification.event.includes('deleted') || notification.event.includes('failed')) {
@@ -53,33 +51,10 @@ export default function PreventionNotificationProvider({
       toastType = 'success';
     }
 
-    // Determine action href based on event type
-    let href: string | undefined;
-    const data = notification.data;
-
-    if (notification.event.includes('plan:')) {
-      const planData = data as PreventionPlanEvent;
-      if (planData.id) {
-        href = `/dashboard/prevention/plans/${planData.id}`;
-      }
-    } else if (notification.event.includes('template:')) {
-      const templateData = data as PreventionTemplateEvent;
-      if (templateData.id) {
-        href = `/dashboard/prevention/templates/${templateData.id}`;
-      }
-    } else if (notification.event.includes('goal:')) {
-      const goalData = data as PreventionGoalEvent;
-      if (goalData.planId) {
-        href = `/dashboard/prevention/plans/${goalData.planId}`;
-      }
-    }
-
     return {
       type: toastType,
       title: notification.title,
       message: notification.message,
-      action: href ? { label: 'Ver Detalles', href } : undefined,
-      duration: notification.priority === NotificationPriority.URGENT ? 10000 : 5000,
     };
   }, []);
 
@@ -100,32 +75,20 @@ export default function PreventionNotificationProvider({
       SocketEvent.PLAN_CREATED,
       SocketEvent.PLAN_UPDATED,
       SocketEvent.PLAN_DELETED,
-      SocketEvent.PLAN_STATUS_CHANGED,
       SocketEvent.TEMPLATE_CREATED,
-      SocketEvent.TEMPLATE_UPDATED,
-      SocketEvent.TEMPLATE_DELETED,
-      SocketEvent.TEMPLATE_USED,
-      SocketEvent.TEMPLATE_ACTIVATED,
-      SocketEvent.TEMPLATE_DEACTIVATED,
-      SocketEvent.GOAL_ADDED,
-      SocketEvent.GOAL_UPDATED,
       SocketEvent.GOAL_COMPLETED,
-      SocketEvent.COMMENT_ADDED,
-      SocketEvent.REMINDER_CREATED,
-      SocketEvent.BULK_OPERATION_COMPLETED,
     ],
     []
   );
 
-  // Initialize real-time updates
-  const { connected, socketId } = useRealtimePreventionUpdates({
+  const { connected, socketId } = useSocket({
     userId: session?.user?.id,
-    autoConnect,
+    autoConnect: autoConnect,
     events: preventionEvents,
     onNotification: handleNotification,
     onConnect: () => {},
     onDisconnect: () => {},
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Prevention notification error:', error);
       showToast({
         type: 'error',
@@ -136,7 +99,7 @@ export default function PreventionNotificationProvider({
   });
 
   return (
-    <>
+    <ToastProvider>
       {/* Show connection status in development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 z-50 bg-gray-800 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
@@ -148,12 +111,9 @@ export default function PreventionNotificationProvider({
         </div>
       )}
 
-      {/* Toast notifications */}
-      {showToasts && <NotificationToast toasts={toasts} onDismiss={dismissToast} />}
-
       {/* Render children */}
       {children}
-    </>
+    </ToastProvider>
   );
 }
 

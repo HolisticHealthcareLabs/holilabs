@@ -18,9 +18,10 @@
  */
 
 import { Redis, RedisOptions } from 'ioredis';
-import { z} from 'zod';
+import { z } from 'zod';
 import zlib from 'zlib';
 import { promisify } from 'util';
+import logger from '@/lib/logger';
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
@@ -76,10 +77,10 @@ class RedisCircuitBreaker {
     // If circuit is open, check if timeout elapsed
     if (this.state === 'OPEN') {
       if (Date.now() - this.lastFailureTime > this.timeout) {
-        console.info('[Redis Circuit Breaker] Attempting HALF_OPEN state');
+        logger.info('[Redis Circuit Breaker] Attempting HALF_OPEN state');
         this.state = 'HALF_OPEN';
       } else {
-        console.warn('[Redis Circuit Breaker] Circuit is OPEN - using fallback');
+        logger.warn('[Redis Circuit Breaker] Circuit is OPEN - using fallback');
         if (fallback) return fallback();
         throw new Error('Redis circuit breaker is OPEN');
       }
@@ -90,7 +91,7 @@ class RedisCircuitBreaker {
 
       // Success - reset if in HALF_OPEN or reduce failure count
       if (this.state === 'HALF_OPEN') {
-        console.info('[Redis Circuit Breaker] CLOSED - Service recovered');
+        logger.info('[Redis Circuit Breaker] CLOSED - Service recovered');
         this.reset();
       } else if (this.failures > 0) {
         // Gradually reduce failure count on success
@@ -98,12 +99,12 @@ class RedisCircuitBreaker {
       }
 
       return result;
-    } catch (error) {
+    } catch (err) {
       this.recordFailure();
-      console.error('[Redis Circuit Breaker] Operation failed:', error);
+      logger.error({ err }, '[Redis Circuit Breaker] Operation failed');
 
       if (fallback) return fallback();
-      throw error;
+      throw err;
     }
   }
 
@@ -113,7 +114,7 @@ class RedisCircuitBreaker {
 
     if (this.failures >= this.threshold) {
       this.state = 'OPEN';
-      console.error(`[Redis Circuit Breaker] OPEN - ${this.failures} consecutive failures`);
+      logger.error(`[Redis Circuit Breaker] OPEN - ${this.failures} consecutive failures`);
     }
   }
 
@@ -226,13 +227,13 @@ export class RedisCacheClient {
       retryStrategy: (times: number) => {
         // Exponential backoff with max 3 seconds
         const delay = Math.min(times * 100, 3000);
-        console.warn(`[Redis] Retry attempt ${times} - waiting ${delay}ms`);
+        logger.warn(`[Redis] Retry attempt ${times} - waiting ${delay}ms`);
         return delay;
       },
       reconnectOnError: (err: Error) => {
         const targetErrors = ['READONLY', 'ECONNREFUSED'];
         if (targetErrors.some((target) => err.message.includes(target))) {
-          console.error('[Redis] Reconnecting due to error:', err.message);
+          logger.error({ err }, '[Redis] Reconnecting due to error');
           return true;
         }
         return false;
@@ -253,24 +254,24 @@ export class RedisCacheClient {
 
   private setupEventHandlers(): void {
     this.client.on('connect', () => {
-      console.info('[Redis] Connected successfully');
+      logger.info('[Redis] Connected successfully');
     });
 
     this.client.on('ready', () => {
-      console.info('[Redis] Ready to accept commands');
+      logger.info('[Redis] Ready to accept commands');
     });
 
-    this.client.on('error', (error) => {
-      console.error('[Redis] Error:', error.message);
+    this.client.on('error', (err) => {
+      logger.error({ err }, '[Redis] Error');
       this.metrics.recordError();
     });
 
     this.client.on('close', () => {
-      console.warn('[Redis] Connection closed');
+      logger.warn('[Redis] Connection closed');
     });
 
     this.client.on('reconnecting', (delay: number) => {
-      console.info(`[Redis] Reconnecting in ${delay}ms`);
+      logger.info(`[Redis] Reconnecting in ${delay}ms`);
     });
   }
 
@@ -316,13 +317,13 @@ export class RedisCacheClient {
 
         if (value === null) {
           this.metrics.recordMiss();
-          console.debug(`[Redis] MISS: ${key}`);
+          logger.debug(`[Redis] MISS: ${key}`);
           return null;
         }
 
         this.metrics.recordHit();
         const duration = Date.now() - startTime;
-        console.debug(`[Redis] HIT: ${key} (${duration}ms)`);
+        logger.debug(`[Redis] HIT: ${key} (${duration}ms)`);
 
         return await this.deserialize(value);
       },
@@ -344,7 +345,7 @@ export class RedisCacheClient {
         this.metrics.recordSet();
         const duration = Date.now() - startTime;
         const sizeKB = (serialized.length / 1024).toFixed(2);
-        console.debug(`[Redis] SET: ${key} (${sizeKB}KB, TTL=${ttlSeconds}s, ${duration}ms)`);
+        logger.debug(`[Redis] SET: ${key} (${sizeKB}KB, TTL=${ttlSeconds}s, ${duration}ms)`);
       },
       () => undefined // Fallback: silent fail on circuit open
     );
@@ -358,7 +359,7 @@ export class RedisCacheClient {
       async () => {
         await this.client.del(key);
         this.metrics.recordDelete();
-        console.debug(`[Redis] DELETE: ${key}`);
+        logger.debug(`[Redis] DELETE: ${key}`);
       },
       () => undefined
     );
@@ -378,7 +379,7 @@ export class RedisCacheClient {
 
         await this.client.del(...keys);
         this.metrics.recordDelete();
-        console.debug(`[Redis] DELETE PATTERN: ${pattern} (${keys.length} keys)`);
+        logger.debug(`[Redis] DELETE PATTERN: ${pattern} (${keys.length} keys)`);
 
         return keys.length;
       },
@@ -456,7 +457,7 @@ export class RedisCacheClient {
    */
   async close(): Promise<void> {
     await this.client.quit();
-    console.info('[Redis] Connection closed gracefully');
+    logger.info('[Redis] Connection closed gracefully');
   }
 }
 
@@ -506,12 +507,12 @@ export async function withCache<T>(
 
     // Store in cache (don't await - fire and forget)
     cache.set(key, freshData, ttl).catch((err) => {
-      console.error(`[Cache] Failed to set ${key}:`, err);
+      logger.error({ err }, `[Cache] Failed to set ${key}`);
     });
 
     return freshData;
-  } catch (error) {
-    console.error(`[Cache] Error for ${key}:`, error);
+  } catch (err) {
+    logger.error({ err }, `[Cache] Error for ${key}`);
     // Fallback to direct fetch on cache error
     return await fetchFn();
   }

@@ -2,38 +2,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({ motion: new Proxy({}, { get: (_, t: string) => t }), AnimatePresence: ({ children }: any) => children }));
-jest.mock('next-intl', () => ({
-  useTranslations: () => Object.assign((k: string) => k, { raw: () => [] }),
-  useLocale: () => 'en',
-}));
 jest.mock('next/link', () => ({ __esModule: true, default: ({ children, ...p }: any) => <a {...p}>{children}</a> }));
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), usePathname: () => '/' }));
-jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 'u1', role: 'CLINICIAN' } }, status: 'authenticated' }) }));
-jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
-
-jest.mock('@/i18n/navigation', () => ({
-  useRouter: () => ({ replace: jest.fn() }),
-  usePathname: () => '/',
+jest.mock('next/image', () => ({ __esModule: true, default: (props: any) => <img {...props} /> }));
+jest.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({ locale: 'en', setLocale: jest.fn(), t: (k: string) => k }),
 }));
-
-global.fetch = jest.fn().mockResolvedValue({
-  ok: true,
-  json: async () => ({}),
-} as any);
-
-// Class-based IntersectionObserver mock for jsdom
-class MockIntersectionObserver {
-  observe = jest.fn();
-  unobserve = jest.fn();
-  disconnect = jest.fn();
-  constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
-}
-Object.defineProperty(global, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: MockIntersectionObserver,
-});
 
 import { BillingComplianceLanding } from '../BillingComplianceLanding';
 
@@ -43,13 +16,31 @@ describe('BillingComplianceLanding', () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  it('renders the navigation header', () => {
+  it('renders the navigation', () => {
     render(<BillingComplianceLanding />);
-    expect(document.querySelector('header')).toBeInTheDocument();
+    expect(document.querySelector('nav')).toBeInTheDocument();
   });
 
   it('renders Holi Labs brand name', () => {
     render(<BillingComplianceLanding />);
-    expect(screen.getByText(/Holi Labs/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Holi Labs/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders hero section with headline', () => {
+    render(<BillingComplianceLanding />);
+    expect(screen.getByText(/reimagined the future of healthcare/i)).toBeInTheDocument();
+  });
+
+  it('renders contact form', () => {
+    render(<BillingComplianceLanding />);
+    expect(screen.getByText(/Start the conversation/i)).toBeInTheDocument();
+  });
+
+  it('contains no SOAP note references', () => {
+    const { container } = render(<BillingComplianceLanding />);
+    const text = container.textContent?.toLowerCase() ?? '';
+    expect(text).not.toContain('soap');
+    expect(text).not.toContain('chart notes');
+    expect(text).not.toContain('medical records system');
   });
 });

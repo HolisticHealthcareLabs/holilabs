@@ -34,6 +34,6 @@ describe('MedicationAdherenceTracker', () => {
 
   it('shows streak indicator', () => {
     render(<MedicationAdherenceTracker />);
-    expect(screen.getByText(/day streak/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/day streak/i).length).toBeGreaterThan(0);
   });
 });

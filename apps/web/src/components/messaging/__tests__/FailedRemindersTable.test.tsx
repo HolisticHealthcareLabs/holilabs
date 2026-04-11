@@ -60,21 +60,21 @@ describe('FailedRemindersTable', () => {
     render(<FailedRemindersTable />);
     await waitFor(() => {
       expect(screen.getByText('Post-Op Reminder')).toBeInTheDocument();
-      expect(screen.getByText('3 patients')).toBeInTheDocument();
+      expect(screen.getByText('3 recipients')).toBeInTheDocument();
       expect(screen.getByText('Retry')).toBeInTheDocument();
     });
   });
 
-  it('shows error details when View error details is clicked', async () => {
-    global.fetch = jest.fn(() =>
+  it('shows inline error details for failed reminders', async () => {
+    global.fetch = (() =>
       Promise.resolve({
         json: () => Promise.resolve({ success: true, data: [mockFailedReminder] }),
       })
-    ) as jest.Mock;
+    ) as any;
     render(<FailedRemindersTable />);
-    await waitFor(() => screen.getByText('View error details →'));
-    fireEvent.click(screen.getByText('View error details →'));
-    expect(screen.getByText(/Invalid phone number/)).toBeInTheDocument();
-    expect(screen.getByText(/Carrier rejected/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Post-Op Reminder')).toBeInTheDocument();
+    });
+    expect(screen.getAllByText(/Invalid phone number/).length).toBeGreaterThan(0);
   });
 });

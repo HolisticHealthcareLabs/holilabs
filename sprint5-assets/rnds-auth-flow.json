@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+  "system": "RNDS — Rede Nacional de Dados em Saúde",
+  "fhirVersion": "4.0.1",
+  "source": "https://rnds-guia.saude.gov.br/docs/rnds/tools/api/",
+
+  "authentication": {
+    "protocol": "OAuth 2.0 Client Credentials with Mutual TLS (mTLS)",
+    "endpoints": {
+      "homologacao": "https://ehr-auth-hmg.saude.gov.br/api/token",
+      "producao": "https://ehr-auth.saude.gov.br/api/token"
+    },
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "grant_type=client_credentials&client_id={CNES_CODE}",
+    "tls": {
+      "type": "Mutual TLS (mTLS)",
+      "clientCertificate": "ICP-Brasil e-CNPJ certificate (A1 software or A3 hardware token)",
+      "certificateFormat": "PEM (certificate + private key)",
+      "trustStore": "ICP-Brasil root CA chain (available from ITI: https://www.gov.br/iti/)"
+    },
+    "response": {
+      "success": {
+        "status": 200,
+        "body": {
+          "access_token": "eyJ...",
+          "token_type": "Bearer",
+          "expires_in": 1800,
+          "scope": "openid"
+        }
+      },
+      "errors": {
+        "401": { "cause": "Invalid or expired certificate", "action": "Renew e-CNPJ certificate, verify certificate chain" },
+        "403": { "cause": "CNES not authorized in SCPA", "action": "Complete SCPA registration at servicos-datasus.saude.gov.br" },
+        "429": { "cause": "Rate limit exceeded", "action": "Retry with exponential backoff" },
+        "500": { "cause": "RNDS internal error", "action": "Retry after 30s, max 3 retries" }
+      }
+    },
+    "tokenManagement": {
+      "storage": "Server-side only. NEVER expose to client. Encrypt at rest with encryptPHIWithVersion.",
+      "refresh": "Token expires in 1800s (30 min). Refresh 60s before expiry. No refresh_token — re-authenticate.",
+      "caching": "Cache token in memory or Redis with TTL = expires_in - 60"
+    },
+    "rateLimits": {
+      "tokenRequests": "10 per minute per CNES",
+      "apiRequests": "100 per minute per CNES",
+      "note": "Limits may vary by establishment size. Contact DATASUS for increases."
+    }
+  },
+
+  "retryPolicy": {
+    "maxRetries": 3,
+    "initialBackoffMs": 1000,
+    "backoffMultiplier": 2,
+    "maxBackoffMs": 30000,
+    "retryableStatusCodes": [429, 500, 502, 503, 504],
+    "nonRetryableStatusCodes": [400, 401, 403, 404, 422]
+  },
+
+  "credentialingSteps": [
+    "1. Register establishment in CNES (Cadastro Nacional de Estabelecimentos de Saúde) if not already",
+    "2. Obtain e-CNPJ certificate (ICP-Brasil A1 or A3) for the establishment's CNPJ",
+    "3. Access SCPA (Sistema de Controle de Permissão de Acesso) at servicos-datasus.saude.gov.br",
+    "4. Register the software system (HoliLabs) in RNDS portal",
+    "5. Configure homologação environment with test certificate",
+    "6. Complete integration tests against sandbox: submit Bundle, retrieve Patient by CNS",
+    "7. Submit homologação results to DATASUS for review",
+    "8. Upon approval, receive production credentials and API access"
+  ],
+
+  "environmentVariables": {
+    "RNDS_ENABLED": "true | false — feature flag for all RNDS operations",
+    "RNDS_ENVIRONMENT": "homologacao | producao",
+    "RNDS_CNES": "7-digit CNES code for the establishment",
+    "RNDS_CERT_PEM": "Path to e-CNPJ certificate PEM file",
+    "RNDS_CERT_KEY": "Path to e-CNPJ private key PEM file (encrypted at rest)",
+    "RNDS_CERT_PASSPHRASE": "Passphrase for private key (if encrypted)",
+    "RNDS_TOKEN_CACHE_TTL": "1740 (30 min - 60s buffer)"
+  }
+}

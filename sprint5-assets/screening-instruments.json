@@ -1,0 +1,253 @@
+{
+  "version": "1.0.0",
+  "instruments": {
+    "PHQ-9": {
+      "id": "phq9",
+      "name": { "en": "Patient Health Questionnaire-9", "pt-BR": "Questionário de Saúde do Paciente-9", "es": "Cuestionario de Salud del Paciente-9" },
+      "abbreviation": "PHQ-9",
+      "domain": "depression",
+      "citation": {
+        "source": "Kroenke K, Spitzer RL, Williams JB",
+        "title": "The PHQ-9: validity of a brief depression severity measure",
+        "journal": "J Gen Intern Med. 2001;16(9):606-613",
+        "year": 2001,
+        "url": "https://pubmed.ncbi.nlm.nih.gov/11556941/",
+        "license": "Public domain — no permission required"
+      },
+      "scoring": { "min": 0, "max": 27, "perQuestion": { "min": 0, "max": 3 } },
+      "severityLevels": [
+        { "range": [0, 4], "label": { "en": "Minimal", "pt-BR": "Mínima", "es": "Mínima" }, "color": "clinical-safe" },
+        { "range": [5, 9], "label": { "en": "Mild", "pt-BR": "Leve", "es": "Leve" }, "color": "clinical-routine" },
+        { "range": [10, 14], "label": { "en": "Moderate", "pt-BR": "Moderada", "es": "Moderada" }, "color": "clinical-caution" },
+        { "range": [15, 19], "label": { "en": "Moderately Severe", "pt-BR": "Moderadamente Grave", "es": "Moderadamente Grave" }, "color": "clinical-critical" },
+        { "range": [20, 27], "label": { "en": "Severe", "pt-BR": "Grave", "es": "Grave" }, "color": "clinical-emergency" }
+      ],
+      "responseOptions": [
+        { "value": 0, "label": { "en": "Not at all", "pt-BR": "Nenhuma vez", "es": "Nunca" } },
+        { "value": 1, "label": { "en": "Several days", "pt-BR": "Vários dias", "es": "Varios días" } },
+        { "value": 2, "label": { "en": "More than half the days", "pt-BR": "Mais da metade dos dias", "es": "Más de la mitad de los días" } },
+        { "value": 3, "label": { "en": "Nearly every day", "pt-BR": "Quase todos os dias", "es": "Casi todos los días" } }
+      ],
+      "timeframe": { "en": "Over the last 2 weeks", "pt-BR": "Nas últimas 2 semanas", "es": "En las últimas 2 semanas" },
+      "questions": [
+        { "id": "phq9_q1", "text": { "en": "Little interest or pleasure in doing things", "pt-BR": "Pouco interesse ou prazer em fazer as coisas", "es": "Poco interés o placer en hacer las cosas" } },
+        { "id": "phq9_q2", "text": { "en": "Feeling down, depressed, or hopeless", "pt-BR": "Sentir-se para baixo, deprimido(a) ou sem esperança", "es": "Sentirse desanimado/a, deprimido/a o sin esperanza" } },
+        { "id": "phq9_q3", "text": { "en": "Trouble falling or staying asleep, or sleeping too much", "pt-BR": "Dificuldade para pegar no sono ou permanecer dormindo, ou dormir demais", "es": "Dificultad para dormir o permanecer dormido/a, o dormir demasiado" } },
+        { "id": "phq9_q4", "text": { "en": "Feeling tired or having little energy", "pt-BR": "Sentir-se cansado(a) ou com pouca energia", "es": "Sentirse cansado/a o con poca energía" } },
+        { "id": "phq9_q5", "text": { "en": "Poor appetite or overeating", "pt-BR": "Falta de apetite ou comer demais", "es": "Falta de apetito o comer en exceso" } },
+        { "id": "phq9_q6", "text": { "en": "Feeling bad about yourself — or that you are a failure or have let yourself or your family down", "pt-BR": "Sentir-se mal consigo mesmo(a) — ou que é um fracasso ou que decepcionou sua família", "es": "Sentirse mal consigo mismo/a — o que es un fracaso o ha decepcionado a su familia" } },
+        { "id": "phq9_q7", "text": { "en": "Trouble concentrating on things, such as reading the newspaper or watching television", "pt-BR": "Dificuldade para se concentrar nas coisas, como ler jornal ou ver televisão", "es": "Dificultad para concentrarse en las cosas, como leer el periódico o ver televisión" } },
+        { "id": "phq9_q8", "text": { "en": "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual", "pt-BR": "Mover-se ou falar tão devagar que as outras pessoas puderam perceber? Ou o contrário — estar tão agitado(a) que se mexeu muito mais que o habitual", "es": "Moverse o hablar tan lento que otras personas lo notaron? O lo contrario — estar tan inquieto/a que se movió mucho más de lo habitual" } },
+        { "id": "phq9_q9", "text": { "en": "Thoughts that you would be better off dead or of hurting yourself in some way", "pt-BR": "Pensamentos de que seria melhor estar morto(a) ou de se machucar de alguma forma", "es": "Pensamientos de que estaría mejor muerto/a o de hacerse daño de alguna forma" } }
+      ]
+    },
+    "GAD-7": {
+      "id": "gad7",
+      "name": { "en": "Generalized Anxiety Disorder-7", "pt-BR": "Transtorno de Ansiedade Generalizada-7", "es": "Trastorno de Ansiedad Generalizada-7" },
+      "abbreviation": "GAD-7",
+      "domain": "anxiety",
+      "citation": {
+        "source": "Spitzer RL, Kroenke K, Williams JBW, Löwe B",
+        "title": "A brief measure for assessing generalized anxiety disorder: the GAD-7",
+        "journal": "Arch Intern Med. 2006;166(10):1092-1097",
+        "year": 2006,
+        "url": "https://pubmed.ncbi.nlm.nih.gov/16717171/",
+        "license": "Public domain — no permission required"
+      },
+      "scoring": { "min": 0, "max": 21, "perQuestion": { "min": 0, "max": 3 } },
+      "severityLevels": [
+        { "range": [0, 4], "label": { "en": "Minimal", "pt-BR": "Mínima", "es": "Mínima" }, "color": "clinical-safe" },
+        { "range": [5, 9], "label": { "en": "Mild", "pt-BR": "Leve", "es": "Leve" }, "color": "clinical-routine" },
+        { "range": [10, 14], "label": { "en": "Moderate", "pt-BR": "Moderada", "es": "Moderada" }, "color": "clinical-caution" },
+        { "range": [15, 21], "label": { "en": "Severe", "pt-BR": "Grave", "es": "Grave" }, "color": "clinical-critical" }
+      ],
+      "responseOptions": [
+        { "value": 0, "label": { "en": "Not at all", "pt-BR": "Nenhuma vez", "es": "Nunca" } },
+        { "value": 1, "label": { "en": "Several days", "pt-BR": "Vários dias", "es": "Varios días" } },
+        { "value": 2, "label": { "en": "More than half the days", "pt-BR": "Mais da metade dos dias", "es": "Más de la mitad de los días" } },
+        { "value": 3, "label": { "en": "Nearly every day", "pt-BR": "Quase todos os dias", "es": "Casi todos los días" } }
+      ],
+      "timeframe": { "en": "Over the last 2 weeks", "pt-BR": "Nas últimas 2 semanas", "es": "En las últimas 2 semanas" },
+      "questions": [
+        { "id": "gad7_q1", "text": { "en": "Feeling nervous, anxious, or on edge", "pt-BR": "Sentir-se nervoso(a), ansioso(a) ou muito tenso(a)", "es": "Sentirse nervioso/a, ansioso/a o con los nervios de punta" } },
+        { "id": "gad7_q2", "text": { "en": "Not being able to stop or control worrying", "pt-BR": "Não ser capaz de impedir ou controlar as preocupações", "es": "No poder dejar de preocuparse o controlar la preocupación" } },
+        { "id": "gad7_q3", "text": { "en": "Worrying too much about different things", "pt-BR": "Preocupar-se demais com diversas coisas", "es": "Preocuparse demasiado por diferentes cosas" } },
+        { "id": "gad7_q4", "text": { "en": "Trouble relaxing", "pt-BR": "Dificuldade para relaxar", "es": "Dificultad para relajarse" } },
+        { "id": "gad7_q5", "text": { "en": "Being so restless that it's hard to sit still", "pt-BR": "Ficar tão agitado(a) que é difícil permanecer sentado(a)", "es": "Estar tan inquieto/a que es difícil permanecer sentado/a" } },
+        { "id": "gad7_q6", "text": { "en": "Becoming easily annoyed or irritable", "pt-BR": "Ficar facilmente irritado(a) ou aborrecido(a)", "es": "Molestarse o irritarse fácilmente" } },
+        { "id": "gad7_q7", "text": { "en": "Feeling afraid as if something awful might happen", "pt-BR": "Sentir medo como se algo horrível pudesse acontecer", "es": "Sentir miedo como si algo terrible pudiera pasar" } }
+      ]
+    },
+    "FINDRISC": {
+      "id": "findrisc",
+      "name": { "en": "Finnish Diabetes Risk Score", "pt-BR": "Escore de Risco de Diabetes Finlandês", "es": "Puntuación de Riesgo de Diabetes Finlandesa" },
+      "abbreviation": "FINDRISC",
+      "domain": "diabetes",
+      "citation": {
+        "source": "Lindström J, Tuomilehto J",
+        "title": "The diabetes risk score: a practical tool to predict type 2 diabetes risk",
+        "journal": "Diabetes Care. 2003;26(3):725-731",
+        "year": 2003,
+        "url": "https://pubmed.ncbi.nlm.nih.gov/12610029/",
+        "license": "Public domain"
+      },
+      "scoring": { "min": 0, "max": 26 },
+      "severityLevels": [
+        { "range": [0, 6], "label": { "en": "Low", "pt-BR": "Baixo", "es": "Bajo" }, "color": "clinical-safe", "riskPercent": "~1% in 10 years" },
+        { "range": [7, 11], "label": { "en": "Slightly elevated", "pt-BR": "Levemente elevado", "es": "Ligeramente elevado" }, "color": "clinical-routine", "riskPercent": "~4% in 10 years" },
+        { "range": [12, 14], "label": { "en": "Moderate", "pt-BR": "Moderado", "es": "Moderado" }, "color": "clinical-caution", "riskPercent": "~17% in 10 years" },
+        { "range": [15, 20], "label": { "en": "High", "pt-BR": "Alto", "es": "Alto" }, "color": "clinical-critical", "riskPercent": "~33% in 10 years" },
+        { "range": [21, 26], "label": { "en": "Very high", "pt-BR": "Muito alto", "es": "Muy alto" }, "color": "clinical-emergency", "riskPercent": "~50% in 10 years" }
+      ],
+      "questions": [
+        {
+          "id": "findrisc_q1", "type": "select",
+          "text": { "en": "Age", "pt-BR": "Idade", "es": "Edad" },
+          "options": [
+            { "value": 0, "label": { "en": "Under 45", "pt-BR": "Menos de 45", "es": "Menos de 45" } },
+            { "value": 2, "label": { "en": "45–54", "pt-BR": "45–54", "es": "45–54" } },
+            { "value": 3, "label": { "en": "55–64", "pt-BR": "55–64", "es": "55–64" } },
+            { "value": 4, "label": { "en": "Over 64", "pt-BR": "Mais de 64", "es": "Más de 64" } }
+          ]
+        },
+        {
+          "id": "findrisc_q2", "type": "select",
+          "text": { "en": "BMI (kg/m²)", "pt-BR": "IMC (kg/m²)", "es": "IMC (kg/m²)" },
+          "options": [
+            { "value": 0, "label": { "en": "Less than 25", "pt-BR": "Menos de 25", "es": "Menos de 25" } },
+            { "value": 1, "label": { "en": "25–30", "pt-BR": "25–30", "es": "25–30" } },
+            { "value": 3, "label": { "en": "Over 30", "pt-BR": "Mais de 30", "es": "Más de 30" } }
+          ]
+        },
+        {
+          "id": "findrisc_q3", "type": "select",
+          "text": { "en": "Waist circumference", "pt-BR": "Circunferência da cintura", "es": "Circunferencia de cintura" },
+          "options": [
+            { "value": 0, "label": { "en": "Men <94cm / Women <80cm", "pt-BR": "H <94cm / M <80cm", "es": "H <94cm / M <80cm" } },
+            { "value": 3, "label": { "en": "Men 94–102cm / Women 80–88cm", "pt-BR": "H 94–102cm / M 80–88cm", "es": "H 94–102cm / M 80–88cm" } },
+            { "value": 4, "label": { "en": "Men >102cm / Women >88cm", "pt-BR": "H >102cm / M >88cm", "es": "H >102cm / M >88cm" } }
+          ]
+        },
+        {
+          "id": "findrisc_q4", "type": "select",
+          "text": { "en": "Do you do at least 30 min of physical activity daily?", "pt-BR": "Você pratica pelo menos 30 min de atividade física por dia?", "es": "¿Realiza al menos 30 min de actividad física diaria?" },
+          "options": [
+            { "value": 0, "label": { "en": "Yes", "pt-BR": "Sim", "es": "Sí" } },
+            { "value": 2, "label": { "en": "No", "pt-BR": "Não", "es": "No" } }
+          ]
+        },
+        {
+          "id": "findrisc_q5", "type": "select",
+          "text": { "en": "How often do you eat vegetables, fruits, or berries?", "pt-BR": "Com que frequência você come vegetais, frutas ou grãos?", "es": "¿Con qué frecuencia come vegetales, frutas o granos?" },
+          "options": [
+            { "value": 0, "label": { "en": "Every day", "pt-BR": "Todos os dias", "es": "Todos los días" } },
+            { "value": 1, "label": { "en": "Not every day", "pt-BR": "Nem todos os dias", "es": "No todos los días" } }
+          ]
+        },
+        {
+          "id": "findrisc_q6", "type": "select",
+          "text": { "en": "Have you ever taken medication for high blood pressure?", "pt-BR": "Você já tomou medicamento para pressão alta?", "es": "¿Ha tomado medicamentos para la presión arterial alta?" },
+          "options": [
+            { "value": 0, "label": { "en": "No", "pt-BR": "Não", "es": "No" } },
+            { "value": 2, "label": { "en": "Yes", "pt-BR": "Sim", "es": "Sí" } }
+          ]
+        },
+        {
+          "id": "findrisc_q7", "type": "select",
+          "text": { "en": "Have you ever been found to have high blood glucose?", "pt-BR": "Já foi detectado glicemia alta em algum exame?", "es": "¿Le han detectado glucosa alta en algún examen?" },
+          "options": [
+            { "value": 0, "label": { "en": "No", "pt-BR": "Não", "es": "No" } },
+            { "value": 5, "label": { "en": "Yes", "pt-BR": "Sim", "es": "Sí" } }
+          ]
+        },
+        {
+          "id": "findrisc_q8", "type": "select",
+          "text": { "en": "Have any members of your immediate family been diagnosed with diabetes?", "pt-BR": "Algum membro da sua família imediata foi diagnosticado com diabetes?", "es": "¿Algún miembro de su familia inmediata ha sido diagnosticado con diabetes?" },
+          "options": [
+            { "value": 0, "label": { "en": "No", "pt-BR": "Não", "es": "No" } },
+            { "value": 3, "label": { "en": "Yes (grandparent, aunt/uncle, cousin)", "pt-BR": "Sim (avós, tios, primos)", "es": "Sí (abuelos, tíos, primos)" } },
+            { "value": 5, "label": { "en": "Yes (parent, sibling, or child)", "pt-BR": "Sim (pais, irmãos ou filhos)", "es": "Sí (padres, hermanos o hijos)" } }
+          ]
+        }
+      ]
+    },
+    "SCORE2": {
+      "id": "score2",
+      "name": { "en": "Systematic Coronary Risk Evaluation 2", "pt-BR": "Avaliação Sistemática de Risco Coronariano 2", "es": "Evaluación Sistemática de Riesgo Coronario 2" },
+      "abbreviation": "SCORE2",
+      "domain": "cardiovascular",
+      "citation": {
+        "source": "SCORE2 working group and ESC Cardiovascular Risk Collaboration",
+        "title": "SCORE2 risk prediction algorithms",
+        "journal": "European Heart Journal. 2021;42(25):2439-2454",
+        "year": 2021,
+        "url": "https://pubmed.ncbi.nlm.nih.gov/34120177/",
+        "license": "ESC Guidelines — free for clinical use"
+      },
+      "inputs": [
+        { "id": "age", "type": "number", "label": { "en": "Age (40-69)", "pt-BR": "Idade (40-69)", "es": "Edad (40-69)" }, "min": 40, "max": 69 },
+        { "id": "sex", "type": "select", "label": { "en": "Sex", "pt-BR": "Sexo", "es": "Sexo" }, "options": ["male", "female"] },
+        { "id": "smoking", "type": "boolean", "label": { "en": "Current smoker", "pt-BR": "Fumante atual", "es": "Fumador actual" } },
+        { "id": "systolicBP", "type": "number", "label": { "en": "Systolic BP (mmHg)", "pt-BR": "PA Sistólica (mmHg)", "es": "PA Sistólica (mmHg)" }, "min": 90, "max": 200 },
+        { "id": "totalCholesterol", "type": "number", "label": { "en": "Total cholesterol (mmol/L)", "pt-BR": "Colesterol total (mmol/L)", "es": "Colesterol total (mmol/L)" }, "min": 3, "max": 9 },
+        { "id": "hdlCholesterol", "type": "number", "label": { "en": "HDL cholesterol (mmol/L)", "pt-BR": "Colesterol HDL (mmol/L)", "es": "Colesterol HDL (mmol/L)" }, "min": 0.5, "max": 3 }
+      ],
+      "riskRegions": {
+        "low": { "label": { "en": "Low-risk region", "pt-BR": "Região de baixo risco", "es": "Región de bajo riesgo" }, "countries": ["Spain", "France", "Italy", "Brazil", "Colombia", "Mexico"] },
+        "moderate": { "label": { "en": "Moderate-risk region", "pt-BR": "Região de risco moderado", "es": "Región de riesgo moderado" }, "countries": ["Germany", "USA", "Portugal"] },
+        "high": { "label": { "en": "High-risk region", "pt-BR": "Região de alto risco", "es": "Región de alto riesgo" }, "countries": ["Poland", "Turkey"] },
+        "veryHigh": { "label": { "en": "Very high-risk region", "pt-BR": "Região de risco muito alto", "es": "Región de riesgo muy alto" }, "countries": ["Russia", "Ukraine", "Belarus"] }
+      },
+      "thresholds": {
+        "underAge50": { "low": 2.5, "moderate": 5, "high": 7.5 },
+        "age50to69": { "low": 5, "moderate": 7.5, "high": 10 }
+      },
+      "note": "SCORE2 uses region-specific coefficients. For LATAM, use the 'low-risk' region table. Full coefficient matrices are in the ESC 2021 supplementary materials. The implementation should use a lookup table approach rather than the full Cox regression — validated tables are published for each risk region."
+    },
+    "Framingham": {
+      "id": "framingham",
+      "name": { "en": "Framingham Risk Score", "pt-BR": "Escore de Risco de Framingham", "es": "Puntuación de Riesgo de Framingham" },
+      "abbreviation": "FRS",
+      "domain": "cardiovascular",
+      "citation": {
+        "source": "D'Agostino RB Sr, Vasan RS, Pencina MJ, et al",
+        "title": "General cardiovascular risk profile for use in primary care",
+        "journal": "Circulation. 2008;117(6):743-753",
+        "year": 2008,
+        "url": "https://pubmed.ncbi.nlm.nih.gov/18212285/",
+        "license": "Public domain formula"
+      },
+      "inputs": [
+        { "id": "age", "type": "number", "label": { "en": "Age", "pt-BR": "Idade", "es": "Edad" }, "min": 30, "max": 79 },
+        { "id": "sex", "type": "select", "label": { "en": "Sex", "pt-BR": "Sexo", "es": "Sexo" }, "options": ["male", "female"] },
+        { "id": "totalCholesterol", "type": "number", "label": { "en": "Total cholesterol (mg/dL)", "pt-BR": "Colesterol total (mg/dL)", "es": "Colesterol total (mg/dL)" } },
+        { "id": "hdlCholesterol", "type": "number", "label": { "en": "HDL cholesterol (mg/dL)", "pt-BR": "Colesterol HDL (mg/dL)", "es": "Colesterol HDL (mg/dL)" } },
+        { "id": "systolicBP", "type": "number", "label": { "en": "Systolic BP (mmHg)", "pt-BR": "PA Sistólica (mmHg)", "es": "PA Sistólica (mmHg)" } },
+        { "id": "bpTreated", "type": "boolean", "label": { "en": "On BP medication", "pt-BR": "Em uso de anti-hipertensivo", "es": "En tratamiento antihipertensivo" } },
+        { "id": "smoking", "type": "boolean", "label": { "en": "Current smoker", "pt-BR": "Fumante atual", "es": "Fumador actual" } },
+        { "id": "diabetes", "type": "boolean", "label": { "en": "Has diabetes", "pt-BR": "Tem diabetes", "es": "Tiene diabetes" } }
+      ],
+      "coefficients": {
+        "male": {
+          "lnAge": 3.06117, "lnTotalChol": 1.12370, "lnHDL": -0.93263,
+          "lnSBPuntreated": 1.93303, "lnSBPtreated": 1.99881,
+          "smoking": 0.65451, "diabetes": 0.57367,
+          "meanCoeffSum": 23.9802, "baselineSurvival": 0.88936
+        },
+        "female": {
+          "lnAge": 2.32888, "lnTotalChol": 1.20904, "lnHDL": -0.70833,
+          "lnSBPuntreated": 2.76157, "lnSBPtreated": 2.82263,
+          "smoking": 0.52873, "diabetes": 0.69154,
+          "meanCoeffSum": 26.1931, "baselineSurvival": 0.95012
+        }
+      },
+      "formula": "risk = 1 - baselineSurvival^exp(coeffSum - meanCoeffSum)",
+      "resultInterpretation": [
+        { "range": [0, 5], "label": { "en": "Low risk", "pt-BR": "Baixo risco", "es": "Bajo riesgo" }, "color": "clinical-safe" },
+        { "range": [5, 10], "label": { "en": "Borderline risk", "pt-BR": "Risco limítrofe", "es": "Riesgo limítrofe" }, "color": "clinical-routine" },
+        { "range": [10, 20], "label": { "en": "Intermediate risk", "pt-BR": "Risco intermediário", "es": "Riesgo intermedio" }, "color": "clinical-caution" },
+        { "range": [20, 100], "label": { "en": "High risk", "pt-BR": "Alto risco", "es": "Alto riesgo" }, "color": "clinical-critical" }
+      ]
+    }
+  }
+}

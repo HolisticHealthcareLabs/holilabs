@@ -23,9 +23,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { processEmailQueue } from '@/lib/email/email-service';
+import { startEmailWorker } from '@/lib/email/email-queue';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +37,16 @@ const VERCEL_CRON_IPS = [
   '76.76.21.21',   // Specific Vercel Cron IP
   '76.76.21.98',   // Specific Vercel Cron IP
 ];
+
+// Lazy singleton for email worker
+let emailWorker: ReturnType<typeof startEmailWorker> | null = null;
+
+function getEmailWorker() {
+  if (!emailWorker) {
+    emailWorker = startEmailWorker();
+  }
+  return emailWorker;
+}
 
 /**
  * Validates if the request IP is from Vercel Cron
@@ -122,49 +131,23 @@ async function postProcessEmailQueue(request: NextRequest) {
       ip,
     });
 
-    // Process email queue with retry logic
-    let result = { processed: 0, failed: 0 };
-    while (retryCount < maxRetries) {
-      try {
-        result = await processEmailQueue(50); // Process up to 50 emails per run
-        break; // Success, exit retry loop
-      } catch (error) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          throw error; // Max retries exceeded, throw error
-        }
-
-        // Exponential backoff: 1s, 2s, 4s
-        const backoffMs = Math.pow(2, retryCount - 1) * 1000;
-        logger.warn({
-          event: 'cron_job_retry',
-          job: 'process_email_queue',
-          retryCount,
-          backoffMs,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
-      }
-    }
+    // Initialize email worker (lazy singleton)
+    const worker = getEmailWorker();
 
     const duration = Date.now() - startTime;
 
     logger.info({
       event: 'cron_job_completed',
       job: 'process_email_queue',
-      processed: result.processed,
-      failed: result.failed,
+      message: 'Email worker initialized and running in background',
       duration,
-      retries: retryCount,
+      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
-      processed: result.processed,
-      failed: result.failed,
+      message: 'Email worker processing queue in background',
       duration,
-      retries: retryCount,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

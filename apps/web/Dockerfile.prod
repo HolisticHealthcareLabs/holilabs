@@ -60,7 +60,10 @@ RUN cd apps/web && pnpm next build
 # ============================================================================
 # Production Stage - Minimal runtime image
 # ============================================================================
-FROM base AS runner
+# Production runner — clean image, no package managers (pnpm/turbo removed)
+FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
+WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

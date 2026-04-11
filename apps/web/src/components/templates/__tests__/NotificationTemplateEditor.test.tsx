@@ -51,7 +51,8 @@ describe('NotificationTemplateEditor', () => {
         onCancel={onCancel}
       />
     );
-    const cancelBtn = screen.getByText(/Cancelar|Cancel/i);
+    const cancelBtns = screen.getAllByText(/Cancelar|Cancel/i);
+    const cancelBtn = cancelBtns.find(el => el.tagName === 'BUTTON') || cancelBtns[cancelBtns.length - 1];
     cancelBtn.click();
     expect(onCancel).toHaveBeenCalled();
   });

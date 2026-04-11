@@ -70,7 +70,7 @@ export function useClinicalContext({
     try {
       const res = await fetch('/api/clinical/context-scan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Access-Reason': 'CLINICAL_CARE' },
         signal: controller.signal,
         body: JSON.stringify({
           patientId,

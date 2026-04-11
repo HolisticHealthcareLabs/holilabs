@@ -1,16 +1,26 @@
 import { FastifyPluginAsync } from 'fastify';
-// import { z } from 'zod';
-// import { prisma } from '../index';
-// import { pseudonymize } from '@holi/deid';
 
-// TODO: This file references PatientToken and SubjectIndex models that don't exist in production schema
-// The production schema uses Patient model directly
-// This de-identification layer needs to be refactored or removed
+/**
+ * Patient routes — Fastify API server
+ *
+ * Patient CRUD is handled by the Next.js web app (apps/web/src/app/api/patients/).
+ * This server only exposes a health check; patient queries are rejected
+ * with a pointer to the correct endpoint.
+ */
 
 const patientRoutes: FastifyPluginAsync = async (server) => {
-  // Placeholder - patient routes disabled until schema alignment
-  server.get('/health', async (request, reply) => {
-    return reply.send({ status: 'ok', message: 'Patient routes disabled - schema mismatch' });
+  server.get('/health', async (_request, reply) => {
+    return reply.send({
+      status: 'ok',
+      message: 'Patient API served by Next.js at /api/patients',
+    });
+  });
+
+  server.all('/*', async (_request, reply) => {
+    return reply.code(410).send({
+      error: 'Patient routes moved',
+      message: 'Patient API is served by the Next.js app at /api/patients.',
+    });
   });
 };
 

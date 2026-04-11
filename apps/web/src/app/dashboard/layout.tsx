@@ -7,13 +7,17 @@ import { signOut, useSession } from 'next-auth/react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import ThemeToggle from '@/components/ThemeToggle';
-import { HoliLogo } from '@/components/HoliLogo';
+const HoliLogo = () => (
+  <div className="flex items-center gap-2">
+    <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center text-white font-bold">H</div>
+    <span className="font-bold text-xl tracking-tight">Holi</span>
+  </div>
+);
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
 // CinematicTransition removed — instant dashboard load
 import {
   ChevronLeft,
   ChevronRight,
-  PanelLeft,
   Search,
   Plus,
   Loader2,
@@ -26,21 +30,27 @@ import {
   LayoutDashboard,
   FileText,
   BarChart3,
-  Shield,
   Settings,
   Eye,
   CreditCard,
-  Plug,
   HelpCircle,
-  UserPlus,
+  Activity,
+  Lock,
   type LucideIcon,
 } from 'lucide-react';
-
+const Pill = Activity;
+const Plug = Activity;
+const UserPlus = Users;
+const PanelLeft = LayoutDashboard;
+const Zap = Activity;
+const Shield = Lock;
 const NotificationPrompt = lazy(() => import('@/components/NotificationPrompt'));
 const NotificationCenter = lazy(() => import('@/components/notifications/NotificationCenter'));
+const DemoModeBanner = lazy(() => import('@/components/demo/DemoModeBanner').then(m => ({ default: m.DemoModeBanner })));
 
 const SessionTimeoutWarning = lazy(() => import('@/components/SessionTimeoutWarning').then(m => ({ default: m.SessionTimeoutWarning })));
 const DemoGuidedTour = lazy(() => import('@/components/demo/DemoGuidedTour').then(m => ({ default: m.DemoGuidedTour })));
+const LockScreen = lazy(() => import('@/components/LockScreen').then(m => ({ default: m.LockScreen })));
 
 interface SidebarNavItem {
   key: string;
@@ -98,9 +108,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isLaunchingEncounter, setIsLaunchingEncounter] = useState(false);
   const [isEphemeral, setIsEphemeral] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { locale, t } = useLanguage();
   const { usageStats, bumpUsage, getMostUsed } = useToolUsageTracker();
   // hasWarmedDashboardModulesRef removed — preloader eliminated
+
+  useEffect(() => { setIsMounted(true); }, []);
 
   // Session timeout is isolated into <SessionTimeoutGuard /> to avoid
   // countdown-driven re-renders from cascading into the entire layout.
@@ -182,7 +196,33 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const showCollapsedSidebar = sidebarCollapsed && isDesktopViewport;
+  // ── Auto-lock: lock screen after 5 min of inactivity (disabled for demos) ─
+  useEffect(() => {
+    if (isLocked) return;
+    // Demo sessions skip auto-lock — the lock screen is still manually available
+    try {
+      if (typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true') return;
+    } catch { /* SSR / incognito */ }
+    const LOCK_MS = 5 * 60 * 1000;
+    const THROTTLE_MS = 30_000;
+    let timer = setTimeout(() => setIsLocked(true), LOCK_MS);
+    let lastReset = Date.now();
+    const reset = () => {
+      const now = Date.now();
+      if (now - lastReset < THROTTLE_MS) return;
+      lastReset = now;
+      clearTimeout(timer);
+      timer = setTimeout(() => setIsLocked(true), LOCK_MS);
+    };
+    const events: (keyof WindowEventMap)[] = ['mousedown', 'keydown', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [isLocked]);
+
+  const showCollapsedSidebar = sidebarCollapsed && isDesktopViewport && !sidebarPeekOpen;
   const isSettingsPage = pathname?.includes('/dashboard/settings');
 
   useEffect(() => {
@@ -216,6 +256,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: Sun },
         { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/co-pilot', icon: Stethoscope },
         { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Users },
+        { key: 'prescriptions', label: t('dashboard.sidebar.prescriptions'), href: '/dashboard/prescriptions', icon: Pill },
         { key: 'reminders', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Inbox, badge: '3' },
       ],
     },
@@ -245,6 +286,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (currentPath.includes('/dashboard/billing')) return 'claims-intelligence';
     if (currentPath.includes('/dashboard/analytics')) return 'analytics';
     if (currentPath.includes('/dashboard/reminders')) return 'reminders';
+    if (currentPath.includes('/dashboard/prescriptions')) return 'prescriptions';
     if (currentPath.includes('/dashboard/patients')) return 'patients';
     if (currentPath.includes('/dashboard/auditor') || currentPath.includes('/dashboard/admin/audit-logs')) return 'audit-compliance';
     if (currentPath.includes('/dashboard/settings')) return 'settings-team';
@@ -269,6 +311,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      {isLocked && (
+        <Suspense fallback={null}>
+          <LockScreen onUnlock={() => setIsLocked(false)} userEmail={user?.email} />
+        </Suspense>
+      )}
       {fatalError && (
         <div className="fixed inset-0 z-[10000] bg-white text-gray-900 p-6 overflow-auto">
           <div className="max-w-3xl mx-auto space-y-4">
@@ -305,7 +352,24 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 isolate ${profileMenuOpen ? 'overflow-visible' : 'overflow-hidden'} ${showCollapsedSidebar ? 'w-[68px]' : 'w-[200px] sm:w-[210px] lg:w-[200px]'} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-[width,transform] duration-150 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          onMouseEnter={() => {
+            if (sidebarCollapsed && isDesktopViewport) {
+              if (sidebarPeekCloseTimerRef.current) { clearTimeout(sidebarPeekCloseTimerRef.current); sidebarPeekCloseTimerRef.current = null; }
+              setSidebarPeekOpen(true);
+            }
+          }}
+          onMouseLeave={() => {
+            if (sidebarCollapsed && isDesktopViewport && sidebarPeekOpen) {
+              sidebarPeekCloseTimerRef.current = setTimeout(() => setSidebarPeekOpen(false), 300);
+            }
+          }}
+          className={`fixed inset-y-0 left-0 z-50 isolate overflow-visible ${
+            sidebarCollapsed && isDesktopViewport
+              ? sidebarPeekOpen
+                ? 'w-[200px] shadow-2xl'
+                : 'w-[52px]'
+              : 'w-[200px] sm:w-[210px] lg:w-[200px]'
+          } bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-[width,transform,opacity] duration-200 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           <div className="relative z-10 flex flex-col h-full">
@@ -328,7 +392,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100/80 dark:bg-white/[0.06] hover:bg-gray-200/80 dark:hover:bg-white/[0.1] transition-all duration-200"
                   title={showCollapsedSidebar ? t('dashboard.sidebar.expandSidebar') : t('dashboard.sidebar.collapseSidebar')}
                 >
-                  <PanelLeft className="w-[16px] h-[16px]" strokeWidth={1.5} />
+                  <PanelLeft className="w-[16px] h-[16px]" strokeWidth={1.25} />
                 </button>
                 {!showCollapsedSidebar && (
                   <>
@@ -351,23 +415,48 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Search pill (hidden when collapsed) */}
-            {!showCollapsedSidebar && (
-              <div className="px-2.5 py-1.5 border-b border-gray-100 dark:border-gray-700/50">
-                <div className="flex items-center bg-gray-900 dark:bg-white/[0.07] rounded-full px-3 h-10 gap-2">
-                  <Search className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder={t('dashboard.sidebar.searchPatients')}
-                    className="flex-1 min-w-0 bg-transparent text-xs text-white dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none"
-                    aria-label={t('dashboard.sidebar.searchPatients')}
-                  />
+            {/* Search pill — icon when collapsed, expands to full bar */}
+            <div className={`border-b border-gray-100 dark:border-gray-700/50 transition-all duration-200 ease-out ${showCollapsedSidebar ? 'px-0 py-1.5 flex justify-center' : 'px-2.5 py-1.5'}`}>
+              {showCollapsedSidebar ? (
+                <button
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                  aria-label={t('dashboard.sidebar.searchPatients')}
+                  onClick={() => { setSidebarCollapsed(false); }}
+                >
+                  <Search className="w-3.5 h-3.5" strokeWidth={1.25} />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="flex-1 flex items-center rounded-full px-3 h-9 gap-2"
+                    style={{
+                      backgroundColor: 'var(--surface-primary)',
+                      border: '1.5px solid var(--border-default)',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder={t('dashboard.sidebar.searchPatients')}
+                      className="flex-1 min-w-0 bg-transparent text-xs focus:outline-none"
+                      style={{ color: 'var(--text-primary)', }}
+                      aria-label={t('dashboard.sidebar.searchPatients')}
+                    />
+                    <button
+                      className="w-6 h-6 min-w-[24px] min-h-[24px] max-w-[24px] max-h-[24px] flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white shrink-0 transition-colors mr-0.5"
+                      aria-label={t('dashboard.sidebar.addPatient')}
+                      title={t('dashboard.sidebar.addPatient')}
+                    >
+                      <Plus className="w-3 h-3" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Navigation */}
-            <nav className="flex-1 min-h-0 overflow-y-auto px-1.5 py-2">
+            <nav className="flex-1 min-h-0 overflow-y-auto px-1.5 py-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
               {sidebarGroups.map((group) => (
                 <div key={group.heading} className="mb-2.5 last:mb-0">
                   {!showCollapsedSidebar && (
@@ -400,7 +489,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                               }`}
                           >
-                            <Icon className={`w-3.5 h-3.5 shrink-0 icon-animate transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
+                            <Icon className={`w-3.5 h-3.5 shrink-0 icon-animate transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} strokeWidth={1.25} />
                             {!showCollapsedSidebar && (
                               <span className={`text-[11.5px] truncate flex-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
                                 {item.label}
@@ -512,11 +601,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               <div className={`${showCollapsedSidebar ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}`}>
                 {/* Notifications */}
                 <div className="group/notif relative">
-                  <Suspense fallback={null}>
-                    <div className={`glass-circle glass-circle-light dark:glass-circle-dark glass-circle-inner flex items-center justify-center cursor-pointer ${showCollapsedSidebar ? 'w-11 h-11' : 'w-10 h-10'}`}>
-                      <NotificationCenter />
-                    </div>
-                  </Suspense>
+                  {isMounted ? (
+                    <Suspense fallback={null}>
+                      <div className={`glass-circle glass-circle-light dark:glass-circle-dark glass-circle-inner flex items-center justify-center cursor-pointer ${showCollapsedSidebar ? 'w-11 h-11' : 'w-10 h-10'}`}>
+                        <NotificationCenter />
+                      </div>
+                    </Suspense>
+                  ) : (
+                    <div className={`glass-circle glass-circle-light dark:glass-circle-dark glass-circle-inner flex items-center justify-center cursor-pointer ${showCollapsedSidebar ? 'w-11 h-11' : 'w-10 h-10'}`} />
+                  )}
                   <div className={`pointer-events-none absolute z-[60] opacity-0 group-hover/notif:opacity-100 transition-all duration-200 ease-out ${
                     showCollapsedSidebar
                       ? 'left-full top-1/2 -translate-y-1/2 ml-3 translate-x-1 group-hover/notif:translate-x-0'
@@ -550,7 +643,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     onClick={() => {/* future: open invite modal */}}
                     className={`glass-circle glass-circle-light dark:glass-circle-dark flex items-center justify-center ${showCollapsedSidebar ? 'w-11 h-11' : 'w-10 h-10'}`}
                   >
-                    <UserPlus className="w-4 h-4 text-gray-600 dark:text-gray-300" strokeWidth={1.5} />
+                    <UserPlus className="w-[18px] h-[18px] text-gray-600 dark:text-gray-300" strokeWidth={1.25} />
                   </button>
                   <div className={`pointer-events-none absolute z-[60] opacity-0 group-hover/invite:opacity-100 transition-all duration-200 ease-out ${
                     showCollapsedSidebar
@@ -559,6 +652,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   }`}>
                     <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
                       {t('dashboard.sidebar.inviteColleague')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lock Screen */}
+                <div className="group/lock relative">
+                  <button
+                    onClick={() => setIsLocked(true)}
+                    className={`glass-circle glass-circle-light dark:glass-circle-dark flex items-center justify-center ${showCollapsedSidebar ? 'w-11 h-11' : 'w-10 h-10'}`}
+                  >
+                    <Lock className="w-[18px] h-[18px] text-gray-600 dark:text-gray-300" strokeWidth={1.25} />
+                  </button>
+                  <div className={`pointer-events-none absolute z-[60] opacity-0 group-hover/lock:opacity-100 transition-all duration-200 ease-out ${
+                    showCollapsedSidebar
+                      ? 'left-full top-1/2 -translate-y-1/2 ml-3 translate-x-1 group-hover/lock:translate-x-0'
+                      : 'bottom-full left-1/2 -translate-x-1/2 mb-2 translate-y-1 group-hover/lock:translate-y-0'
+                  }`}>
+                    <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+                      {t('dashboard.sidebar.lockScreen')}
                     </div>
                   </div>
                 </div>
@@ -601,7 +713,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <div className={(showCollapsedSidebar ? 'lg:pl-[68px]' : 'lg:pl-[200px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950 transition-[padding] duration-150 ease-out'}>
+        <div className={((sidebarCollapsed && isDesktopViewport) ? 'lg:pl-[52px]' : 'lg:pl-[200px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950 transition-[padding] duration-150 ease-out'}>
+          {/* Demo mode banner — persistent, non-dismissable */}
+          <Suspense fallback={null}><DemoModeBanner /></Suspense>
+
           {/* Top Mobile Header */}
           <header className={`lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/50 sticky top-0 z-30 shadow-sm dark:shadow-none ${isSettingsPage ? 'hidden' : ''}`}>
             <div className="flex items-center justify-between h-16 px-4">
@@ -610,7 +725,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100/80 dark:bg-white/[0.06] hover:bg-gray-200/80 dark:hover:bg-white/[0.1] transition-all duration-200"
                 aria-label={t('dashboard.sidebar.openNavigation')}
               >
-                <PanelLeft className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                <PanelLeft className="w-[18px] h-[18px]" strokeWidth={1.25} />
               </button>
               <div className="flex-1" aria-hidden="true" />
             </div>

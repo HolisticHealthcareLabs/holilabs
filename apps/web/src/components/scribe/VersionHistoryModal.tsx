@@ -160,7 +160,7 @@ export default function VersionHistoryModal({
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+        <div className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-xl)' }}>
           {/* Header */}
           <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between z-10">
             <div className="flex items-center gap-3">
@@ -172,7 +172,8 @@ export default function VersionHistoryModal({
             <button
               ref={closeButtonRef}
               onClick={onClose}
-              className="p-2 hover:bg-blue-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-blue-800 transition-colors"
+              style={{ borderRadius: 'var(--radius-lg)' }}
               aria-label="Cerrar"
             >
               <X className="w-5 h-5" aria-hidden="true" />
@@ -191,9 +192,10 @@ export default function VersionHistoryModal({
               <div
                 role="alert"
                 aria-live="assertive"
-                className="bg-red-50 border-l-4 border-red-500 p-4 rounded"
+                className="border-l-4 border-red-500 p-4"
+                style={{ backgroundColor: 'var(--surface-danger)', borderRadius: 'var(--radius-md)' }}
               >
-                <p className="text-sm text-red-700">
+                <p className="text-sm" style={{ color: 'var(--text-danger)' }}>
                   <span className="sr-only">Error: </span>
                   {error}
                 </p>
@@ -203,8 +205,8 @@ export default function VersionHistoryModal({
             {!loading && !error && !showDiff && (
               <>
                 {/* Instructions */}
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
-                  <p className="text-sm text-blue-800">
+                <div className="border-l-4 border-blue-500 p-4 mb-6" style={{ backgroundColor: 'var(--surface-accent)', borderRadius: 'var(--radius-md)' }}>
+                  <p className="text-sm" style={{ color: 'var(--text-accent)' }}>
                     <strong>Selecciona dos versiones</strong> para compararlas lado a lado.
                     Haz clic en una versión para seleccionarla o deseleccionarla.
                   </p>
@@ -215,7 +217,8 @@ export default function VersionHistoryModal({
                   <div className="mb-6 flex justify-center">
                     <button
                       onClick={handleCompare}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg shadow-lg hover:from-green-700 hover:to-green-800 transition-all"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 transition-all"
+                      style={{ borderRadius: 'var(--radius-lg)', boxShadow: 'var(--token-shadow-lg)' }}
                     >
                       <GitCompare className="w-5 h-5" />
                       Comparar Versiones Seleccionadas
@@ -227,7 +230,7 @@ export default function VersionHistoryModal({
                 <div className="space-y-4">
                   {versions.length === 0 && (
                     // Decorative - low contrast intentional for empty state text
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <p className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
                       No hay versiones anteriores disponibles
                     </p>
                   )}
@@ -241,18 +244,23 @@ export default function VersionHistoryModal({
                         key={version.id}
                         onClick={() => toggleVersionSelection(version.id)}
                         className={`
-                          relative border-2 rounded-lg p-4 cursor-pointer transition-all
+                          relative border-2 p-4 cursor-pointer transition-all
                           ${isSelected
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                            ? 'border-blue-500 shadow-md'
+                            : 'hover:border-blue-300 hover:shadow-sm'
                           }
                           ${isCurrent ? 'ring-2 ring-green-400' : ''}
                         `}
+                        style={{
+                          borderRadius: 'var(--radius-lg)',
+                          backgroundColor: isSelected ? 'var(--surface-accent)' : 'var(--surface-primary)',
+                          borderColor: isSelected ? undefined : 'var(--border-default)',
+                        }}
                       >
                         {/* Selection Indicator */}
                         {isSelected && (
                           <div className="absolute top-4 right-4">
-                            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            <div className="w-6 h-6 bg-blue-600 flex items-center justify-center text-white text-xs font-bold" style={{ borderRadius: 'var(--radius-full)' }}>
                               {selectedVersions.indexOf(version.id) + 1}
                             </div>
                           </div>
@@ -261,7 +269,7 @@ export default function VersionHistoryModal({
                         {/* Current Version Badge */}
                         {isCurrent && (
                           <div className="absolute top-4 left-4">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300">
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-green-300" style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-success)', color: 'var(--text-success)' }}>
                               Versión Actual
                             </span>
                           </div>
@@ -273,10 +281,10 @@ export default function VersionHistoryModal({
                           <div>
                             {/* Decorative - low contrast intentional for file icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <FileEdit className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                              <span className="text-sm font-semibold text-gray-700">Versión</span>
+                              <FileEdit className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                              <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Versión</span>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                               #{version.versionNumber}
                             </p>
                           </div>
@@ -285,10 +293,10 @@ export default function VersionHistoryModal({
                           <div>
                             {/* Decorative - low contrast intentional for user icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                              <span className="text-sm font-semibold text-gray-700">Editado por</span>
+                              <User className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                              <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Editado por</span>
                             </div>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                               {version.changedByUser.firstName} {version.changedByUser.lastName}
                             </p>
                           </div>
@@ -297,14 +305,14 @@ export default function VersionHistoryModal({
                           <div>
                             {/* Decorative - low contrast intentional for clock icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                              <span className="text-sm font-semibold text-gray-700">Fecha</span>
+                              <Clock className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                              <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Fecha</span>
                             </div>
-                            <p className="text-sm text-gray-900 dark:text-white">
+                            <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                               {format(new Date(version.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
                             </p>
                             {/* Decorative - low contrast intentional for timestamp */}
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                               {format(new Date(version.createdAt), 'HH:mm', { locale: es })}
                             </p>
                           </div>
@@ -312,13 +320,14 @@ export default function VersionHistoryModal({
 
                         {/* Changed Fields */}
                         {version.changedFields && version.changedFields.length > 0 && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-semibold text-gray-700">Campos modificados:</span>
+                              <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Campos modificados:</span>
                               {version.changedFields.map(field => (
                                 <span
                                   key={field}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium border border-yellow-300"
+                                  style={{ borderRadius: 'var(--radius-full)', backgroundColor: 'var(--surface-warning)' }}
                                 >
                                   {field}
                                 </span>
@@ -329,7 +338,7 @@ export default function VersionHistoryModal({
 
                         {/* Changes Summary */}
                         {version.changesSummary && (
-                          <div className="mt-3 text-sm text-gray-700 bg-gray-50 rounded p-3">
+                          <div className="mt-3 text-sm p-3" style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--surface-secondary)', borderRadius: 'var(--radius-md)' }}>
                             <span className="font-semibold">Resumen: </span>
                             {version.changesSummary}
                           </div>
@@ -348,7 +357,8 @@ export default function VersionHistoryModal({
                 <div className="mb-6">
                   <button
                     onClick={handleBackToList}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 font-medium hover:bg-gray-200 transition-colors"
+                    style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-lg)' }}
                   >
                     ← Volver al Historial
                   </button>

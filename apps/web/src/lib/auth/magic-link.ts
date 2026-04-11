@@ -15,6 +15,7 @@ import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import logger from '@/lib/logger';
+import type { PatientUser, Patient } from '@prisma/client';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -157,11 +158,11 @@ export async function generateMagicLink({
     // Calculate expiration
     const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_MINUTES * 60 * 1000);
 
-    // Store magic link in database
+    // Store hash only — never persist plaintext tokens (CVI-003)
     await prisma.magicLink.create({
       data: {
         patientUserId: patientUser.id,
-        token,
+        token: tokenHash, // Store hash in token field for schema compat; actual lookup uses tokenHash
         tokenHash,
         expiresAt,
         ipAddress,
@@ -299,11 +300,21 @@ export async function sendMagicLinkEmail(
 }
 
 /**
+ * Patient user with patient relation
+ */
+export type PatientUserWithPatient = PatientUser & {
+  patient: Patient;
+};
+
+/**
  * Verify magic link token and return patient user
+ * 
+ * @param token - The raw magic link token
+ * @returns Result object with success status and patient user if valid
  */
 export async function verifyMagicLink(token: string): Promise<{
   success: boolean;
-  patientUser?: any;
+  patientUser?: PatientUserWithPatient;
   error?: string;
 }> {
   try {

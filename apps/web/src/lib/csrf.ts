@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
+import { logger } from './logger';
 
 const CSRF_TOKEN_LENGTH = 32;
 const CSRF_COOKIE_NAME = 'csrf_token';
@@ -149,7 +150,7 @@ export function withCSRFToken(options: RequestInit = {}): RequestInit {
   const token = getCSRFTokenFromCookie();
 
   if (!token) {
-    console.warn('CSRF token not found in cookies');
+    logger.warn('[CSRF] token_not_found_in_cookies');
     return options;
   }
 

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: () => Promise.resolve(true),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -16,7 +17,9 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
-  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+  logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({

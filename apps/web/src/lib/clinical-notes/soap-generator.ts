@@ -17,6 +17,7 @@ import { createHash } from 'crypto';
 import { aiScribeService, type ClinicalSessionContext } from '../scribe/ai-scribe-service';
 import { AIProviderFactory } from '../ai/factory';
 import { PromptBuilder } from '../ai/prompt-builder';
+import logger from '@/lib/logger';
 
 /**
  * Medical entity extracted from AWS Comprehend Medical
@@ -113,11 +114,11 @@ export class SOAPGenerator {
 
     try {
       // Step 1: Extract medical entities using AWS Comprehend Medical
-      console.error('[SOAPGenerator]', { event: 'extracting_entities' });
+      logger.info({ event: 'extracting_entities' }, '[SOAPGenerator]');
       const medicalEntities = await this.extractMedicalEntities(transcription);
 
       // Step 2: Auto-fill patient context using existing AI Scribe Service
-      console.error('[SOAPGenerator]', { event: 'auto_filling_context' });
+      logger.info({ event: 'auto_filling_context' }, '[SOAPGenerator]');
       const autoFillResult = await aiScribeService.autoFillPatientInfo(context, {
         includeVitals: true,
         includeHistory: true,
@@ -125,7 +126,7 @@ export class SOAPGenerator {
       });
 
       // Step 3: Generate SOAP sections using AI Provider (BYOK aware)
-      console.error('[SOAPGenerator]', { event: 'generating_soap' });
+      logger.info({ event: 'generating_soap' }, '[SOAPGenerator]');
       const soapSections = await this.generateSOAPSections(
         transcription,
         context,
@@ -157,7 +158,7 @@ export class SOAPGenerator {
 
       const processingTime = Date.now() - startTime;
 
-      console.error('[SOAPGenerator]', { event: 'generation_complete', processingTimeMs: processingTime });
+      logger.info({ event: 'generation_complete', processingTimeMs: processingTime }, '[SOAPGenerator]');
 
       return {
         noteId,
@@ -174,9 +175,9 @@ export class SOAPGenerator {
           modelUsed: 'ai-provider-factory', // Dynamic based on provider
         },
       };
-    } catch (error) {
-      console.error('❌ [SOAP Generator] Error generating SOAP note:', error);
-      throw new Error(`Failed to generate SOAP note: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (err) {
+      logger.error({ err }, '❌ [SOAP Generator] Error generating SOAP note');
+      throw new Error(`Failed to generate SOAP note: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 
@@ -224,10 +225,10 @@ export class SOAPGenerator {
         }
       }
 
-      console.error('[SOAPGenerator]', { event: 'entities_extracted', count: allEntities.length });
+      logger.info({ event: 'entities_extracted', count: allEntities.length }, '[SOAPGenerator]');
       return allEntities;
-    } catch (error) {
-      console.error('Error extracting medical entities:', error);
+    } catch (err) {
+      logger.error({ err }, 'Error extracting medical entities');
       // Return empty array on error - don't block SOAP generation
       return [];
     }
@@ -304,8 +305,8 @@ IMPORTANT FORMATTING REQUIREMENTS:
       // 4. Parse the response into structured sections
       const sections = this.parseSOAPSections(responseText);
       return sections;
-    } catch (error) {
-      console.error('Error generating SOAP sections with AI:', error);
+    } catch (err) {
+      logger.error({ err }, 'Error generating SOAP sections with AI');
       throw new Error('Failed to generate SOAP sections');
     }
   }
@@ -485,10 +486,10 @@ IMPORTANT FORMATTING REQUIREMENTS:
         },
       });
 
-      console.error('[SOAPGenerator]', { event: 'draft_saved', noteId: note.id });
+      logger.info({ event: 'draft_saved', noteId: note.id }, '[SOAPGenerator]');
       return note.id;
-    } catch (error) {
-      console.error('Error saving note to database:', error);
+    } catch (err) {
+      logger.error({ err }, 'Error saving note to database');
       throw new Error('Failed to save note to database');
     } finally {
       await prisma.$disconnect();

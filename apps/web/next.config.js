@@ -1,5 +1,8 @@
 const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -9,6 +12,7 @@ const nextConfig = {
   // and produces a self-contained server.js — required by the release pipeline.
   output: 'standalone',
   reactStrictMode: true,
+  poweredByHeader: false,
   transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas', '@prisma/extension-read-replicas'],
   experimental: {
     serverActions: {
@@ -98,4 +102,4 @@ const nextConfig = {
   },
 }
 
-module.exports = withNextIntl(nextConfig)
+module.exports = withBundleAnalyzer(withNextIntl(nextConfig))

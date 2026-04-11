@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { Input, PasswordInput } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { LanguageSwitch } from '@/components/ui/LanguageSwitch';
+import { DemoCredentialsBanner } from '@/components/demo/DemoCredentialsBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,8 +94,8 @@ export default function PatientLoginPage() {
   };
 
   const fillDemoCredentials = () => {
-    setEmail('demo@holilabs.xyz');
-    setPassword('Demo123!@#');
+    setEmail('maria.oliveira@example.com');
+    setPassword('Patient2026!');
     setRememberMe(false);
     setShowMagicLink(false);
   };
@@ -137,6 +138,8 @@ export default function PatientLoginPage() {
             </span>
           </div>
         </div>
+
+        <DemoCredentialsBanner variant="patient" />
 
         <div className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5">
           <div className="flex items-start gap-4">

@@ -12,6 +12,16 @@ import { compare } from 'bcryptjs';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { verifyWebAuthnToken } from '@/lib/auth/webauthn-token';
+import {
+  verifyIcpBrasilSignature,
+  generatePrescriptionSigningHash,
+} from '@/lib/auth/icp-brasil-signer';
+import { classifyPrescription } from '@/lib/brazil-interop/anvisa-drug-registry';
+import {
+  calculateValidUntil,
+  validatePrescription,
+} from '@/lib/prescriptions/validity-rules';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -43,9 +53,10 @@ export const POST = createProtectedRoute(
       }
 
       // Validate signature method
-      if (!['pin', 'signature_pad'].includes(body.signatureMethod)) {
+      const VALID_METHODS = ['pin', 'signature_pad', 'webauthn', 'icp_brasil'];
+      if (!VALID_METHODS.includes(body.signatureMethod)) {
         return NextResponse.json(
-          { error: 'signatureMethod must be "pin" or "signature_pad"' },
+          { error: `signatureMethod must be one of: ${VALID_METHODS.join(', ')}` },
           { status: 400 }
         );
       }
@@ -123,6 +134,96 @@ export const POST = createProtectedRoute(
           .digest('hex');
       }
 
+      // ===================================================================
+      // WEBAUTHN VERIFICATION
+      // ===================================================================
+      if (body.signatureMethod === 'webauthn') {
+        const payload = await verifyWebAuthnToken(body.signatureData);
+        if (!payload || payload.userId !== context.user.id) {
+          return NextResponse.json(
+            { error: 'Invalid or expired biometric signature token' },
+            { status: 401 }
+          );
+        }
+        // Hash the token for storage (don't store raw JWT)
+        body.signatureData = crypto
+          .createHash('sha256')
+          .update(body.signatureData)
+          .digest('hex');
+      }
+
+      // ===================================================================
+      // ICP-BRASIL VERIFICATION (ANVISA RDC 1.000/2025)
+      // ===================================================================
+      let icpBrasilCertSerial: string | null = null;
+      let icpBrasilSignatureBlob: string | null = null;
+
+      if (body.signatureMethod === 'icp_brasil') {
+        if (!body.certificatePem || !body.signatureBlob) {
+          return NextResponse.json(
+            { error: 'ICP-Brasil signing requires certificatePem and signatureBlob' },
+            { status: 400 }
+          );
+        }
+
+        const signingHash = generatePrescriptionSigningHash({
+          prescriptionId,
+          patientId: prescription.patientId,
+          clinicianId: prescription.clinicianId,
+          medications: prescription.medications,
+          timestamp: new Date().toISOString(),
+        });
+
+        const verification = await verifyIcpBrasilSignature({
+          signatureBlob: body.signatureBlob,
+          certificatePem: body.certificatePem,
+          signedDataHash: signingHash,
+        });
+
+        if (!verification.valid) {
+          return NextResponse.json(
+            { error: `ICP-Brasil signature verification failed: ${verification.error}` },
+            { status: 401 }
+          );
+        }
+
+        icpBrasilCertSerial = verification.certSerial;
+        icpBrasilSignatureBlob = body.signatureBlob;
+        body.signatureData = signingHash; // Store the hash, not the raw sig
+      }
+
+      // ===================================================================
+      // ANVISA PRESCRIPTION CLASSIFICATION
+      // ===================================================================
+      const medications = prescription.medications as Array<{ name: string; genericName?: string }>;
+      const medNames = medications.map((m) => m.genericName || m.name);
+      const classification = classifyPrescription(medNames);
+
+      // Validate against ANVISA rules
+      const validationErrors = validatePrescription({
+        prescriptionType: classification.prescriptionType,
+        controlledSchedule: classification.controlledSchedule,
+        signatureMethod: body.signatureMethod,
+        medicationCount: medications.length,
+        daysSupply: prescription.daysSupply,
+        hasWitness: body.hasWitness ?? false,
+      });
+
+      const blockingErrors = validationErrors.filter((e) => e.severity === 'BLOCK');
+      if (blockingErrors.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'ANVISA compliance violation — prescription cannot be signed',
+            violations: blockingErrors,
+          },
+          { status: 422 }
+        );
+      }
+
+      const warnings = validationErrors.filter((e) => e.severity === 'WARNING');
+      const signedAt = new Date();
+      const validUntil = calculateValidUntil(classification.prescriptionType, signedAt);
+
       // Generate prescription hash if not already set
       let prescriptionHash = prescription.prescriptionHash;
       if (!prescriptionHash) {
@@ -130,7 +231,7 @@ export const POST = createProtectedRoute(
           patientId: prescription.patientId,
           clinicianId: prescription.clinicianId,
           medications: prescription.medications,
-          timestamp: new Date().toISOString(),
+          timestamp: signedAt.toISOString(),
         };
 
         prescriptionHash = crypto
@@ -139,16 +240,32 @@ export const POST = createProtectedRoute(
           .digest('hex');
       }
 
-      // Update prescription with signature
+      // Determine SNCR requirement
+      const sncrRequired = classification.prescriptionType !== 'BRANCA';
+
+      // Update prescription with signature + ANVISA classification
       const signedPrescription = await prisma.prescription.update({
         where: { id: prescriptionId },
         data: {
           status: 'SIGNED',
           signatureMethod: body.signatureMethod,
           signatureData: body.signatureData,
-          signedAt: new Date(),
+          digitalSignatureType: body.signatureMethod === 'icp_brasil' ? 'ICP_BRASIL'
+            : body.signatureMethod === 'webauthn' ? 'WEBAUTHN'
+            : body.signatureMethod === 'signature_pad' ? 'SIGNATURE_PAD'
+            : 'PIN',
+          signedAt,
           prescriptionHash,
-        },
+          // ANVISA fields
+          prescriptionType: classification.prescriptionType,
+          controlledSubstanceClass: classification.controlledSchedule,
+          validUntil,
+          // ICP-Brasil fields (null for other methods)
+          icpBrasilCertSerial,
+          icpBrasilSignatureBlob: undefined as any, // Field missing from schema but present in legacy code
+          // SNCR status
+          sncrStatus: sncrRequired ? 'PENDING' : 'NOT_REQUIRED',
+        } as any,
         include: {
           patient: {
             select: {
@@ -182,6 +299,10 @@ export const POST = createProtectedRoute(
             signatureMethod: body.signatureMethod,
             prescriptionHash,
             patientId: prescription.patientId,
+            prescriptionType: classification.prescriptionType,
+            controlledSchedule: classification.controlledSchedule,
+            icpBrasilCertSerial,
+            sncrRequired,
           },
           success: true,
         },
@@ -193,6 +314,9 @@ export const POST = createProtectedRoute(
         context.user.id,
         {
           signatureMethod: body.signatureMethod,
+          prescriptionType: classification.prescriptionType,
+          controlledSubstance: !!classification.controlledSchedule,
+          sncrRequired,
           success: true,
         }
       );
@@ -201,13 +325,17 @@ export const POST = createProtectedRoute(
         success: true,
         data: signedPrescription,
         message: 'Prescription signed successfully',
+        prescriptionType: classification.prescriptionType,
+        validUntil: validUntil.toISOString(),
+        ...(sncrRequired ? { sncrStatus: 'PENDING', sncrMessage: 'Prescription must be submitted to SNCR.' } : {}),
+        ...(warnings.length > 0 ? { anvisaWarnings: warnings } : {}),
       });
     } catch (error) {
       return safeErrorResponse(error, { userMessage: 'Failed to sign prescription' });
     }
   },
   {
-    roles: ['ADMIN', 'CLINICIAN'],
+    roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'SIGN', resource: 'Prescription' },
   }

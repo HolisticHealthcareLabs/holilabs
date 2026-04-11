@@ -1,0 +1,173 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HoliLabs Clinical Platform API",
+    "version": "6.0.0",
+    "description": "REST API for HoliLabs LATAM healthtech platform. Covers Co-Pilot AI, Communications Hub, Billing/Faturamento, and Prevention systems.",
+    "contact": { "name": "HoliLabs Engineering", "email": "eng@holilabs.xyz" }
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Development" },
+    { "url": "https://api.holilabs.xyz", "description": "Production" }
+  ],
+
+  "rateLimitHeaders": {
+    "X-RateLimit-Limit": { "description": "Maximum requests allowed in the current window", "type": "integer" },
+    "X-RateLimit-Remaining": { "description": "Requests remaining in the current window", "type": "integer" },
+    "X-RateLimit-Reset": { "description": "UTC epoch seconds when the window resets", "type": "integer" },
+    "Retry-After": { "description": "Seconds to wait before retrying (only on 429)", "type": "integer" }
+  },
+
+  "errorCatalog": {
+    "400": { "code": "BAD_REQUEST", "description": "Invalid request body or parameters", "examples": ["Missing required field 'patientId'", "Invalid TUSS code '99999'", "Message content exceeds 1024 characters"] },
+    "401": { "code": "UNAUTHORIZED", "description": "Missing or invalid authentication", "examples": ["No Authorization header", "Expired session token", "Invalid API key"] },
+    "403": { "code": "FORBIDDEN", "description": "Authenticated but not authorized", "examples": ["CLINICIAN role cannot access billing endpoints", "X-Access-Reason header required for PHI", "Cross-tenant access denied", "ORG_ADMIN approval required for voids > R$500"] },
+    "404": { "code": "NOT_FOUND", "description": "Resource not found (also used for cross-tenant isolation)", "examples": ["Patient not found", "Encounter not found", "Conversation not found"] },
+    "409": { "code": "CONFLICT", "description": "Resource state conflict", "examples": ["Invoice already voided", "Encounter already finalized", "Duplicate MessageSid (replay)"] },
+    "422": { "code": "UNPROCESSABLE_ENTITY", "description": "Valid syntax but semantic error", "examples": ["FHIR validation failed (profile mismatch)", "Screening responses incomplete — all questions required", "ICD-10 code does not match encounter diagnosis"] },
+    "429": { "code": "RATE_LIMITED", "description": "Too many requests", "examples": ["Rate limit: 30/min for /api/copilot/suggest", "Rate limit: 200/min for webhook endpoints"] },
+    "500": { "code": "INTERNAL_ERROR", "description": "Unexpected server error", "examples": ["Database connection failed", "External API (Deepgram/Twilio) timeout", "LLM provider error"] }
+  },
+
+  "webhookEvents": {
+    "twilio_incoming_message": {
+      "endpoint": "POST /api/comms/webhook/twilio",
+      "description": "Twilio sends this when a patient sends a WhatsApp/SMS message",
+      "security": "X-Twilio-Signature MUST be validated using twilio.validateRequest(authToken, signature, fullUrl, body)",
+      "payload": {
+        "MessageSid": "SMxxxxx", "AccountSid": "ACxxxxx", "From": "whatsapp:+5511987654321",
+        "To": "whatsapp:+551134567890", "Body": "Bom dia, preciso remarcar", "NumMedia": "0"
+      }
+    },
+    "twilio_delivery_status": {
+      "endpoint": "POST /api/comms/webhook/status",
+      "description": "Twilio sends delivery status updates (sent, delivered, read, failed)",
+      "payload": {
+        "MessageSid": "SMxxxxx", "MessageStatus": "delivered", "To": "whatsapp:+5511987654321",
+        "ErrorCode": null, "ErrorMessage": null
+      },
+      "statusValues": ["queued", "sent", "delivered", "read", "failed", "undelivered"]
+    }
+  },
+
+  "examples": {
+    "copilot_suggest": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/copilot/suggest",
+          "headers": { "Authorization": "Bearer eyJ...", "Content-Type": "application/json", "X-Access-Reason": "TREATMENT" },
+          "body": { "encounterId": "enc_01", "actionType": "RX_TIMELINE_SAFETY", "transcript": "Paciente em uso de Enalapril 20mg e Espironolactona 25mg...", "patientContext": { "age": 67, "sex": "M", "activeMedications": ["Enalapril 20mg", "Espironolactona 25mg"], "allergies": [], "activeConditions": ["I10"] } }
+        },
+        "response": {
+          "status": 200,
+          "body": { "suggestion": "Combinação IECA + espironolactona apresenta risco elevado de hipercalemia. Recomenda-se monitorar potássio sérico em 1 semana, depois mensalmente por 3 meses. Suspender se K+ >5,5 mEq/L.", "confidence": 0.92, "sourceAuthority": "ACC/AHA Heart Failure Guidelines", "citationUrl": "https://pubmed.ncbi.nlm.nih.gov/35363500/", "evidenceGrade": "A", "model": "claude-sonnet-4-20250514", "samdDisclaimer": "AI-generated suggestion for clinical consideration. Not a diagnosis.", "extractedEntities": [{ "type": "drug_interaction", "value": "ACEi + Spironolactone → Hyperkalemia risk", "code": "DRUG-001", "codeSystem": "holilabs-cds-rules" }] }
+        }
+      },
+      "error_no_phi_header": {
+        "request": { "method": "POST", "url": "/api/copilot/suggest", "headers": { "Authorization": "Bearer eyJ..." }, "body": { "encounterId": "enc_01", "actionType": "RX_TIMELINE_SAFETY" } },
+        "response": { "status": 403, "body": { "error": "FORBIDDEN", "message": "X-Access-Reason header required for PHI access. Valid values: TREATMENT, OPERATIONS, PAYMENT, LEGAL, PUBLIC_HEALTH" } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/copilot/suggest -H 'Authorization: Bearer TOKEN' -H 'Content-Type: application/json' -H 'X-Access-Reason: TREATMENT' -d '{\"encounterId\":\"enc_01\",\"actionType\":\"RX_TIMELINE_SAFETY\",\"transcript\":\"...\"}'"
+    },
+
+    "comms_send": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/comms/send",
+          "headers": { "Authorization": "Bearer eyJ...", "Content-Type": "application/json" },
+          "body": { "patientId": "pat_01", "channel": "WHATSAPP", "templateId": "appt_reminder_24h", "templateVariables": { "patient_name": "João", "doctor_name": "Dr. Ricardo", "appointment_date": "31/03/2026", "appointment_time": "10:00", "clinic_name": "Clínica HoliLabs", "clinic_address": "Av. Paulista, 1000" } }
+        },
+        "response": { "status": 200, "body": { "success": true, "messageId": "msg_abc123", "channel": "WHATSAPP", "status": "QUEUED", "consentVerified": true } }
+      },
+      "error_no_consent": {
+        "request": { "method": "POST", "url": "/api/comms/send", "body": { "patientId": "pat_99", "channel": "WHATSAPP", "content": "Test" } },
+        "response": { "status": 200, "body": { "success": false, "messageId": null, "channel": "WHATSAPP", "status": "FAILED", "failureReason": "Patient has not granted WhatsApp consent. Update consent at /portal/onboarding/consent", "consentVerified": false } }
+      },
+      "error_phi_in_body": {
+        "request": { "method": "POST", "url": "/api/comms/send", "body": { "patientId": "pat_01", "channel": "WHATSAPP", "content": "Seu diagnóstico: hipertensão. Glicemia: 250 mg/dL" } },
+        "response": { "status": 400, "body": { "error": "BAD_REQUEST", "message": "Message content must not contain clinical data (diagnoses, lab values). Use secure portal links instead." } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/comms/send -H 'Authorization: Bearer TOKEN' -H 'Content-Type: application/json' -d '{\"patientId\":\"pat_01\",\"channel\":\"WHATSAPP\",\"templateId\":\"appt_reminder_24h\",\"templateVariables\":{\"patient_name\":\"João\"}}'"
+    },
+
+    "comms_webhook_twilio": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/comms/webhook/twilio",
+          "headers": { "X-Twilio-Signature": "abc123validhash", "Content-Type": "application/x-www-form-urlencoded" },
+          "body": "MessageSid=SM123&AccountSid=AC456&From=whatsapp%3A%2B5511987654321&Body=Bom+dia"
+        },
+        "response": { "status": 200, "body": { "status": "received" } }
+      },
+      "error_invalid_signature": {
+        "request": { "method": "POST", "url": "/api/comms/webhook/twilio", "headers": { "X-Twilio-Signature": "invalid_signature" } },
+        "response": { "status": 403, "body": { "error": "FORBIDDEN", "message": "Invalid Twilio webhook signature" } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/comms/webhook/twilio -H 'X-Twilio-Signature: SIGNATURE' -d 'MessageSid=SM123&From=whatsapp%3A%2B5511987654321&Body=Hello'"
+    },
+
+    "billing_invoice": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/billing/invoice",
+          "headers": { "Authorization": "Bearer eyJ...", "X-Access-Reason": "PAYMENT" },
+          "body": { "patientId": "pat_01", "encounterId": "enc_01", "payerType": "INSURANCE", "lineItems": [{ "description": "Consulta em consultório", "tussCode": "10101012", "cbhpmCode": "1.01.01.01-2", "icd10Code": "I10", "quantity": 1, "unitAmount": 250, "amount": 250 }], "dueDate": "2026-04-15" }
+        },
+        "response": { "status": 201, "body": { "success": true, "invoice": { "id": "inv_new", "invoiceNumber": "HLB-2026-0011", "status": "DRAFT", "totalAmount": 250, "stripeInvoiceId": null } } }
+      },
+      "error_wrong_role": {
+        "request": { "method": "POST", "url": "/api/billing/invoice", "headers": { "Authorization": "Bearer CLINICIAN_TOKEN" } },
+        "response": { "status": 403, "body": { "error": "FORBIDDEN", "message": "Role CLINICIAN is not authorized for billing operations. Required: BILLING or ORG_ADMIN" } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/billing/invoice -H 'Authorization: Bearer TOKEN' -H 'Content-Type: application/json' -H 'X-Access-Reason: PAYMENT' -d '{\"patientId\":\"pat_01\",\"encounterId\":\"enc_01\",\"lineItems\":[...]}'"
+    },
+
+    "billing_void": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/billing/void/inv_05",
+          "headers": { "Authorization": "Bearer eyJ...", "X-Access-Reason": "PAYMENT" },
+          "body": { "reason": "BILLING_ERROR", "reasonDetail": "Incorrect TUSS code applied", "initiateRefund": true }
+        },
+        "response": { "status": 200, "body": { "success": true, "invoice": { "id": "inv_05", "status": "VOID", "voidedAt": "2026-03-30T15:00:00-03:00", "voidedBy": "user_billing_ana", "voidReason": "BILLING_ERROR" }, "refund": { "stripeRefundId": "re_xxx", "amount": 430.00, "status": "PENDING" } } }
+      },
+      "error_already_voided": {
+        "request": { "method": "POST", "url": "/api/billing/void/inv_05", "body": { "reason": "DUPLICATE" } },
+        "response": { "status": 409, "body": { "error": "CONFLICT", "message": "Invoice inv_05 is already voided" } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/billing/void/inv_05 -H 'Authorization: Bearer TOKEN' -H 'X-Access-Reason: PAYMENT' -d '{\"reason\":\"BILLING_ERROR\"}'"
+    },
+
+    "prevention_screen": {
+      "success": {
+        "request": {
+          "method": "POST", "url": "/api/prevention/screen",
+          "headers": { "Authorization": "Bearer eyJ...", "X-Access-Reason": "TREATMENT" },
+          "body": { "patientId": "pat_09", "instrumentId": "phq9", "responses": [{"questionId":"phq9_q1","value":2},{"questionId":"phq9_q2","value":2},{"questionId":"phq9_q3","value":2},{"questionId":"phq9_q4","value":2},{"questionId":"phq9_q5","value":1},{"questionId":"phq9_q6","value":2},{"questionId":"phq9_q7","value":2},{"questionId":"phq9_q8","value":1},{"questionId":"phq9_q9","value":1}] }
+        },
+        "response": { "status": 200, "body": { "success": true, "score": 15, "maxScore": 27, "severity": { "level": "moderately_severe", "label": { "en": "Moderately Severe", "pt-BR": "Moderadamente Grave" }, "color": "clinical-critical" }, "interpretation": "PHQ-9 score of 15 indicates possible moderately severe depression. Clinical evaluation recommended.", "recommendation": "Assess for safety (Q9 endorsed). Consider SSRI initiation + psychotherapy referral. Follow-up in 2 weeks.", "sourceAuthority": "Kroenke K, Spitzer RL, Williams JB (2001)", "citationUrl": "https://pubmed.ncbi.nlm.nih.gov/11556941/", "evidenceGrade": "A", "fhirQuestionnaireResponseId": "qr_abc123", "triggeredRules": ["MH-001", "MH-002"], "insufficientData": false } }
+      },
+      "error_missing_questions": {
+        "request": { "method": "POST", "url": "/api/prevention/screen", "body": { "patientId": "pat_09", "instrumentId": "phq9", "responses": [{"questionId":"phq9_q1","value":2}] } },
+        "response": { "status": 422, "body": { "error": "UNPROCESSABLE_ENTITY", "message": "PHQ-9 requires all 9 questions. Received 1. Missing: phq9_q2, phq9_q3, phq9_q4, phq9_q5, phq9_q6, phq9_q7, phq9_q8, phq9_q9", "insufficientData": true } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/prevention/screen -H 'Authorization: Bearer TOKEN' -H 'Content-Type: application/json' -H 'X-Access-Reason: TREATMENT' -d '{\"patientId\":\"pat_09\",\"instrumentId\":\"phq9\",\"responses\":[...]}'"
+    },
+
+    "prevention_gov_submit": {
+      "success_sandbox": {
+        "request": {
+          "method": "POST", "url": "/api/prevention/gov-submit",
+          "headers": { "Authorization": "Bearer eyJ...", "X-Access-Reason": "PUBLIC_HEALTH" },
+          "body": { "system": "RNDS", "resourceType": "Immunization", "fhirBundle": { "resourceType": "Bundle", "type": "document" }, "sandbox": true }
+        },
+        "response": { "status": 200, "body": { "success": true, "system": "RNDS", "submissionId": "sub_sandbox_001", "status": "STUB_OK", "errors": [], "note": "Sandbox mode — production RNDS integration pending e-CNPJ certificate setup" } }
+      },
+      "error_missing_cns": {
+        "request": { "method": "POST", "url": "/api/prevention/gov-submit", "body": { "system": "RNDS", "resourceType": "Immunization", "fhirBundle": { "resourceType": "Bundle" } } },
+        "response": { "status": 422, "body": { "error": "UNPROCESSABLE_ENTITY", "message": "Patient CNS (15-digit) required for RNDS submission", "errors": [{ "code": "MISSING_CNS", "message": "Bundle must contain Patient resource with valid CNS identifier", "field": "fhirBundle.entry[].resource.identifier" }] } }
+      },
+      "curl": "curl -X POST http://localhost:3000/api/prevention/gov-submit -H 'Authorization: Bearer TOKEN' -H 'X-Access-Reason: PUBLIC_HEALTH' -d '{\"system\":\"RNDS\",\"resourceType\":\"Immunization\",\"sandbox\":true,\"fhirBundle\":{...}}'"
+    }
+  }
+}

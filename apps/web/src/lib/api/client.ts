@@ -17,10 +17,10 @@ export interface ApiError {
   error: string;
   message?: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -32,7 +32,7 @@ export class ApiClientError extends Error {
     message: string,
     public status: number,
     public code?: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -67,7 +67,7 @@ async function fetchCsrfToken(): Promise<string> {
 
     cachedCsrfToken = data.token;
     return data.token;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to fetch CSRF token:', error);
     throw error;
   }
@@ -154,18 +154,19 @@ async function apiFetch<T = any>(
     const contentType = response.headers.get('Content-Type');
     const isJson = contentType?.includes('application/json');
 
-    let data: any;
+    let data: T;
     if (isJson) {
-      data = await response.json();
+      data = (await response.json()) as T;
     } else {
-      data = await response.text();
+      data = (await response.text()) as unknown as T;
     }
 
     // Handle error responses
     if (!response.ok) {
-      const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
-      const errorCode = data?.code;
-      const errorDetails = data?.details;
+      const errorData = data as unknown as ApiError;
+      const errorMessage = errorData?.message || errorData?.error || `Request failed with status ${response.status}`;
+      const errorCode = errorData?.code;
+      const errorDetails = errorData?.details;
 
       throw new ApiClientError(
         errorMessage,
@@ -176,7 +177,7 @@ async function apiFetch<T = any>(
     }
 
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Re-throw ApiClientError as-is
     if (error instanceof ApiClientError) {
       throw error;
@@ -185,7 +186,7 @@ async function apiFetch<T = any>(
     // Network or other errors
     console.error('API request failed:', error);
     throw new ApiClientError(
-      error.message || 'Network request failed',
+      error instanceof Error ? error.message : 'Network request failed',
       0,
       'NETWORK_ERROR'
     );
@@ -199,14 +200,14 @@ export const apiClient = {
   /**
    * GET request
    */
-  async get<T = any>(url: string, options?: FetchOptions): Promise<T> {
+  async get<T = unknown>(url: string, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, { ...options, method: 'GET', skipCsrf: true });
   },
 
   /**
    * POST request
    */
-  async post<T = any>(url: string, body?: any, options?: FetchOptions): Promise<T> {
+  async post<T = unknown>(url: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, {
       ...options,
       method: 'POST',
@@ -217,7 +218,7 @@ export const apiClient = {
   /**
    * PUT request
    */
-  async put<T = any>(url: string, body?: any, options?: FetchOptions): Promise<T> {
+  async put<T = unknown>(url: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, {
       ...options,
       method: 'PUT',
@@ -228,7 +229,7 @@ export const apiClient = {
   /**
    * PATCH request
    */
-  async patch<T = any>(url: string, body?: any, options?: FetchOptions): Promise<T> {
+  async patch<T = unknown>(url: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, {
       ...options,
       method: 'PATCH',
@@ -239,14 +240,14 @@ export const apiClient = {
   /**
    * DELETE request
    */
-  async delete<T = any>(url: string, options?: FetchOptions): Promise<T> {
+  async delete<T = unknown>(url: string, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, { ...options, method: 'DELETE' });
   },
 
   /**
    * Upload file (multipart/form-data)
    */
-  async upload<T = any>(url: string, formData: FormData, options?: FetchOptions): Promise<T> {
+  async upload<T = unknown>(url: string, formData: FormData, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(url, {
       ...options,
       method: 'POST',

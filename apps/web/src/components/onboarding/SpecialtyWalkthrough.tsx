@@ -288,7 +288,7 @@ export default function SpecialtyWalkthrough({
   // Kick-off once active
   useEffect(() => {
     if (active) {
-      const timer = setTimeout(() => setRun(true), 400);
+      const timer = setTimeout(() => setRun(true), 50);
       return () => clearTimeout(timer);
     }
     setRun(false);
@@ -334,7 +334,7 @@ export default function SpecialtyWalkthrough({
           setTimeout(() => {
             setStepIndex(nextIndex);
             navigatingRef.current = false;
-          }, 1_200);
+          }, 300);
         } else {
           setStepIndex(nextIndex);
         }

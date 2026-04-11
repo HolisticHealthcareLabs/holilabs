@@ -64,7 +64,7 @@ describe('POST /api/prevention/templates/[id]/revert', () => {
           create: jest.fn().mockResolvedValue({ id: 'v3', versionNumber: 3 }),
         },
         preventionPlanTemplate: {
-          findUnique: jest.fn().mockResolvedValue({ id: 'tpl-1', templateName: 'Current Name', ...mockTargetVersion.templateData, useCount: 3, createdBy: 'user-1', createdAt: new Date(), updatedAt: new Date() }),
+          findUnique: jest.fn().mockResolvedValue({ id: 'tpl-1', ...mockTargetVersion.templateData, templateName: 'Current Name', useCount: 3, createdBy: 'user-1', createdAt: new Date(), updatedAt: new Date() }),
           update: jest.fn().mockResolvedValue(mockUpdatedTemplate),
         },
         auditLog: { create: jest.fn().mockResolvedValue({}) },
@@ -98,7 +98,7 @@ describe('POST /api/prevention/templates/[id]/revert', () => {
     expect(data.error).toBe('versionId is required');
   });
 
-  it('returns 404 when version not found in transaction', async () => {
+  it('throws when version not found in transaction', async () => {
     (prisma.$transaction as jest.Mock).mockImplementation(async (fn: any) => {
       const tx = {
         preventionPlanTemplateVersion: {
@@ -112,10 +112,8 @@ describe('POST /api/prevention/templates/[id]/revert', () => {
       method: 'POST',
       body: JSON.stringify({ versionId: 'missing' }),
     });
-    const res = await POST(req, mockContext);
-    const data = await res.json();
 
-    expect(res.status).toBe(500);
+    await expect(POST(req, mockContext)).rejects.toThrow('Version not found');
   });
 
   it('reverts without snapshot when createSnapshot is false', async () => {
@@ -125,7 +123,7 @@ describe('POST /api/prevention/templates/[id]/revert', () => {
           findUnique: jest.fn().mockResolvedValue(mockTargetVersion),
         },
         preventionPlanTemplate: {
-          findUnique: jest.fn().mockResolvedValue({ id: 'tpl-1', templateName: 'Current', ...mockTargetVersion.templateData, useCount: 1, createdBy: 'user-1', createdAt: new Date(), updatedAt: new Date() }),
+          findUnique: jest.fn().mockResolvedValue({ id: 'tpl-1', ...mockTargetVersion.templateData, templateName: 'Current', useCount: 1, createdBy: 'user-1', createdAt: new Date(), updatedAt: new Date() }),
           update: jest.fn().mockResolvedValue(mockUpdatedTemplate),
         },
         auditLog: { create: jest.fn().mockResolvedValue({}) },

@@ -267,7 +267,8 @@ export function ActivityTimeline({
 
   return (
     <div
-      className={`bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg ${className}`}
+      className={`dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 ${className}`}
+      style={{ backgroundColor: 'var(--surface-primary)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--token-shadow-lg)' }}
     >
       {/* Header */}
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
@@ -334,11 +335,12 @@ export function ActivityTimeline({
                         <div className="ml-16 group">
                           <div
                             onClick={() => handleActivityClick(activity)}
-                            className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                            className={`p-4 border transition-all cursor-pointer ${
                               isExpanded
                                 ? 'border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/10'
                                 : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800'
                             }`}
+                            style={{ borderRadius: 'var(--radius-lg)' }}
                           >
                             {/* Header */}
                             <div className="flex items-start justify-between gap-4 mb-2">

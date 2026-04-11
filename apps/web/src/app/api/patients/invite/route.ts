@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/sms';
@@ -82,13 +82,11 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Verify patient belongs to requesting clinician
-      if (patient.assignedClinicianId !== context.user.id && context.user.role !== 'ADMIN') {
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      const hasAccess = await verifyPatientAccess(context.user.id, patientId);
+      if (!hasAccess) {
         return NextResponse.json(
-          {
-            success: false,
-            error: 'Forbidden: You do not have access to this patient',
-          },
+          { error: 'Access denied to this patient record' },
           { status: 403 }
         );
       }

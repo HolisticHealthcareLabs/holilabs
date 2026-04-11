@@ -5,15 +5,28 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
-jest.mock('framer-motion', () => ({
-  motion: new Proxy({}, {
-    get: (_target, prop) => React.forwardRef(({ children, ...rest }: any, ref: any) => {
-      const Tag = typeof prop === 'string' ? prop : 'div';
-      return React.createElement(Tag, { ...rest, ref }, children);
-    }),
-  }),
-  AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
-}));
+jest.mock('framer-motion', () => {
+  const React = require('react');
+  const cache: Record<string, React.ComponentType<any>> = {};
+  const handler = {
+    get: (_target: any, prop: string) => {
+      if (!cache[prop]) {
+        cache[prop] = React.forwardRef(({ children, initial, animate, exit, transition, whileHover, whileTap, whileInView, variants, layout, ...rest }: any, ref: any) => {
+          const tag = typeof prop === 'string' ? prop : 'div';
+          return React.createElement(tag, { ...rest, ref }, children);
+        });
+      }
+      return cache[prop];
+    },
+  };
+  const motionProxy = new Proxy({}, handler);
+  return {
+    __esModule: true,
+    motion: motionProxy,
+    m: motionProxy,
+    AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  };
+});
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {

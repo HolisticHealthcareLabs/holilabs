@@ -39,6 +39,7 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   default: {
     info: jest.fn(),
     error: jest.fn(),

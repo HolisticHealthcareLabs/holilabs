@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import {
   AlertTriangle, TrendingUp,
   Search, Filter, ChevronRight, CheckCircle2, Clock,
-  XCircle, BarChart3, X, FileText,
+  XCircle, BarChart3, X, FileText, Download,
 } from 'lucide-react';
 import { DEMO_CLAIMS, getDemoBillingStats, type DemoClaim } from '@/lib/demo/dashboard-mocks';
 import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
@@ -173,7 +173,7 @@ function PreAuthModal({
                   <div className="flex items-start gap-2">
                     <FileText className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
                     <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed">
-                      Cortex will auto-attach the relevant SOAP note, ICD-10 codes, and supporting lab results from this patient&apos;s record to strengthen the authorization request.
+                      {t('priorAuthDocumentationNote')}
                     </p>
                   </div>
                 </div>
@@ -285,6 +285,31 @@ export default function ClaimsIntelligencePage() {
     return getDemoBillingStats(selectedCountry);
   }, [selectedCountry]);
 
+  const exportClaimsToCSV = () => {
+    const headers = [
+      'Claim ID', 'Patient', 'Provider', 'Payer', 'Country',
+      'Status', 'Encounter Date', 'Total Value', 'Currency',
+      'Billing Codes', 'CDI Flags', 'Denial Reason',
+    ];
+    const rows = filteredClaims.map((c) => [
+      c.id, c.patientName, c.provider, c.payer, c.country,
+      c.status, c.encounterDate, c.totalValue.toString(), c.currency,
+      c.billingCodes.map((bc) => `${bc.code} (${bc.standard})`).join('; '),
+      c.cdiFlags.toString(), c.denialReason || '',
+    ]);
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `claims-${selectedCountry}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: t('all') },
     { value: 'pending_review', label: t('pending') },
@@ -318,6 +343,14 @@ export default function ClaimsIntelligencePage() {
               { target: '#prior-auth-btn', title: 'Prior Authorization', content: 'Submit pre-auth requests directly from the dashboard.' },
             ]}
           />
+          <button
+            onClick={exportClaimsToCSV}
+            disabled={filteredClaims.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {t('exportCsv')}
+          </button>
           <button
             id="prior-auth-btn"
             onClick={() => { setPriorAuthPatientId(''); setPriorAuthPatientName(''); setPriorAuthOpen(true); }}

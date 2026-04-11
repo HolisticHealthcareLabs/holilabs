@@ -1,0 +1,201 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-30",
+
+  "migrations": [
+    {
+      "order": 1,
+      "name": "add_user_ai_preferences",
+      "description": "Add preferredAiModel and firstRunCompleted to User model",
+      "model": "User",
+      "changes": [
+        { "field": "preferredAiModel", "type": "String?", "default": null, "note": "AI model ID from MODEL_CATALOG" },
+        { "field": "firstRunCompleted", "type": "Boolean", "default": false, "note": "Onboarding tour completion flag" }
+      ],
+      "rollback": "ALTER TABLE \"User\" DROP COLUMN IF EXISTS \"preferredAiModel\", DROP COLUMN IF EXISTS \"firstRunCompleted\";",
+      "backfill": "UPDATE \"User\" SET \"firstRunCompleted\" = true WHERE \"lastLoginAt\" IS NOT NULL;",
+      "dependencies": [],
+      "risk": "low",
+      "cyrus": "preferredAiModel is not PII — no encryption needed"
+    },
+    {
+      "order": 2,
+      "name": "add_comms_enums",
+      "description": "Create enums for Communications Hub",
+      "changes": [
+        { "enum": "ChannelType", "values": ["WHATSAPP", "SMS", "EMAIL", "IN_APP"] },
+        { "enum": "ConversationStatus", "values": ["ACTIVE", "CLOSED", "ARCHIVED"] },
+        { "enum": "MessageDirection", "values": ["INBOUND", "OUTBOUND"] },
+        { "enum": "MessageContentType", "values": ["TEXT", "IMAGE", "DOCUMENT", "AUDIO", "VIDEO", "TEMPLATE", "INTERACTIVE"] },
+        { "enum": "MessageStatus", "values": ["QUEUED", "SENT", "DELIVERED", "READ", "FAILED"] }
+      ],
+      "rollback": "DROP TYPE IF EXISTS \"ChannelType\", \"ConversationStatus\", \"MessageDirection\", \"MessageContentType\", \"MessageStatus\" CASCADE;",
+      "dependencies": [],
+      "risk": "low"
+    },
+    {
+      "order": 3,
+      "name": "create_conversation_model",
+      "description": "Create Conversation model for Communications Hub",
+      "model": "Conversation",
+      "fields": [
+        { "field": "id", "type": "String @id @default(cuid())" },
+        { "field": "patientId", "type": "String", "relation": "Patient" },
+        { "field": "organizationId", "type": "String", "relation": "Organization" },
+        { "field": "channelType", "type": "ChannelType" },
+        { "field": "status", "type": "ConversationStatus @default(ACTIVE)" },
+        { "field": "lastMessageAt", "type": "DateTime?" },
+        { "field": "lastMessagePreview", "type": "String?", "note": "max 100 chars" },
+        { "field": "unreadCount", "type": "Int @default(0)" },
+        { "field": "externalId", "type": "String?", "note": "WhatsApp conversation ID", "unique": true },
+        { "field": "assignedToId", "type": "String?", "relation": "User" },
+        { "field": "lastInboundAt", "type": "DateTime?", "note": "Tracks 24h WhatsApp window" },
+        { "field": "createdAt", "type": "DateTime @default(now())" },
+        { "field": "updatedAt", "type": "DateTime @updatedAt" }
+      ],
+      "indexes": [
+        "@@index([organizationId, status, lastMessageAt])",
+        "@@index([patientId])"
+      ],
+      "rollback": "DROP TABLE IF EXISTS \"Conversation\" CASCADE;",
+      "dependencies": ["add_comms_enums"],
+      "risk": "low",
+      "cyrus": "organizationId required for tenant isolation. lastMessagePreview must not contain PHI."
+    },
+    {
+      "order": 4,
+      "name": "create_message_model",
+      "description": "Create Message model for Communications Hub",
+      "model": "Message",
+      "fields": [
+        { "field": "id", "type": "String @id @default(cuid())" },
+        { "field": "conversationId", "type": "String", "relation": "Conversation" },
+        { "field": "direction", "type": "MessageDirection" },
+        { "field": "channelType", "type": "ChannelType" },
+        { "field": "content", "type": "String", "cyrus": "MUST encrypt with encryptPHIWithVersion — patient communications are PHI" },
+        { "field": "contentType", "type": "MessageContentType @default(TEXT)" },
+        { "field": "mediaUrl", "type": "String?", "note": "Stored in secure bucket, not Twilio CDN" },
+        { "field": "templateId", "type": "String?" },
+        { "field": "templateVariables", "type": "Json?" },
+        { "field": "status", "type": "MessageStatus @default(QUEUED)" },
+        { "field": "twilioSid", "type": "String?", "unique": true, "note": "For idempotency and status tracking" },
+        { "field": "errorCode", "type": "String?" },
+        { "field": "errorMessage", "type": "String?" },
+        { "field": "sentById", "type": "String?", "relation": "User" },
+        { "field": "deliveredAt", "type": "DateTime?" },
+        { "field": "readAt", "type": "DateTime?" },
+        { "field": "metadata", "type": "Json?" },
+        { "field": "createdAt", "type": "DateTime @default(now())" }
+      ],
+      "indexes": [
+        "@@index([conversationId, createdAt])",
+        "@@unique([twilioSid])"
+      ],
+      "rollback": "DROP TABLE IF EXISTS \"Message\" CASCADE;",
+      "dependencies": ["create_conversation_model"],
+      "risk": "medium",
+      "cyrus": "content MUST be encrypted at rest. twilioSid unique index prevents replay attacks.",
+      "ruth": "Message retention: soft-delete content after retention period. Preserve AuditLog entries per LGPD Art. 37."
+    },
+    {
+      "order": 5,
+      "name": "create_screening_result_model",
+      "description": "Create ScreeningResult model for Prevention system",
+      "model": "ScreeningResult",
+      "fields": [
+        { "field": "id", "type": "String @id @default(cuid())" },
+        { "field": "patientId", "type": "String", "relation": "Patient" },
+        { "field": "clinicianId", "type": "String", "relation": "User" },
+        { "field": "encounterId", "type": "String?", "relation": "Encounter" },
+        { "field": "organizationId", "type": "String", "relation": "Organization" },
+        { "field": "instrumentId", "type": "String", "note": "phq9, gad7, findrisc, score2, framingham" },
+        { "field": "score", "type": "Float" },
+        { "field": "maxScore", "type": "Float" },
+        { "field": "severity", "type": "String" },
+        { "field": "severityColor", "type": "String" },
+        { "field": "responses", "type": "Json", "note": "Array of {questionId, value}" },
+        { "field": "triggeredRules", "type": "String[]", "note": "Rule IDs from clinical-decision-rules.json" },
+        { "field": "interpretation", "type": "Json", "note": "Trilingual interpretation text" },
+        { "field": "sourceAuthority", "type": "String", "elena": "REQUIRED — must cite the validated instrument source" },
+        { "field": "citationUrl", "type": "String", "elena": "REQUIRED — PubMed URL" },
+        { "field": "fhirQuestionnaireResponseId", "type": "String?", "note": "Created FHIR resource ID" },
+        { "field": "note", "type": "String?" },
+        { "field": "completedAt", "type": "DateTime @default(now())" },
+        { "field": "createdAt", "type": "DateTime @default(now())" }
+      ],
+      "indexes": [
+        "@@index([patientId, instrumentId, completedAt])",
+        "@@index([organizationId, completedAt])"
+      ],
+      "rollback": "DROP TABLE IF EXISTS \"ScreeningResult\" CASCADE;",
+      "dependencies": [],
+      "risk": "low",
+      "elena": "sourceAuthority and citationUrl are NOT NULL — every screening result must cite its instrument.",
+      "ruth": "Screening results are PHI. Access requires X-Access-Reason: TREATMENT."
+    },
+    {
+      "order": 6,
+      "name": "create_copilot_session_model",
+      "description": "Create CopilotSession and CopilotSuggestion models for AI tracking",
+      "models": {
+        "CopilotSession": {
+          "fields": [
+            { "field": "id", "type": "String @id @default(cuid())" },
+            { "field": "encounterId", "type": "String", "relation": "Encounter" },
+            { "field": "clinicianId", "type": "String", "relation": "User" },
+            { "field": "organizationId", "type": "String", "relation": "Organization" },
+            { "field": "modelId", "type": "String", "note": "AI model used" },
+            { "field": "startedAt", "type": "DateTime @default(now())" },
+            { "field": "endedAt", "type": "DateTime?" },
+            { "field": "transcriptLength", "type": "Int @default(0)", "note": "Character count" },
+            { "field": "suggestionsGenerated", "type": "Int @default(0)" },
+            { "field": "suggestionsAccepted", "type": "Int @default(0)" },
+            { "field": "totalTokensUsed", "type": "Int @default(0)" }
+          ],
+          "indexes": ["@@index([encounterId])", "@@index([clinicianId, startedAt])"]
+        },
+        "CopilotSuggestion": {
+          "fields": [
+            { "field": "id", "type": "String @id @default(cuid())" },
+            { "field": "sessionId", "type": "String", "relation": "CopilotSession" },
+            { "field": "actionType", "type": "String", "note": "RX_TIMELINE_SAFETY, DIFFERENTIAL_DIAGNOSIS, etc." },
+            { "field": "modelId", "type": "String" },
+            { "field": "prompt", "type": "String", "cyrus": "De-identified before storage — no raw patient names" },
+            { "field": "response", "type": "String" },
+            { "field": "confidence", "type": "Float?" },
+            { "field": "sourceAuthority", "type": "String?", "elena": "Required for clinical suggestions" },
+            { "field": "citationUrl", "type": "String?" },
+            { "field": "accepted", "type": "Boolean?" },
+            { "field": "tokensUsed", "type": "Int?" },
+            { "field": "latencyMs", "type": "Int?" },
+            { "field": "createdAt", "type": "DateTime @default(now())" }
+          ],
+          "indexes": ["@@index([sessionId, createdAt])"]
+        }
+      },
+      "rollback": "DROP TABLE IF EXISTS \"CopilotSuggestion\" CASCADE; DROP TABLE IF EXISTS \"CopilotSession\" CASCADE;",
+      "dependencies": [],
+      "risk": "low",
+      "cyrus": "Prompts must be de-identified before storage. No raw patient names in prompt field."
+    }
+  ],
+
+  "indexRecommendations": [
+    { "table": "Conversation", "index": "CREATE INDEX idx_conv_org_status ON \"Conversation\" (\"organizationId\", status, \"lastMessageAt\" DESC);", "reason": "Conversation list query with org filter + status sort" },
+    { "table": "Message", "index": "CREATE INDEX idx_msg_conv_date ON \"Message\" (\"conversationId\", \"createdAt\");", "reason": "Message thread pagination" },
+    { "table": "Message", "index": "CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE INDEX idx_msg_content_trgm ON \"Message\" USING GIN (content gin_trgm_ops);", "reason": "Full-text search across message content" },
+    { "table": "ScreeningResult", "index": "CREATE INDEX idx_screen_patient ON \"ScreeningResult\" (\"patientId\", \"instrumentId\", \"completedAt\" DESC);", "reason": "Patient screening history" },
+    { "table": "CopilotSuggestion", "index": "CREATE INDEX idx_copilot_session ON \"CopilotSuggestion\" (\"sessionId\", \"createdAt\");", "reason": "Session suggestion timeline" }
+  ],
+
+  "migrationOrder": [
+    "1. add_user_ai_preferences (no dependencies)",
+    "2. add_comms_enums (no dependencies)",
+    "3. create_conversation_model (depends on enums)",
+    "4. create_message_model (depends on conversation)",
+    "5. create_screening_result_model (no dependencies, can run parallel with 3-4)",
+    "6. create_copilot_session_model (no dependencies, can run parallel with 3-5)"
+  ],
+
+  "rollbackStrategy": "Each migration has a rollback SQL command. Run in REVERSE order. Test rollbacks in staging before production. Prisma migrate does NOT auto-rollback — use manual SQL."
+}

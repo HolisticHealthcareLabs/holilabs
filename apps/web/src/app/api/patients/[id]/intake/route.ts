@@ -17,10 +17,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto, { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
-import { encryptPHIWithVersion } from '@/lib/security/encryption';
+import { createProtectedRoute, verifyPatientAccess, type ApiContext } from '@/lib/api/middleware';
 import { createChainedAuditEntry } from '@/lib/security/audit-chain';
 import type { ConsentType } from '@prisma/client';
+// NOTE: encryptPHIWithVersion removed — Prisma encryption extension handles
+// field-level encryption transparently. Manual calls cause double-encryption (CVI-003).
 
 const ALLOWED_CONSENT_TYPES = new Set<ConsentType>([
   'GENERAL_CONSULTATION',
@@ -41,6 +42,12 @@ async function handler(
   context: ApiContext,
 ): Promise<NextResponse> {
   const { id: patientId } = (context.params ?? ({} as any)) as { id: string };
+
+  // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+  const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+  }
 
   // ── Parse body ──────────────────────────────────────────────────────────────
   let body: {
@@ -89,20 +96,9 @@ async function handler(
 
   const demo = intakeData.demographics;
 
-  // ── Encrypt PII before any DB write (ELENA invariant) ──────────────────────
-  const [
-    encFirstName,
-    encLastName,
-    encEmail,
-    encCpf,
-    encPhone,
-  ] = await Promise.all([
-    demo.firstName   ? encryptPHIWithVersion(demo.firstName)   : Promise.resolve(null),
-    demo.lastName    ? encryptPHIWithVersion(demo.lastName)     : Promise.resolve(null),
-    demo.email       ? encryptPHIWithVersion(demo.email)        : Promise.resolve(null),
-    demo.cpf         ? encryptPHIWithVersion(demo.cpf)          : Promise.resolve(null),
-    demo.phone       ? encryptPHIWithVersion(demo.phone)        : Promise.resolve(null),
-  ]);
+  // Prisma encryption extension handles field-level encryption transparently
+  // for all PHI_FIELDS_CONFIG fields (firstName, lastName, email, cpf, phone, etc.)
+  // Do NOT manually call encryptPHIWithVersion() — it causes double-encryption (CVI-003).
 
   // ── Upsert Patient ──────────────────────────────────────────────────────────
   // For 'new' patientId we create; for a real ID we update.
@@ -111,16 +107,16 @@ async function handler(
   if (patientId === 'new') {
     const patient = await prisma.patient.create({
       data: {
-        firstName:   encFirstName ?? '',
-        lastName:    encLastName  ?? '',
+        firstName:   demo.firstName ?? '',
+        lastName:    demo.lastName ?? '',
         dateOfBirth: demo.dateOfBirth
           ? new Date(demo.dateOfBirth)
           : new Date('1900-01-01'),
-        mrn:     (await encryptPHIWithVersion(`MRN-${randomUUID()}`)) ?? `MRN-${randomUUID()}`,
+        mrn:     `MRN-${randomUUID()}`,
         tokenId: `PT-${randomUUID().slice(0, 8)}`,
-        ...(encEmail    && { email:   encEmail    }),
-        ...(encCpf      && { cpf:     encCpf      }),
-        ...(encPhone    && { phone:   encPhone    }),
+        ...(demo.email   && { email:   demo.email }),
+        ...(demo.cpf     && { cpf:     demo.cpf }),
+        ...(demo.phone   && { phone:   demo.phone }),
         ...(demo.address && { address: demo.address }),
       },
       select: { id: true },
@@ -130,11 +126,11 @@ async function handler(
     await prisma.patient.update({
       where: { id: patientId },
       data: {
-        ...(encFirstName   && { firstName: encFirstName }),
-        ...(encLastName    && { lastName:  encLastName  }),
-        ...(encEmail       && { email:     encEmail     }),
-        ...(encCpf         && { cpf:       encCpf       }),
-        ...(encPhone       && { phone:     encPhone     }),
+        ...(demo.firstName && { firstName: demo.firstName }),
+        ...(demo.lastName  && { lastName:  demo.lastName }),
+        ...(demo.email     && { email:     demo.email }),
+        ...(demo.cpf       && { cpf:       demo.cpf }),
+        ...(demo.phone     && { phone:     demo.phone }),
         ...(demo.address   && { address:   demo.address }),
       },
     });

@@ -6,10 +6,11 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }), us
 jest.mock('lucide-react', () => new Proxy({}, { get: () => () => null }));
 jest.mock('@/contexts/LanguageContext', () => ({ useLanguage: () => ({ locale: 'en', t: (k: string) => k }) }));
 
+let _swrReturn: any = { data: null, error: null, isLoading: true };
 jest.mock('swr', () => ({
   __esModule: true,
-  default: jest.fn().mockReturnValue({ data: null, error: null, isLoading: true }),
-  mutate: jest.fn(),
+  default: () => _swrReturn,
+  mutate: () => {},
 }));
 
 import React from 'react';
@@ -18,6 +19,11 @@ import { ConflictReviewQueue } from '../ConflictReviewQueue';
 
 describe('ConflictReviewQueue', () => {
   it('renders the FHIR Sync Conflicts heading', () => {
+    _swrReturn = {
+      data: { success: true, data: { conflicts: [], pagination: { totalCount: 0, totalPages: 1, page: 1, limit: 20, hasMore: false } } },
+      error: null,
+      isLoading: false,
+    };
     render(<ConflictReviewQueue />);
     expect(screen.getByText('FHIR Sync Conflicts')).toBeInTheDocument();
   });
@@ -29,12 +35,11 @@ describe('ConflictReviewQueue', () => {
   });
 
   it('renders "No conflicts pending" when data is empty', () => {
-    const useSWR = require('swr').default;
-    useSWR.mockReturnValue({
+    _swrReturn = {
       data: { success: true, data: { conflicts: [], pagination: { totalCount: 0, totalPages: 1, page: 1, limit: 20, hasMore: false } } },
       error: null,
       isLoading: false,
-    });
+    };
     render(<ConflictReviewQueue />);
     expect(screen.getByText('No conflicts pending')).toBeInTheDocument();
   });

@@ -20,14 +20,17 @@ jest.mock('@/lib/calendar/sync', () => ({
 }));
 
 jest.mock('@/lib/api/safe-error-response', () => ({
-  safeErrorResponse: jest.fn().mockReturnValue(
-    new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 })
+  safeErrorResponse: jest.fn((_err: any, _opts: any) =>
+    new (require('next/server').NextResponse)(
+      JSON.stringify({ error: 'Internal error' }),
+      { status: 500 }
+    )
   ),
 }));
 
 const { POST } = require('../route');
 const { syncAllCalendars } = require('@/lib/calendar/sync');
-const { verifyPatientAccess } = require('@/lib/api/middleware');
+const { safeErrorResponse } = require('@/lib/api/safe-error-response');
 
 const mockContext = {
   user: { id: 'user-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -37,7 +40,12 @@ const mockContext = {
 describe('POST /api/calendar/sync', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
+    (safeErrorResponse as jest.Mock).mockImplementation((_err: any, _opts: any) =>
+      new (require('next/server').NextResponse)(
+        JSON.stringify({ error: 'Internal error' }),
+        { status: 500 }
+      )
+    );
   });
 
   it('syncs all calendars and returns total count', async () => {

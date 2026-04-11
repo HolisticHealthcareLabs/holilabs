@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HoliLabs v2 — Security Hardening Checklist (CVE-2026-4747 Response)</title>
+<style>
+  :root { --green: #00FF88; --dark: #0A0A0A; --gray: #1a1a2e; --card: #16213e; --text: #e0e0e0; --muted: #8892b0; --red: #ff6b6b; --yellow: #ffd93d; --blue: #4dabf7; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--dark); color: var(--text); line-height: 1.7; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  header { background: linear-gradient(135deg, var(--gray), var(--card)); border-bottom: 3px solid var(--green); padding: 3rem 2rem; margin-bottom: 2rem; }
+  header h1 { font-size: 2rem; color: #fff; margin-bottom: 0.5rem; }
+  header .subtitle { color: var(--green); font-size: 1.1rem; font-weight: 600; }
+  header .meta { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-red { background: rgba(255,107,107,0.2); color: var(--red); border: 1px solid var(--red); }
+  .badge-yellow { background: rgba(255,217,61,0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-blue { background: rgba(77,171,247,0.2); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-green { background: rgba(0,255,136,0.2); color: var(--green); border: 1px solid var(--green); }
+  section { background: var(--card); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
+  section h2 { color: var(--green); font-size: 1.4rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; }
+  section h3 { color: #fff; font-size: 1.1rem; margin: 1.5rem 0 0.75rem 0; }
+  p { margin-bottom: 1rem; color: var(--text); }
+  .item { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; border-left: 4px solid var(--green); }
+  .item.critical { border-left-color: var(--red); }
+  .item.high { border-left-color: var(--yellow); }
+  .item.medium { border-left-color: var(--blue); }
+  .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .item-title { font-weight: 700; color: #fff; font-size: 1rem; }
+  .item-detail { color: var(--muted); font-size: 0.9rem; }
+  .item-code { background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.15); border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-family: 'Fira Code', 'SF Mono', monospace; font-size: 0.85rem; color: var(--green); overflow-x: auto; white-space: pre; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: rgba(0,255,136,0.1); color: var(--green); text-align: left; padding: 0.75rem 1rem; font-weight: 600; border-bottom: 2px solid rgba(0,255,136,0.3); }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .stat-card { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1.25rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+  .stat-number { font-size: 2rem; font-weight: 800; color: var(--green); }
+  .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem; }
+  .threat-box { background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,107,107,0.05)); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+  .threat-box h3 { color: var(--red); }
+  .checkbox { display: flex; align-items: flex-start; gap: 0.75rem; margin: 0.5rem 0; }
+  .checkbox input[type="checkbox"] { accent-color: var(--green); width: 18px; height: 18px; margin-top: 3px; cursor: pointer; }
+  .checkbox label { cursor: pointer; color: var(--text); }
+  @media print { body { background: #fff; color: #000; } section { border: 1px solid #ddd; } .item { border-left-color: #333; } header { background: #f5f5f5; border-bottom-color: #00cc6a; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Security Hardening Implementation Checklist</h1>
+    <div class="subtitle">HoliLabs v2 — AI-Era Threat Response (CVE-2026-4747)</div>
+    <div class="meta">
+      Prepared: April 3, 2026 | Classification: CONFIDENTIAL | Owner: Nico (nicola@holilabs.xyz)<br>
+      Stack: Next.js 14 + Fastify 4.25 + Prisma 6.7/PostgreSQL 15 + Redis 7 + Electron 28<br>
+      Compliance: HIPAA | LGPD (Brazil) | ANVISA RDC 657/2022 | ICP-Brasil
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- EXECUTIVE SUMMARY -->
+<section>
+  <h2>Executive Summary</h2>
+  <p>On March 2026, an autonomous AI agent (Claude, Anthropic) discovered and exploited a critical remote code execution vulnerability in the FreeBSD kernel (CVE-2026-4747) in approximately 4 hours of compute time, at a cost of a few hundred dollars. This represents a paradigm shift: offensive cyber capabilities previously exclusive to nation-state actors are now commoditized. The researcher's pipeline has already identified 500+ high-severity vulnerabilities across various codebases.</p>
+  <p>HoliLabs v2 handles Protected Health Information (PHI) under three regulatory frameworks (HIPAA, LGPD, ANVISA). Our current security posture has strong foundations — Helmet.js CSP, Pino log redaction for PII fields (CPF, SSN, email), structured auth middleware, and CI security scanning — but critical gaps remain. Rate limiting is disabled (lines 96-102, <code>apps/api/src/index.ts</code>). JWT token lifetimes are not optimized for the new threat window. Column-level encryption for PHI is absent. The CI security workflow runs on manual trigger only.</p>
+  <p>This checklist prioritizes 17 hardening items across three tiers: ship-blockers (must complete before GTM), week-1 post-launch, and month-1 strategic. Total estimated effort is 231 engineering hours. The threat model assumes AI-speed attacks against our API surface, supply chain, and authentication layer.</p>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number">17</div>
+      <div class="stat-label">Hardening Items</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">231h</div>
+      <div class="stat-label">Total Effort</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">6</div>
+      <div class="stat-label">Critical (P1)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">3</div>
+      <div class="stat-label">Compliance Frameworks</div>
+    </div>
+  </div>
+
+  <div class="threat-box">
+    <h3>Threat Model: AI-Accelerated Attacks</h3>
+    <p style="margin-bottom:0.5rem">The CVE-2026-4747 incident proves that the attacker-defender time asymmetry has inverted. Key parameters for HoliLabs:</p>
+    <p style="margin-bottom:0"><strong>Attack surface:</strong> 11 Fastify route modules, 49KB+ Prisma schema, 100+ npm dependencies<br>
+    <strong>AI exploit time:</strong> ~4 hours | <strong>Our current patch time:</strong> Unknown (no automated rollback)<br>
+    <strong>PHI exposure risk:</strong> Patient records, CPF, medical diagnoses, lab results, prescriptions<br>
+    <strong>Regulatory penalty:</strong> LGPD: up to 2% of revenue | HIPAA: up to $1.9M per violation category</p>
+  </div>
+</section>
+
+<!-- PRIORITY 1: SHIP BLOCKERS -->
+<section>
+  <h2><span class="badge badge-red">CRITICAL</span> Priority 1 — Ship Blockers (Before GTM)</h2>
+  <p>These 6 items must be completed before any production deployment. Each addresses a direct exploit vector that AI-speed attacks would target within hours of discovery.</p>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.1 Enable API Rate Limiting</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Current state:</strong> Rate limiting is imported but DISABLED (lines 96-102 in <code>apps/api/src/index.ts</code>). Comment reads: "Rate limiting temporarily disabled for local development. TODO: Implement proper Redis client with ioredis."
+    </div>
+    <div class="item-code">// CURRENT (disabled):
+// await server.register(rateLimit, { max: 100, timeWindow: '15 minutes', redis: env.REDIS_URL });
+
+// TARGET:
+await server.register(rateLimit, {
+  max: 100,                    // General: 100 req/min
+  timeWindow: '1 minute',
+  redis: new Redis(env.UPSTASH_REDIS_REST_URL),  // Upstash (already in deps)
+  allowList: ['127.0.0.1'],    // Dev bypass
+  keyGenerator: (req) => req.headers['x-forwarded-for'] || req.ip,
+});
+// Auth endpoints: 10 req/min  |  Password reset: 5 req/min
+// Add route-level overrides via { config: { rateLimit: { max: 10 } } }</div>
+    <div class="item-detail"><strong>Effort:</strong> 4h | <strong>Owner:</strong> Backend | <strong>Dependencies:</strong> UPSTASH_REDIS_REST_URL env var</div>
+  </div>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.2 JWT Token Hardening</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> The FreeBSD exploit window was 4 hours. If our JWT access tokens live longer than 15 minutes, a stolen token provides an attacker more time than needed to exfiltrate all PHI.
+    </div>
+    <div class="item-code">// Access token: 15 min expiry (down from default)
+// Refresh token: 7 days, single-use rotation
+// Device binding: hash(User-Agent + IP-subnet) stored in token claims
+// On refresh: validate fingerprint matches; if not, force re-auth
+// Implementation: jose library (already in deps)</div>
+    <div class="item-detail"><strong>Effort:</strong> 8h | <strong>Owner:</strong> Backend | <strong>Files:</strong> auth middleware, token service, refresh endpoint</div>
+  </div>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.3 Input Validation on All API Routes</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> The FreeBSD exploit crafted multi-packet shellcode through unchecked input. Zod is already in our deps but not enforced on every route. An AI fuzzer can probe all 11 route modules in minutes.
+    </div>
+    <div class="item-code">// Audit checklist for each route module:
+// apps/api/src/routes/auth.ts       — ✅ Has Zod? Verify body + params
+// apps/api/src/routes/patients.ts   — ❓ Check all CRUD operations
+// apps/api/src/routes/ai.ts         — ❓ AI endpoints accept freeform text — validate length
+// apps/api/src/routes/upload.ts     — ❓ File type + size validation
+// apps/api/src/routes/exports.ts    — ❓ Query params validation
+// apps/api/src/routes/admin.ts      — ❓ Admin operations need strict schemas
+// apps/api/src/routes/telemetry.ts  — ❓ Sidecar data ingestion
+// apps/api/src/routes/monitoring.ts — ✅ Read-only
+// apps/api/src/routes/fhir-admin.ts — ❓ FHIR payloads are complex</div>
+    <div class="item-detail"><strong>Effort:</strong> 16h | <strong>Owner:</strong> Backend | <strong>Pattern:</strong> Zod schema per route, fastify-type-provider-zod</div>
+  </div>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.4 CSP & Security Headers Tightening</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Current state:</strong> Helmet is configured (lines 79-88) but CSP allows <code>'unsafe-inline'</code> for styles. Missing: Permissions-Policy, HSTS preload, Referrer-Policy.
+    </div>
+    <div class="item-code">// Tighten Helmet config:
+await server.register(helmet, {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],  // TODO: Remove unsafe-inline with nonce
+      scriptSrc: ["'self'"],                     // GOOD: No unsafe-eval
+      imgSrc: ["'self'", 'data:', 'https://storage.googleapis.com'],  // Pin CDNs
+      connectSrc: ["'self'", env.API_URL, env.MEDPLUM_URL],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+  hsts: { maxAge: 63072000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permissionsPolicy: {
+    features: { camera: ["'none'"], microphone: ["'self'"], geolocation: ["'none'"] }
+  },
+});</div>
+    <div class="item-detail"><strong>Effort:</strong> 4h | <strong>Owner:</strong> Backend/DevOps | <strong>Risk:</strong> May break LiveKit if camera/mic blocked — test telehealth flow</div>
+  </div>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.5 CORS Origin Lockdown</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Current state:</strong> CORS origin is set from <code>env.CORS_ORIGIN</code> (line 75). Verify this is NOT set to <code>*</code> in production. Must be explicit domain list.
+    </div>
+    <div class="item-code">// Ensure .env.production has:
+// CORS_ORIGIN=https://app.holilabs.xyz,https://dashboard.holilabs.xyz
+// NOT: CORS_ORIGIN=* (allows any origin to make authenticated requests)</div>
+    <div class="item-detail"><strong>Effort:</strong> 2h | <strong>Owner:</strong> DevOps | <strong>Verify:</strong> All environments (.env.staging, .env.production)</div>
+  </div>
+
+  <div class="item critical">
+    <div class="item-header">
+      <span class="item-title">1.6 CI Security Scanning on Every PR</span>
+      <span class="badge badge-red">Critical</span>
+    </div>
+    <div class="item-detail">
+      <strong>Current state:</strong> <code>.github/workflows/security-enhanced.yml</code> runs on <code>workflow_dispatch</code> (manual trigger only). This means security scans only happen when someone remembers to run them. In the AI-speed era, every PR must be scanned.
+    </div>
+    <div class="item-code"># Change trigger from:
+on: workflow_dispatch
+# To:
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday scan</div>
+    <div class="item-detail"><strong>Effort:</strong> 2h | <strong>Owner:</strong> DevOps | <strong>Add:</strong> npm audit --audit-level=high as blocking step</div>
+  </div>
+</section>
+
+<!-- PRIORITY 2: WEEK 1 -->
+<section>
+  <h2><span class="badge badge-yellow">HIGH</span> Priority 2 — Week 1 Post-Launch</h2>
+
+  <div class="item high">
+    <div class="item-header">
+      <span class="item-title">2.1 Supply Chain Scanning (Socket.dev / Snyk)</span>
+      <span class="badge badge-yellow">High</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> 100+ npm deps including medical libraries (Medplum, Cornerstone.js, Deepgram). The xz-utils supply chain attack pattern could target any of these. Socket.dev detects behavioral anomalies in packages (not just known CVEs).
+    </div>
+    <div class="item-detail"><strong>Effort:</strong> 8h | <strong>Owner:</strong> DevOps | <strong>Action:</strong> Add Socket.dev GitHub App + CI integration</div>
+  </div>
+
+  <div class="item high">
+    <div class="item-header">
+      <span class="item-title">2.2 Column-Level Encryption for PHI</span>
+      <span class="badge badge-yellow">High</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> Prisma schema has CPF, phone, email, patient diagnoses, lab results stored as plaintext strings. Supabase provides at-rest encryption, but a SQL injection or leaked connection string exposes everything. Application-level encryption means even a full DB dump is useless.
+    </div>
+    <div class="item-code">// Fields requiring app-level encryption (from schema.prisma):
+// Patient: cpf, phone, emergencyContactPhone, emergencyContactName
+// User: phone, cpfEncrypted (exists but verify implementation)
+// LabResult: value, referenceRange (clinical data)
+// Diagnosis: icdCode, description (clinical data)
+// Prescription: all fields (medication, dosage, instructions)
+//
+// Implementation: prisma-field-encryption or custom AES-256-GCM middleware
+// Key management: AWS KMS or environment variable (ENCRYPTION_KEY)</div>
+    <div class="item-detail"><strong>Effort:</strong> 24h | <strong>Owner:</strong> Backend | <strong>Migration:</strong> Encrypt existing data in-place, add decrypt-on-read middleware</div>
+  </div>
+
+  <div class="item high">
+    <div class="item-header">
+      <span class="item-title">2.3 Query Rate Limiting at ORM Level</span>
+      <span class="badge badge-yellow">High</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> API rate limiting protects the HTTP layer. But a compromised session could issue expensive queries (SELECT * on patient tables) through legitimate endpoints. Add Prisma middleware that limits query volume per session.
+    </div>
+    <div class="item-detail"><strong>Effort:</strong> 8h | <strong>Owner:</strong> Backend | <strong>Pattern:</strong> Prisma $use() middleware with per-session query counter</div>
+  </div>
+
+  <div class="item high">
+    <div class="item-header">
+      <span class="item-title">2.4 Immutable Audit Log Separation</span>
+      <span class="badge badge-yellow">High</span>
+    </div>
+    <div class="item-detail">
+      <strong>Current:</strong> AuditLog model exists in Prisma schema. But if an attacker gains DB write access, they can DELETE audit entries to cover tracks. Separate audit logs into an append-only schema with revoked DELETE/UPDATE permissions.
+    </div>
+    <div class="item-code">-- Prisma migration:
+CREATE SCHEMA IF NOT EXISTS audit;
+ALTER TABLE "AuditLog" SET SCHEMA audit;
+REVOKE DELETE, UPDATE ON audit."AuditLog" FROM app_user;
+GRANT INSERT, SELECT ON audit."AuditLog" TO app_user;</div>
+    <div class="item-detail"><strong>Effort:</strong> 8h | <strong>Owner:</strong> Backend/DBA | <strong>HIPAA:</strong> Required for breach forensics (§164.312(b))</div>
+  </div>
+
+  <div class="item high">
+    <div class="item-header">
+      <span class="item-title">2.5 mTLS for Edge Server Communication</span>
+      <span class="badge badge-yellow">High</span>
+    </div>
+    <div class="item-detail">
+      <strong>Why:</strong> The edge server (<code>apps/edge/</code>) syncs hospital LAN data to the cloud API. Hospital networks are high-value targets. mTLS ensures both sides authenticate with certificates, preventing MITM attacks even on compromised hospital networks.
+    </div>
+    <div class="item-detail"><strong>Effort:</strong> 16h | <strong>Owner:</strong> DevOps/Backend | <strong>Deps:</strong> Certificate generation, rotation schedule, ICP-Brasil integration</div>
+  </div>
+</section>
+
+<!-- PRIORITY 3: MONTH 1 -->
+<section>
+  <h2><span class="badge badge-blue">STRATEGIC</span> Priority 3 — Month 1</h2>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.1 AI-Powered Codebase Security Review in CI</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">The same AI capability that found CVE-2026-4747 can defend us. Add a CI step that sends PR diffs to Claude for security analysis — looking for injection vectors, auth bypasses, PHI leaks, and unsafe patterns specific to our stack.</div>
+    <div class="item-detail"><strong>Effort:</strong> 16h | <strong>Owner:</strong> DevOps/AI | <strong>Cost:</strong> ~$0.50/PR for Haiku analysis</div>
+  </div>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.2 Runtime Anomaly Detection</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">Add a lightweight service watching Prometheus metrics + API logs for patterns that indicate automated probing: sequential endpoint enumeration, De Bruijn-pattern payloads, unusual header combinations, bulk data access from single sessions.</div>
+    <div class="item-detail"><strong>Effort:</strong> 24h | <strong>Owner:</strong> Backend/DevOps | <strong>Integration:</strong> Prometheus alertmanager → PagerDuty</div>
+  </div>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.3 Automated Rollback on Error Spike</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">If 5xx error rate exceeds 5% for 2 minutes post-deploy, automatically rollback to previous version without human intervention. Currently deploy.yml has no rollback mechanism.</div>
+    <div class="item-detail"><strong>Effort:</strong> 12h | <strong>Owner:</strong> DevOps | <strong>Platform:</strong> DigitalOcean App Platform rollback API</div>
+  </div>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.4 FHIR Sync Kill Switch</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">If the Medplum FHIR connection is compromised, we need a one-click way to sever all external data flows while keeping the app functional in offline mode. The edge server architecture already supports this — formalize it as an emergency procedure.</div>
+    <div class="item-detail"><strong>Effort:</strong> 8h | <strong>Owner:</strong> Backend | <strong>Trigger:</strong> Admin API endpoint + PagerDuty action</div>
+  </div>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.5 Breach Notification Pipeline</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">LGPD requires breach notification within 72 hours. HIPAA within 60 days. Build an automated workflow: detect breach → classify severity → generate notification templates → route to legal → track deadlines.</div>
+    <div class="item-detail"><strong>Effort:</strong> 16h | <strong>Owner:</strong> Backend/Legal | <strong>LGPD:</strong> Art. 48 | <strong>HIPAA:</strong> §164.408</div>
+  </div>
+
+  <div class="item medium">
+    <div class="item-header">
+      <span class="item-title">3.6 Penetration Testing Schedule</span>
+      <span class="badge badge-blue">Strategic</span>
+    </div>
+    <div class="item-detail">Contract a third-party pentest firm for quarterly assessments. Focus areas: API auth bypass, PHI exfiltration, FHIR injection, Electron sidecar privilege escalation, hospital edge server compromise.</div>
+    <div class="item-detail"><strong>Effort:</strong> 40h (coordination) | <strong>Owner:</strong> CTO/Security | <strong>Budget:</strong> $15-30K/quarter</div>
+  </div>
+</section>
+
+<!-- COMPLIANCE MATRIX -->
+<section>
+  <h2>Compliance Matrix</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>HIPAA</th>
+        <th>LGPD</th>
+        <th>ANVISA RDC 657</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1.1 Rate Limiting</td><td>§164.312(a) — Access Control</td><td>Art. 46 — Security measures</td><td>Art. 7 — Cybersecurity</td></tr>
+      <tr><td>1.2 JWT Hardening</td><td>§164.312(d) — Authentication</td><td>Art. 46 — Security measures</td><td>Art. 7 — Access control</td></tr>
+      <tr><td>1.3 Input Validation</td><td>§164.312(c) — Integrity</td><td>Art. 46 — Data integrity</td><td>Art. 8 — Data validation</td></tr>
+      <tr><td>1.4 Security Headers</td><td>§164.312(e) — Transmission</td><td>Art. 46 — Technical measures</td><td>—</td></tr>
+      <tr><td>1.5 CORS Lockdown</td><td>§164.312(a) — Access Control</td><td>Art. 46 — Access restriction</td><td>—</td></tr>
+      <tr><td>1.6 CI Security Scan</td><td>§164.308(a)(8) — Evaluation</td><td>Art. 50 — Verification</td><td>Art. 12 — Quality assurance</td></tr>
+      <tr><td>2.1 Supply Chain Scan</td><td>§164.308(a)(1) — Risk Analysis</td><td>Art. 46 — Security measures</td><td>Art. 7 — Third-party risk</td></tr>
+      <tr><td>2.2 Column Encryption</td><td>§164.312(a)(2)(iv) — Encryption</td><td>Art. 46 — Encryption</td><td>Art. 9 — Data protection</td></tr>
+      <tr><td>2.3 Query Rate Limit</td><td>§164.312(a) — Access Control</td><td>Art. 46 — Least privilege</td><td>—</td></tr>
+      <tr><td>2.4 Immutable Audit</td><td>§164.312(b) — Audit Controls</td><td>Art. 37 — Record keeping</td><td>Art. 11 — Traceability</td></tr>
+      <tr><td>2.5 mTLS Edge</td><td>§164.312(e) — Transmission</td><td>Art. 46 — Encryption in transit</td><td>Art. 9 — Network security</td></tr>
+      <tr><td>3.1 AI Code Review</td><td>§164.308(a)(8) — Evaluation</td><td>Art. 50 — Verification</td><td>Art. 12 — Continuous QA</td></tr>
+      <tr><td>3.2 Anomaly Detection</td><td>§164.312(b) — Audit Controls</td><td>Art. 48 — Incident detection</td><td>Art. 10 — Monitoring</td></tr>
+      <tr><td>3.3 Auto Rollback</td><td>§164.308(a)(7) — Contingency</td><td>Art. 46 — Availability</td><td>Art. 13 — Continuity</td></tr>
+      <tr><td>3.4 FHIR Kill Switch</td><td>§164.308(a)(7) — Emergency</td><td>Art. 48 — Incident response</td><td>Art. 13 — Emergency procedures</td></tr>
+      <tr><td>3.5 Breach Pipeline</td><td>§164.408 — Notification</td><td>Art. 48 — 72h notification</td><td>Art. 15 — Incident reporting</td></tr>
+      <tr><td>3.6 Pen Testing</td><td>§164.308(a)(8) — Evaluation</td><td>Art. 50 — Security testing</td><td>Art. 12 — Validation</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- EFFORT ESTIMATES -->
+<section>
+  <h2>Implementation Effort Estimates</h2>
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Effort</th><th>Owner</th><th>Dependencies</th><th>Priority</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1.1 Rate Limiting</td><td>4h</td><td>Backend</td><td>Upstash Redis URL</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr><td>1.2 JWT Hardening</td><td>8h</td><td>Backend</td><td>None</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr><td>1.3 Input Validation</td><td>16h</td><td>Backend</td><td>Zod schemas per route</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr><td>1.4 Security Headers</td><td>4h</td><td>Backend/DevOps</td><td>Test LiveKit compat</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr><td>1.5 CORS Lockdown</td><td>2h</td><td>DevOps</td><td>Production domain list</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr><td>1.6 CI Security Scan</td><td>2h</td><td>DevOps</td><td>None</td><td><span class="badge badge-red">P1</span></td></tr>
+      <tr style="background:rgba(255,255,255,0.03)"><td><strong>P1 Subtotal</strong></td><td><strong>36h</strong></td><td></td><td></td><td></td></tr>
+      <tr><td>2.1 Supply Chain Scan</td><td>8h</td><td>DevOps</td><td>Socket.dev account</td><td><span class="badge badge-yellow">P2</span></td></tr>
+      <tr><td>2.2 Column Encryption</td><td>24h</td><td>Backend</td><td>KMS or env key</td><td><span class="badge badge-yellow">P2</span></td></tr>
+      <tr><td>2.3 Query Rate Limit</td><td>8h</td><td>Backend</td><td>Prisma middleware</td><td><span class="badge badge-yellow">P2</span></td></tr>
+      <tr><td>2.4 Immutable Audit</td><td>8h</td><td>Backend/DBA</td><td>DB migration</td><td><span class="badge badge-yellow">P2</span></td></tr>
+      <tr><td>2.5 mTLS Edge</td><td>16h</td><td>DevOps</td><td>Cert infrastructure</td><td><span class="badge badge-yellow">P2</span></td></tr>
+      <tr style="background:rgba(255,255,255,0.03)"><td><strong>P2 Subtotal</strong></td><td><strong>64h</strong></td><td></td><td></td><td></td></tr>
+      <tr><td>3.1 AI Code Review</td><td>16h</td><td>DevOps/AI</td><td>Anthropic API key</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr><td>3.2 Anomaly Detection</td><td>24h</td><td>Backend/DevOps</td><td>Prometheus + Alertmanager</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr><td>3.3 Auto Rollback</td><td>12h</td><td>DevOps</td><td>DO App Platform API</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr><td>3.4 FHIR Kill Switch</td><td>8h</td><td>Backend</td><td>Admin endpoint</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr><td>3.5 Breach Pipeline</td><td>16h</td><td>Backend/Legal</td><td>Email templates</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr><td>3.6 Pen Testing</td><td>40h</td><td>CTO</td><td>Vendor selection</td><td><span class="badge badge-blue">P3</span></td></tr>
+      <tr style="background:rgba(255,255,255,0.03)"><td><strong>P3 Subtotal</strong></td><td><strong>116h</strong></td><td></td><td></td><td></td></tr>
+      <tr style="background:rgba(0,255,136,0.1)"><td><strong>TOTAL</strong></td><td><strong>231h</strong></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- EVERYTHING-CLAUDE-CODE INTEGRATION -->
+<section>
+  <h2><span class="badge badge-green">BONUS</span> ECC Integration Recommendations</h2>
+  <p>The <a href="https://github.com/affaan-m/everything-claude-code" style="color:var(--green)">everything-claude-code</a> repository contains 38 agents, 156 skills, and production-grade hook patterns from 10+ months of use. Here are the patterns worth integrating into HoliLabs:</p>
+
+  <div class="item">
+    <div class="item-title">Recommended Integrations (High Value)</div>
+    <div class="item-detail" style="margin-top:0.5rem">
+      <strong>1. Security Rules</strong> (<code>rules/common/security.md</code>) — Extend with HIPAA-specific checkpoints: PII field names from our Prisma schema, encryption mandates, audit logging requirements. Apply as CLAUDE.md rules.<br><br>
+      <strong>2. Hook Architecture</strong> (<code>hooks/hooks.json</code>) — Add pre-commit PII scanning, post-edit typecheck enforcement, and session-end pattern extraction. Use <code>ECC_HOOK_PROFILE=strict</code> for healthcare work.<br><br>
+      <strong>3. Agent Delegation</strong> — Create specialized agents: <code>fastify-api-reviewer</code>, <code>prisma-schema-auditor</code>, <code>hipaa-compliance-checker</code>. Each gets narrow context to prevent PHI leakage across agent boundaries.<br><br>
+      <strong>4. Continuous Learning</strong> (<code>skills/continuous-learning-v2/</code>) — Auto-extract patterns from healthcare sessions (e.g., "Always encrypt patient IDs before logging") and persist as instincts for future sessions.<br><br>
+      <strong>5. SaaS Next.js CLAUDE.md Template</strong> (<code>examples/saas-nextjs-CLAUDE.md</code>) — Adapt this template (closest to our stack) as the foundation for an upgraded CLAUDE.md with all security rules baked in.
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-title">Skip These (Low Value for Healthcare)</div>
+    <div class="item-detail" style="margin-top:0.5rem">
+      Language-specific reviewers for non-TypeScript languages, Django/Laravel/Spring Boot skills, Rust/Go/C++ rules, content writing skills. These add context bloat without relevance.
+    </div>
+  </div>
+</section>
+
+<!-- PRINTABLE CHECKLIST -->
+<section>
+  <h2>Quick-Reference Checklist (Print This)</h2>
+
+  <h3><span class="badge badge-red">P1</span> Before GTM</h3>
+  <div class="checkbox"><input type="checkbox" id="c1"><label for="c1">1.1 Enable rate limiting in <code>apps/api/src/index.ts</code> (lines 96-102)</label></div>
+  <div class="checkbox"><input type="checkbox" id="c2"><label for="c2">1.2 Reduce JWT access token to 15 min + refresh rotation + device binding</label></div>
+  <div class="checkbox"><input type="checkbox" id="c3"><label for="c3">1.3 Add Zod validation to ALL 11 Fastify route modules</label></div>
+  <div class="checkbox"><input type="checkbox" id="c4"><label for="c4">1.4 Tighten CSP, add HSTS preload, Permissions-Policy, Referrer-Policy</label></div>
+  <div class="checkbox"><input type="checkbox" id="c5"><label for="c5">1.5 Verify CORS_ORIGIN is explicit domain list in production</label></div>
+  <div class="checkbox"><input type="checkbox" id="c6"><label for="c6">1.6 Change security-enhanced.yml trigger to run on every PR</label></div>
+
+  <h3><span class="badge badge-yellow">P2</span> Week 1</h3>
+  <div class="checkbox"><input type="checkbox" id="c7"><label for="c7">2.1 Add Socket.dev or Snyk for dependency behavioral analysis</label></div>
+  <div class="checkbox"><input type="checkbox" id="c8"><label for="c8">2.2 Implement column-level encryption for CPF, phone, diagnoses, prescriptions</label></div>
+  <div class="checkbox"><input type="checkbox" id="c9"><label for="c9">2.3 Add Prisma middleware for per-session query rate limiting</label></div>
+  <div class="checkbox"><input type="checkbox" id="c10"><label for="c10">2.4 Separate audit logs to append-only schema (REVOKE DELETE)</label></div>
+  <div class="checkbox"><input type="checkbox" id="c11"><label for="c11">2.5 Implement mTLS between edge server and cloud API</label></div>
+
+  <h3><span class="badge badge-blue">P3</span> Month 1</h3>
+  <div class="checkbox"><input type="checkbox" id="c12"><label for="c12">3.1 Add AI-powered security review step to CI pipeline</label></div>
+  <div class="checkbox"><input type="checkbox" id="c13"><label for="c13">3.2 Deploy runtime anomaly detection on API logs</label></div>
+  <div class="checkbox"><input type="checkbox" id="c14"><label for="c14">3.3 Implement automated rollback on error rate spike</label></div>
+  <div class="checkbox"><input type="checkbox" id="c15"><label for="c15">3.4 Build FHIR sync kill switch (admin endpoint + PagerDuty)</label></div>
+  <div class="checkbox"><input type="checkbox" id="c16"><label for="c16">3.5 Create breach notification pipeline (72h LGPD / 60d HIPAA)</label></div>
+  <div class="checkbox"><input type="checkbox" id="c17"><label for="c17">3.6 Schedule quarterly penetration testing ($15-30K/quarter)</label></div>
+</section>
+
+<footer style="text-align:center; padding:2rem; color:var(--muted); font-size:0.8rem;">
+  HoliLabs v2 Security Hardening Checklist v1.0 | Generated 2026-04-03 | CONFIDENTIAL<br>
+  Protocol: MEGATRON | Owner: Nico (nicola@holilabs.xyz) | CGH Venture
+</footer>
+
+</div>
+</body>
+</html>

@@ -40,19 +40,6 @@ export default function AdminError({
           {t('description')}
         </p>
 
-        {process.env.NODE_ENV === 'development' && (
-          <details className="mb-6 text-left">
-            <summary className="cursor-pointer text-sm font-medium text-red-600 dark:text-red-400 mb-2">
-              {t('errorDetails')}
-            </summary>
-            <pre className="text-xs bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800 overflow-auto">
-              {error.message}
-              {'\n\n'}
-              {error.stack}
-            </pre>
-          </details>
-        )}
-
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={reset}
@@ -68,10 +55,6 @@ export default function AdminError({
           </a>
         </div>
 
-        {/* Decorative element - low contrast intentional */}
-        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-          Error ID: {error.digest || 'Unknown'}
-        </p>
       </div>
     </div>
   );

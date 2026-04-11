@@ -1,354 +1,114 @@
-/**
- * Notification Center Component
- *
- * Beautiful notification dropdown with real-time updates
- */
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+/**
+ * NotificationCenter — Step 5 (orchestrator)
+ *
+ * Self-contained component that the dashboard layout lazy-imports.
+ * Manages state, fetches from API, renders bell + panel.
+ * Respects two-mode system via useNotificationMode.
+ *
+ * CYRUS: all API calls scoped by authenticated session.
+ */
 
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  actionLabel?: string;
-  isRead: boolean;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  createdAt: string;
-}
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { NotificationBell } from './NotificationBell';
+import { NotificationPanel, type AppNotification } from './NotificationPanel';
 
 export default function NotificationCenter() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const hasFetched = useRef(false);
 
-  // Fetch notifications
-  const fetchNotifications = async () => {
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    if (disabled) return;
     try {
-      if (disabled) return;
-      const response = await fetch('/api/notifications?limit=10', { cache: 'no-store' });
-      if (response.status === 401 || response.status === 403) {
+      const res = await fetch('/api/notifications?limit=20', { cache: 'no-store' });
+      if (res.status === 401 || res.status === 403) {
         setDisabled(true);
         return;
       }
-      const data = await response.json();
-
-      if (data.success) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
         setNotifications(data.data);
+        setUnreadCount(data.data.filter((n: AppNotification) => !n.read).length);
       }
-    } catch (error) {
-      // In demo/dev unauthenticated contexts this can fail; do not spam console.
+    } catch {
       setDisabled(true);
     }
-  };
-
-  // Fetch unread count
-  const fetchUnreadCount = async () => {
-    try {
-      if (disabled) return;
-      const response = await fetch('/api/notifications/unread-count', { cache: 'no-store' });
-      if (response.status === 401 || response.status === 403) {
-        setDisabled(true);
-        return;
-      }
-      const data = await response.json();
-
-      if (data.success) {
-        setUnreadCount(data.data.count);
-      }
-    } catch (error) {
-      setDisabled(true);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (notificationId: string) => {
-    try {
-      await fetch(`/api/notifications/${notificationId}`, {
-        method: 'PUT',
-      });
-
-      // Update local state
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notificationId ? { ...n, isRead: true } : n
-        )
-      );
-
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      setLoading(true);
-      await fetch('/api/notifications/read-all', {
-        method: 'PUT',
-      });
-
-      // Update local state
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, isRead: true }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle notification click
-  const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
-    if (!notification.isRead) {
-      markAsRead(notification.id);
-    }
-
-    // Navigate to action URL
-    if (notification.actionUrl) {
-      router.push(notification.actionUrl);
-      setIsOpen(false);
-    }
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  }, [disabled]);
 
   // Initial fetch
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     fetchNotifications();
-    fetchUnreadCount();
-  }, [disabled]);
+  }, [fetchNotifications]);
 
-  // Real-time updates with SSE
+  // SSE for real-time updates
   useEffect(() => {
     if (disabled) return;
-    const eventSource = new EventSource('/api/notifications/events');
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === 'notification') {
-        // Add new notification to list
-        setNotifications((prev) => [data.notification, ...prev].slice(0, 10));
-        setUnreadCount((prev) => prev + 1);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      // Don't spam console in unauthenticated demo/dev contexts.
-      eventSource.close();
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/notifications/events');
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'notification' && data.notification) {
+            const newNotif = data.notification as AppNotification;
+            setNotifications((prev) => [newNotif, ...prev].slice(0, 20));
+            if (!newNotif.read) setUnreadCount((c) => c + 1);
+          }
+        } catch { /* ignore parse errors */ }
+      };
+      eventSource.onerror = () => {
+        eventSource?.close();
+        setDisabled(true);
+      };
+    } catch {
       setDisabled(true);
-    };
-
-    return () => {
-      eventSource.close();
-    };
+    }
+    return () => { eventSource?.close(); };
   }, [disabled]);
 
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-        return 'text-red-600';
-      case 'HIGH':
-        return 'text-orange-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
+  // Mark single as read
+  const markRead = useCallback(async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id && !n.read ? { ...n, read: true } : n))
+    );
+    setUnreadCount((c) => Math.max(0, c - 1));
 
-  // Get time ago
-  const getTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const past = new Date(timestamp);
-    const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+    try {
+      await fetch(`/api/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
+    } catch { /* non-blocking */ }
+  }, []);
 
-    if (seconds < 60) return 'Hace un momento';
-    if (seconds < 3600) return `Hace ${Math.floor(seconds / 60)}m`;
-    if (seconds < 86400) return `Hace ${Math.floor(seconds / 3600)}h`;
-    return `Hace ${Math.floor(seconds / 86400)}d`;
-  };
+  // Mark all as read
+  const markAllRead = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+
+    try {
+      await fetch('/api/notifications/read-all', { method: 'POST' });
+    } catch { /* non-blocking */ }
+  }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Bell Icon Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.10] rounded-lg transition-colors"
-      >
-        {/* Bell Icon */}
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
-
-        {/* Unread Badge */}
-        {unreadCount > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full"
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </motion.span>
-        )}
-      </button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50"
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Notificaciones</h3>
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    disabled={loading}
-                    className="text-sm text-white hover:text-blue-100 font-medium transition-colors disabled:opacity-50"
-                  >
-                    Marcar todas como leídas
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Notifications List */}
-            <div className="max-h-[500px] overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {/* Decorative - low contrast intentional for empty state icon */}
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-gray-600">No tienes notificaciones</p>
-                </div>
-              ) : (
-                notifications.map((notification, index) => (
-                  <motion.div
-                    key={notification.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
-                      !notification.isRead ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      {/* Unread Indicator */}
-                      {!notification.isRead && (
-                        <div className="flex-shrink-0 mt-2">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h4
-                            className={`text-sm font-semibold ${
-                              !notification.isRead
-                                ? 'text-gray-900'
-                                : 'text-gray-700'
-                            }`}
-                          >
-                            {notification.title}
-                          </h4>
-                          <span
-                            className={`text-xs flex-shrink-0 ${getPriorityColor(
-                              notification.priority
-                            )}`}
-                          >
-                            {getTimeAgo(notification.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {notification.message}
-                        </p>
-                        {notification.actionLabel && (
-                          <span className="inline-flex items-center text-xs font-medium text-blue-600">
-                            {notification.actionLabel}
-                            <svg
-                              className="w-3 h-3 ml-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <>
+      <NotificationBell
+        unreadCount={unreadCount}
+        isOpen={isOpen}
+        onClick={() => setIsOpen((o) => !o)}
+      />
+      <NotificationPanel
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        notifications={notifications}
+        onMarkRead={markRead}
+        onMarkAllRead={markAllRead}
+      />
+    </>
   );
 }

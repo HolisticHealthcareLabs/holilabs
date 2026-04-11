@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import {
   generateSchedule,
@@ -39,6 +39,12 @@ export const POST = createProtectedRoute(
           { error: 'Medication not found' },
           { status: 404 }
         );
+      }
+
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      const hasAccess = await verifyPatientAccess(context.user!.id, medication.patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
       }
 
       const scheduleConfig = generateSchedule(medication.frequency);
@@ -131,6 +137,14 @@ export const GET = createProtectedRoute(
         );
       }
 
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      if (patientId) {
+        const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+        if (!hasAccess) {
+          return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+        }
+      }
+
       const where: any = { isActive: true };
       if (patientId) where.patientId = patientId;
       if (medicationId) where.medicationId = medicationId;
@@ -213,6 +227,22 @@ export const DELETE = createProtectedRoute(
           { error: 'Schedule ID is required' },
           { status: 400 }
         );
+      }
+
+      // First look up the schedule to verify tenant access before mutating
+      const existing = await prisma.medicationSchedule.findUnique({
+        where: { id: scheduleId },
+        select: { patientId: true },
+      });
+
+      if (!existing) {
+        return NextResponse.json({ error: 'Schedule not found' }, { status: 404 });
+      }
+
+      // CYRUS: tenant isolation — verify clinician has access to this patient (CVI-002)
+      const hasAccess = await verifyPatientAccess(context.user!.id, existing.patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
       }
 
       const schedule = await prisma.medicationSchedule.update({

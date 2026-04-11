@@ -68,7 +68,7 @@ export default function WelcomeModal({
   const copy = COPY[lang];
 
   useEffect(() => {
-    const timer = setTimeout(() => tourBtnRef.current?.focus(), 500);
+    const timer = setTimeout(() => tourBtnRef.current?.focus(), 100);
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onDismiss();
@@ -87,7 +87,7 @@ export default function WelcomeModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.12 }}
       role="dialog"
       aria-modal="true"
       aria-label="Welcome"
@@ -98,9 +98,9 @@ export default function WelcomeModal({
       {/* Card */}
       <motion.div
         className="relative z-10 flex flex-col items-center text-center px-8 py-12 max-w-md w-full"
-        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ delay: 0, duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Hospital demo logo */}
         <img
@@ -126,9 +126,9 @@ export default function WelcomeModal({
         {/* Welcome heading */}
         <motion.h1
           className="text-[28px] sm:text-[34px] font-semibold text-white tracking-tight leading-tight"
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.04, duration: 0.12 }}
         >
           {copy.welcome(doctorName)}
         </motion.h1>
@@ -138,7 +138,7 @@ export default function WelcomeModal({
           className="text-white/40 text-[15px] mt-2 mb-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
+          transition={{ delay: 0.06, duration: 0.1 }}
         >
           {copy.workspaceReady(specialty)}
         </motion.p>
@@ -147,10 +147,11 @@ export default function WelcomeModal({
         <motion.button
           ref={tourBtnRef}
           onClick={onStartTour}
-          className="w-full max-w-xs px-6 py-3.5 rounded-2xl bg-white text-black text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-          initial={{ opacity: 0, y: 8 }}
+          className="w-full max-w-xs px-6 py-3.5 bg-white text-black text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          style={{ borderRadius: 'var(--radius-xl)' }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65, duration: 0.4 }}
+          transition={{ delay: 0.08, duration: 0.1 }}
         >
           {copy.startTour}
         </motion.button>
@@ -161,7 +162,7 @@ export default function WelcomeModal({
           className="mt-4 text-[13px] text-white/25 hover:text-white/50 transition-colors duration-200"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.85, duration: 0.3 }}
+          transition={{ delay: 0.1, duration: 0.1 }}
         >
           {copy.explore}
         </motion.button>

@@ -22,11 +22,12 @@ export type CanonicalRecordType =
   | 'ALLERGY'
   | 'IMMUNIZATION'
   | 'IMAGING'
+  | 'IMAGING_META'
   | 'CLINICAL_NOTE'
   | 'PROCEDURE'
   | 'ENCOUNTER'
-  | 'DEMOGRAPHICS'
-  | 'SUPPLY_CHAIN'
+  | 'PATIENT_DEMOGRAPHICS'
+  | 'SUPPLY_CHAIN_ITEM'
   | 'DEVICE_READING';
 
 export type ValidationError = {
