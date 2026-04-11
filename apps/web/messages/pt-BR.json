@@ -570,6 +570,30 @@
       "liveDemo": "Demo ao Vivo",
       "copyright": "Copyright © 2026 Holi Labs. Todos os direitos reservados.",
       "badges": "Nativo LGPD · ANVISA Classe I · FHIR R4"
+    },
+    "roiIntro": {
+      "eyebrow": "IMPACTO COMPROVADO",
+      "headline": "Pare de perder receita que você já ganhou.",
+      "subhead": "Cada sinistro negado é dinheiro que você faturou e devolveu. HoliLabs automatiza verificação de elegibilidade, autorização prévia, codificação TUSS e envio para que seu ciclo de receita feche na primeira vez."
+    },
+    "countries": {
+      "eyebrow": "EXPANDINDO NA LATAM",
+      "headline": "Feito para a América Latina. Lançando em todos os lugares.",
+      "subhead": "Construído para regulamentações de saúde, sistemas de faturamento e fluxos clínicos da LATAM.",
+      "brazilName": "Brasil",
+      "brazilBadge": "Ativo",
+      "brazilDesc": "TUSS, ANS, LGPD, integração SUS",
+      "boliviaName": "Bolívia",
+      "boliviaBadge": "Piloto",
+      "boliviaDesc": "CUPS, SOAT, fluxos clínicos",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Em breve",
+      "argentinaDesc": "PMO, obras sociales, prepagas",
+      "comingSoonLabel": "Em breve",
+      "chile": "Chile",
+      "colombia": "Colômbia",
+      "mexico": "México",
+      "salvador": "El Salvador"
     }
   },
   "pricing": {
@@ -862,7 +886,7 @@
       "yourAccount": "Sua conta",
       "noEmail": "Nenhum e-mail cadastrado",
       "securityReview": "Revisão de segurança recomendada",
-      "securityReviewDesc": "Revise o acesso à organização, convites da equipe e configurações de privacidade antes do lançamento.",
+      "securityReviewDesc": "Revise o acesso organizacional, convites de equipe e configurações de privacidade antes do lançamento.",
       "noPendingInvites": "Nenhum convite pendente",
       "reviewSettings": "Revisar configurações",
       "organization": "Organização",
@@ -883,7 +907,6 @@
       "dataPrivacy": "Dados e privacidade",
       "peopleSharing": "Pessoas e compartilhamento",
       "walletSubscriptions": "Carteira e assinaturas",
-      "securityReviewDesc": "Revise o acesso organizacional, convites de equipe e configurações de privacidade antes do lançamento.",
       "scopedToWorkspace": "Escopo do seu espaço de trabalho atual",
       "awaitingOnboarding": "Aguardando conclusão da integração",
       "fullName": "Nome completo",

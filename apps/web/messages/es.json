@@ -570,6 +570,30 @@
       "liveDemo": "Demo en Vivo",
       "copyright": "Copyright © 2026 Holi Labs. Todos los derechos reservados.",
       "badges": "Nativo LGPD · ANVISA Clase I · FHIR R4"
+    },
+    "roiIntro": {
+      "eyebrow": "IMPACTO COMPROBADO",
+      "headline": "Deja de perder ingresos que ya ganaste.",
+      "subhead": "Cada reclamo rechazado es dinero que generaste y devolviste. HoliLabs automatiza verificación de elegibilidad, autorización previa, codificación CUPS/TUSS y envío RIPS para que tu ciclo de ingresos cierre a la primera."
+    },
+    "countries": {
+      "eyebrow": "EXPANDIENDO EN LATAM",
+      "headline": "Hecho para América Latina. Lanzando en todas partes.",
+      "subhead": "Diseñado para regulaciones de salud, sistemas de facturación y flujos clínicos de LATAM.",
+      "brazilName": "Brasil",
+      "brazilBadge": "Activo",
+      "brazilDesc": "TUSS, ANS, LGPD, integración SUS",
+      "boliviaName": "Bolivia",
+      "boliviaBadge": "Piloto",
+      "boliviaDesc": "CUPS, SOAT, flujos clínicos",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Próximamente",
+      "argentinaDesc": "PMO, obras sociales, prepagas",
+      "comingSoonLabel": "Próximamente",
+      "chile": "Chile",
+      "colombia": "Colombia",
+      "mexico": "México",
+      "salvador": "El Salvador"
     }
   },
   "pricing": {
@@ -862,7 +886,7 @@
       "yourAccount": "Su cuenta",
       "noEmail": "Sin correo registrado",
       "securityReview": "Revisión de seguridad recomendada",
-      "securityReviewDesc": "Revise el acceso a la organización, las invitaciones al equipo y la configuración de privacidad antes del lanzamiento.",
+      "securityReviewDesc": "Revise acceso organizacional, invitaciones de equipo y configuración de privacidad antes del lanzamiento.",
       "noPendingInvites": "Sin invitaciones pendientes",
       "reviewSettings": "Revisar configuración",
       "organization": "Organización",
@@ -883,7 +907,6 @@
       "dataPrivacy": "Datos y privacidad",
       "peopleSharing": "Personas y compartir",
       "walletSubscriptions": "Billetera y suscripciones",
-      "securityReviewDesc": "Revise acceso organizacional, invitaciones de equipo y configuración de privacidad antes del lanzamiento.",
       "scopedToWorkspace": "Alcance de tu espacio de trabajo actual",
       "awaitingOnboarding": "Esperando completar la incorporación",
       "fullName": "Nombre completo",

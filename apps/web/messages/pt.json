@@ -1198,6 +1198,30 @@
       "liveDemo": "Demo ao Vivo",
       "copyright": "Copyright © 2026 Holi Labs. Todos os direitos reservados.",
       "badges": "Nativo LGPD · ANVISA Classe I · FHIR R4"
+    },
+    "roiIntro": {
+      "eyebrow": "IMPACTO COMPROVADO",
+      "headline": "Pare de perder receita que você já ganhou.",
+      "subhead": "Cada sinistro negado é dinheiro que você faturou e devolveu. HoliLabs automatiza verificação de elegibilidade, autorização prévia, codificação TUSS e envio para que seu ciclo de receita feche na primeira vez."
+    },
+    "countries": {
+      "eyebrow": "EXPANDINDO NA LATAM",
+      "headline": "Feito para a América Latina. Lançando em todos os lugares.",
+      "subhead": "Construído para regulamentações de saúde, sistemas de faturamento e fluxos clínicos da LATAM.",
+      "brazilName": "Brasil",
+      "brazilBadge": "Ativo",
+      "brazilDesc": "TUSS, ANS, LGPD, integração SUS",
+      "boliviaName": "Bolívia",
+      "boliviaBadge": "Piloto",
+      "boliviaDesc": "CUPS, SOAT, fluxos clínicos",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Em breve",
+      "argentinaDesc": "PMO, obras sociales, prepagas",
+      "comingSoonLabel": "Em breve",
+      "chile": "Chile",
+      "colombia": "Colômbia",
+      "mexico": "México",
+      "salvador": "El Salvador"
     }
   }
 }

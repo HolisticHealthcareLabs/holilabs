@@ -570,6 +570,30 @@
       "liveDemo": "Live Demo",
       "copyright": "Copyright © 2026 Holi Labs. All rights reserved.",
       "badges": "LGPD-native · ANVISA Class I · FHIR R4"
+    },
+    "roiIntro": {
+      "eyebrow": "PROVEN IMPACT",
+      "headline": "Stop losing revenue you already earned.",
+      "subhead": "Every rejected claim is money you made — then gave back. HoliLabs automates eligibility checks, prior auth, CUPS/TUSS coding, and RIPS submission so your revenue cycle closes the first time."
+    },
+    "countries": {
+      "eyebrow": "EXPANDING ACROSS LATAM",
+      "headline": "Built for Latin America. Launching everywhere.",
+      "subhead": "Purpose-built for LATAM healthcare regulations, billing systems, and clinical workflows.",
+      "brazilName": "Brazil",
+      "brazilBadge": "Live",
+      "brazilDesc": "TUSS, ANS, LGPD, SUS integration",
+      "boliviaName": "Bolivia",
+      "boliviaBadge": "Pilot",
+      "boliviaDesc": "CUPS, SOAT, clinical workflows",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Coming soon",
+      "argentinaDesc": "PMO, obras sociales, prepagas",
+      "comingSoonLabel": "Coming soon",
+      "chile": "Chile",
+      "colombia": "Colombia",
+      "mexico": "Mexico",
+      "salvador": "El Salvador"
     }
   },
   "pricing": {
@@ -883,7 +907,6 @@
       "dataPrivacy": "Data & privacy",
       "peopleSharing": "People & sharing",
       "walletSubscriptions": "Wallet & subscriptions",
-      "securityReviewDesc": "Review organization access, team invites, and privacy settings before rollout.",
       "scopedToWorkspace": "Scoped to your current workspace",
       "awaitingOnboarding": "Awaiting onboarding completion",
       "fullName": "Full name",
