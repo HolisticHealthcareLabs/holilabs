@@ -8,14 +8,12 @@
  * Industry-grade settings management
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Bell,
-  Brain,
   ChevronRight,
   Plus,
   CheckCircle2,
@@ -25,7 +23,6 @@ import {
   Shield,
   Settings,
 } from 'lucide-react';
-import { SkillsSettings } from '@/components/settings/SkillsSettings';
 
 type OnboardingProfile = import('@/app/api/onboarding/profile/route').OnboardingProfile;
 type ProtocolMode = NonNullable<OnboardingProfile['protocolMode']>;
@@ -80,8 +77,7 @@ type SettingsSection =
   | 'integrations'
   | 'privacy'
   | 'team'
-  | 'billing'
-  | 'skills';
+  | 'billing';
 
 function getInitials(value: string): string {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -136,6 +132,260 @@ function buildInitialTeamMembers(activeOrganizationId: string): TeamMember[] {
   ];
 }
 
+function SecuritySection() {
+  const t = useTranslations('dashboard.settings');
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwStatus, setPwStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [pwLoading, setPwLoading] = useState(false);
+  const [totpStep, setTotpStep] = useState<'idle' | 'scanning' | 'confirming' | 'done'>('idle');
+  const [qrCode, setQrCode] = useState('');
+  const [totpSecret, setTotpSecret] = useState('');
+  const [totpToken, setTotpToken] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [totpError, setTotpError] = useState('');
+
+  const pwValid = pwNew.length >= 8 && /[A-Z]/.test(pwNew) && /[0-9]/.test(pwNew);
+  const pwMatch = pwNew === pwConfirm && pwNew.length > 0;
+
+  const handleChangePassword = async () => {
+    if (!pwValid || !pwMatch) return;
+    setPwLoading(true);
+    setPwStatus(null);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwStatus({ type: 'success', msg: t('secPasswordUpdated') });
+        setPwCurrent(''); setPwNew(''); setPwConfirm('');
+      } else {
+        setPwStatus({ type: 'error', msg: data.error || 'Failed to update password' });
+      }
+    } catch {
+      setPwStatus({ type: 'error', msg: 'Network error' });
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  const handleTotpSetup = async () => {
+    try {
+      const res = await fetch('/api/auth/totp/setup', { method: 'POST' });
+      const data = await res.json();
+      setQrCode(data.qrCode);
+      setTotpSecret(data.secret);
+      setTotpStep('scanning');
+    } catch {
+      setTotpError('Failed to initialize 2FA setup');
+    }
+  };
+
+  const handleTotpVerify = async () => {
+    setTotpError('');
+    try {
+      const res = await fetch('/api/auth/totp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: totpToken }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBackupCodes(data.backupCodes);
+        setTotpStep('done');
+      } else {
+        setTotpError(data.error || 'Invalid code');
+      }
+    } catch {
+      setTotpError('Network error');
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Password */}
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('secPassword')}</p>
+        <p className="mt-1.5 text-[13px] text-white/35">{t('secPasswordHint')}</p>
+        <div className="mt-6 space-y-4 max-w-md">
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-1.5">{t('secCurrentPassword')}</label>
+            <input
+              type="password"
+              value={pwCurrent}
+              onChange={e => setPwCurrent(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+              placeholder={t('secCurrentPasswordPlaceholder')}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-1.5">{t('secNewPassword')}</label>
+            <input
+              type="password"
+              value={pwNew}
+              onChange={e => setPwNew(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+              placeholder={t('secNewPasswordPlaceholder')}
+            />
+            {pwNew.length > 0 && (
+              <div className="mt-2 flex gap-2">
+                <span className={`text-[11px] px-2 py-0.5 rounded-full ${pwNew.length >= 8 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'}`}>{t('sec8Chars')}</span>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full ${/[A-Z]/.test(pwNew) ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'}`}>{t('secUppercase')}</span>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full ${/[0-9]/.test(pwNew) ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-white/30'}`}>{t('secNumber')}</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-1.5">{t('secConfirmPassword')}</label>
+            <input
+              type="password"
+              value={pwConfirm}
+              onChange={e => setPwConfirm(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+              placeholder={t('secConfirmPlaceholder')}
+            />
+            {pwConfirm.length > 0 && !pwMatch && (
+              <p className="mt-1.5 text-[12px] text-red-400">{t('secPasswordsMismatch')}</p>
+            )}
+          </div>
+          <button
+            onClick={handleChangePassword}
+            disabled={!pwValid || !pwMatch || pwLoading}
+            className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/90 transition-colors"
+          >
+            {pwLoading ? t('secUpdating') : t('secUpdatePassword')}
+          </button>
+          {pwStatus && (
+            <p className={`text-sm ${pwStatus.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+              {pwStatus.msg}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Two-Factor Authentication */}
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('secTwoFactor')}</p>
+            <p className="mt-1.5 text-[13px] text-white/35">{t('secTwoFactorDesc')}</p>
+          </div>
+          {totpStep === 'idle' && (
+            <button
+              onClick={handleTotpSetup}
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors"
+            >
+              {t('secEnable2FA')}
+            </button>
+          )}
+          {totpStep === 'done' && (
+            <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[12px] font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              {t('secEnabled')}
+            </span>
+          )}
+        </div>
+
+        {totpStep === 'scanning' && (
+          <div className="mt-6 max-w-sm">
+            <p className="text-sm text-white/70 mb-4">{t('secScanQR')}</p>
+            {qrCode && (
+              <div className="bg-white rounded-2xl p-4 inline-block mb-4">
+                <img src={qrCode} alt="TOTP QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            <div className="mb-4">
+              <p className="text-[12px] text-white/40 mb-1">{t('secManualKey')}</p>
+              <code className="block text-sm font-mono text-white/80 bg-white/[0.04] rounded-lg px-3 py-2 break-all select-all">{totpSecret}</code>
+            </div>
+            <button
+              onClick={() => setTotpStep('confirming')}
+              className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
+            >
+              {t('secScanned')}
+            </button>
+          </div>
+        )}
+
+        {totpStep === 'confirming' && (
+          <div className="mt-6 max-w-sm">
+            <p className="text-sm text-white/70 mb-4">{t('secEnterCode')}</p>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={totpToken}
+              onChange={e => setTotpToken(e.target.value.replace(/\D/g, ''))}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-2xl font-mono tracking-[0.3em] text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+              placeholder="000000"
+              autoFocus
+            />
+            {totpError && <p className="mt-2 text-sm text-red-400">{totpError}</p>}
+            <button
+              onClick={handleTotpVerify}
+              disabled={totpToken.length !== 6}
+              className="mt-4 w-full px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-500 transition-colors"
+            >
+              {t('secVerifyEnable')}
+            </button>
+          </div>
+        )}
+
+        {totpStep === 'done' && backupCodes.length > 0 && (
+          <div className="mt-6 max-w-sm">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+              <p className="text-sm font-semibold text-amber-400 mb-2">{t('secSaveBackupCodes')}</p>
+              <p className="text-[12px] text-white/50 mb-3">{t('secBackupCodesDesc')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {backupCodes.map((code, i) => (
+                  <code key={i} className="text-sm font-mono text-white/80 bg-white/[0.04] rounded-lg px-3 py-1.5 text-center select-all">{code}</code>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* WebAuthn / Passkeys */}
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('secPasskeys')}</p>
+            <p className="mt-1.5 text-[13px] text-white/35">{t('secPasskeysDesc')}</p>
+          </div>
+          <a
+            href="/dashboard/settings/seguranca"
+            className="px-4 py-2 rounded-xl border border-white/10 text-sm font-medium text-white/60 hover:text-white hover:border-white/20 transition-colors"
+          >
+            {t('secManage')}
+          </a>
+        </div>
+      </div>
+
+      {/* Active Sessions */}
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('secActiveSessions')}</p>
+        <p className="mt-1.5 text-[13px] text-white/35">{t('secActiveSessionsDesc')}</p>
+        <div className="mt-6 rounded-2xl border border-white/8 bg-white/[0.03] p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">{t('secCurrentSession')}</p>
+              <p className="text-[12px] text-white/40">{t('secThisBrowser')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const t = useTranslations('dashboard.settings');
   const { data: session } = useSession();
@@ -147,13 +397,7 @@ export default function SettingsPage() {
   const canManageClinic = tenantRole === 'ORG_ADMIN';
   const canEditRolloutContext = canManageClinic;
 
-  const searchParams = useSearchParams();
-  const initialTab = useMemo(() => {
-    const tab = searchParams?.get('tab');
-    const valid: SettingsSection[] = ['home', 'personal', 'security', 'license', 'integrations', 'privacy', 'team', 'billing', 'skills'];
-    return valid.includes(tab as SettingsSection) ? (tab as SettingsSection) : 'home';
-  }, [searchParams]);
-  const [activeTab, setActiveTab] = useState<SettingsSection>(initialTab);
+  const [activeTab, setActiveTab] = useState<SettingsSection>('home');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() =>
@@ -326,9 +570,8 @@ export default function SettingsPage() {
   }> = [
     { id: 'home', label: t('home'), icon: User, accent: 'bg-blue-100 text-blue-700', available: true },
     { id: 'personal', label: t('personalInfo'), icon: User, accent: 'bg-emerald-100 text-emerald-700', available: true },
-    { id: 'security', label: t('securitySignIn'), icon: Shield, accent: 'bg-sky-100 text-sky-700', available: false },
+    { id: 'security', label: t('securitySignIn'), icon: Shield, accent: 'bg-sky-100 text-sky-700', available: true },
     { id: 'license', label: t('clinicalLicense'), icon: CheckCircle2, accent: 'bg-amber-100 text-amber-700', available: false },
-    { id: 'skills' as SettingsSection, label: 'Clinical Skills', icon: Brain, accent: 'bg-violet-100 text-violet-700', available: true },
     { id: 'integrations', label: t('thirdPartyApps'), icon: Settings, accent: 'bg-indigo-100 text-indigo-700', available: true },
     { id: 'privacy', label: t('dataPrivacy'), icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
     { id: 'team', label: t('peopleSharing'), icon: Plus, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
@@ -344,9 +587,6 @@ export default function SettingsPage() {
       <div className="mx-auto flex w-full max-w-7xl gap-8 px-6 py-8">
         <aside className="hidden w-[280px] shrink-0 xl:block">
           <div className="sticky top-8 space-y-2">
-            <div className="mb-6 px-4 text-[28px] font-semibold tracking-tight text-white">
-              {t('cortexAccount')}
-            </div>
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -379,18 +619,6 @@ export default function SettingsPage() {
 
         <div className="min-w-0 flex-1">
           <div className="mx-auto max-w-4xl">
-            <div className="mb-6 flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-5 py-4 text-white/55">
-              <Search className="h-5 w-5 shrink-0" />
-              <input
-                type="text"
-                value=""
-                readOnly
-                aria-label="Search account settings"
-                placeholder={t('searchCortex')}
-                className="w-full bg-transparent text-base text-white/85 outline-none placeholder:text-white/38"
-              />
-            </div>
-
             <div className="mb-8 text-center">
               <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-[#014751] text-5xl font-semibold text-white shadow-lg">
                 {(session?.user?.name || session?.user?.email || 'C').charAt(0).toUpperCase()}
@@ -415,7 +643,7 @@ export default function SettingsPage() {
                         <div>
                           <p className="text-lg font-semibold text-white">{t('securityReview')}</p>
                           <p className="mt-1 text-sm text-white/80">
-                            Review organization access, team invites, and privacy settings before rollout.
+                            {t('securityReviewDesc')}
                           </p>
                         </div>
                       </div>
@@ -446,56 +674,113 @@ export default function SettingsPage() {
                     <p className="mt-3 text-xl font-semibold text-white">
                       {visibleTeamMembers.filter((member) => member.status === 'PENDING').length}
                     </p>
-                    <p className="mt-1 text-sm text-white/55">{t('awaitingOnboarding')}</p>
+                    {visibleTeamMembers.filter((m) => m.status === 'PENDING').length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {visibleTeamMembers.filter((m) => m.status === 'PENDING').map((m) => (
+                          <p key={m.id} className="text-sm text-white/55 truncate">{m.email}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-sm text-white/55">{t('noPendingInvites')}</p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'personal' && (
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Identity */}
                 <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('personalInfo')}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Identity</p>
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">{t('fullName')}</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || t('unknown')}</p>
+                      <p className="text-sm text-white/50">Full name</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">{t('email')}</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.email || t('unknown')}</p>
+                      <p className="text-sm text-white/50">Email</p>
+                      <p className="mt-2 text-base font-semibold text-white break-all">{session?.user?.email || '—'}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">{t('organizationIdLabel')}</p>
+                      <p className="text-sm text-white/50">Username</p>
+                      <p className="mt-2 text-base font-medium text-white">{session?.user?.username || '—'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Role</p>
+                      <p className="mt-2 text-base font-semibold text-white">{tenantRole}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Credentials */}
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Professional Credentials</p>
+                  <p className="mt-1.5 text-[13px] text-white/35">Required for prescribing, signing, and clinical workflows</p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Specialty</p>
+                      <p className="mt-2 text-base font-medium text-white">{session?.user?.specialty || 'Not set'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">License Number (CRM / CRO)</p>
+                      <p className="mt-2 text-base font-mono text-white">{session?.user?.licenseNumber || 'Not set'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">NPI (US only)</p>
+                      <p className="mt-2 text-base font-mono text-white">{session?.user?.npi || '—'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Signing PIN</p>
+                      <p className="mt-2 text-base text-white">{session?.user?.mfaEnabled ? '••••••' : 'Not configured'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Organization & Workspace */}
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Organization</p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Organization ID</p>
                       <p className="mt-2 font-mono text-sm text-white">{organizationId}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">{t('tenantRoleLabel')}</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{tenantRole}</p>
+                      <p className="text-sm text-white/50">Workspace Role</p>
+                      <p className="mt-2 text-base font-semibold text-white">{tenantRole}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Permissions</p>
+                      <p className="mt-2 text-sm text-white/70">{session?.user?.permissions?.length ? `${(session.user as any)?.permissions?.length} active` : 'Default role permissions'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Account Status</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <p className="text-base font-medium text-emerald-400">Active</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {activeTab === 'skills' && (
-              <div className="space-y-6">
+                {/* Security Overview */}
                 <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Co-Pilot</p>
-                      <h2 className="mt-3 text-2xl font-semibold text-white">Clinical Skills</h2>
-                      <p className="mt-2 text-sm text-white/60">
-                        Configure quais habilidades clínicas o agente deve usar, a prioridade de cada uma,
-                        e a abordagem terapêutica (MBE, PICs, ou integrativa).
-                      </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Security Overview</p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">MFA</p>
+                      <p className="mt-2 text-base font-medium text-white">{session?.user?.mfaEnabled ? 'Enabled' : 'Not enabled'}</p>
                     </div>
-                    <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">
-                      {'\u{1F9E0}'} Skills
-                    </span>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Last Login</p>
+                      <p className="mt-2 text-sm font-medium text-white">{session?.user?.lastLoginAt ? new Date(session.user.lastLoginAt).toLocaleDateString() : 'Current session'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Member Since</p>
+                      <p className="mt-2 text-sm font-medium text-white">{session?.user?.createdAt ? new Date(session.user.createdAt).toLocaleDateString() : '—'}</p>
+                    </div>
                   </div>
                 </div>
-                <SkillsSettings />
               </div>
             )}
 
@@ -659,7 +944,10 @@ export default function SettingsPage() {
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">{t('complianceCountry')}</label>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white/75">
+                          {t('complianceCountry')}
+                          {!canEditRolloutContext && <Lock className="w-3 h-3 text-white/30" />}
+                        </label>
                         <select
                           value={rolloutContext.complianceCountry}
                           disabled={!canEditRolloutContext}
@@ -683,7 +971,10 @@ export default function SettingsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">{t('protocolMode')}</label>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white/75">
+                          {t('protocolMode')}
+                          {!canEditRolloutContext && <Lock className="w-3 h-3 text-white/30" />}
+                        </label>
                         <select
                           value={rolloutContext.protocolMode}
                           disabled={!canEditRolloutContext}
@@ -702,7 +993,10 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-white/75">{t('insurerFocus')}</label>
+                      <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white/75">
+                        {t('insurerFocus')}
+                        {!canEditRolloutContext && <Lock className="w-3 h-3 text-white/30" />}
+                      </label>
                       <input
                         type="text"
                         value={rolloutContext.insurerFocus}
@@ -715,11 +1009,7 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {!canEditRolloutContext && (
-                      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                        {t('readOnlyAccess', { role: tenantRole || userRole || 'UNKNOWN' })}
-                      </div>
-                    )}
+                    {/* Read-only warning removed — phone/channel are always editable. Admin-only fields show inline lock. */}
 
                     {saveMessage && (
                       <div className={`rounded-2xl border px-4 py-3 text-sm ${saveFeedbackTone}`}>
@@ -820,19 +1110,17 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {(activeTab === 'security' || activeTab === 'license' || activeTab === 'billing') && (
+            {activeTab === 'security' && (
+              <SecuritySection />
+            )}
+
+            {(activeTab === 'license' || activeTab === 'billing') && (
               <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
-                  {activeTab === 'security'
-                    ? t('securitySignIn')
-                    : activeTab === 'license'
-                      ? t('clinicalLicense')
-                      : t('walletSubscriptions')}
+                  {activeTab === 'license' ? t('clinicalLicense') : t('walletSubscriptions')}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">{t('comingSoon')}</h2>
-                <p className="mt-2 text-sm text-white/60">
-                  {t('comingSoonDesc')}
-                </p>
+                <p className="mt-2 text-sm text-white/60">{t('comingSoonDesc')}</p>
               </div>
             )}
           </div>

@@ -243,7 +243,6 @@ export function BillingComplianceLanding() {
               <a href="#how-it-works" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('howItWorks')}</a>
               <a href="#for-administrators" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('forHospitals')}</a>
               <a href="/pricing" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>{tNav('pricing')}</a>
-              <a href="/whitepaper" className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}>White Paper</a>
             </div>
 
             <div className="hidden md:flex items-center gap-3 justify-self-end whitespace-nowrap">
