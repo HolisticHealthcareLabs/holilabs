@@ -16,6 +16,23 @@ import {
   Plus,
   Loader2,
   X,
+  CalendarDays,
+  Sparkles,
+  Users,
+  Inbox,
+  LayoutDashboard,
+  ShieldCheck,
+  BarChart3,
+  ClipboardCheck,
+  Settings,
+  User,
+  Lock,
+  SlidersHorizontal,
+  ShieldAlert,
+  CreditCard,
+  Puzzle,
+  HelpCircle,
+  LogOut,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -38,25 +55,6 @@ interface SidebarNavGroup {
   heading: string;
   items: SidebarNavItem[];
 }
-
-const DASHBOARD_MODULE_PRELOADERS = [
-  () => import('@/app/dashboard/my-day/page'),
-  () => import('@/app/dashboard/clinical-command/page'),
-  () => import('@/app/dashboard/patients/page'),
-  () => import('@/app/dashboard/reminders/page'),
-  () => import('@/app/dashboard/command-center/page'),
-  () => import('@/app/dashboard/billing/page'),
-  () => import('@/app/dashboard/analytics/page'),
-  () => import('@/app/dashboard/auditor/page'),
-  () => import('@/app/dashboard/settings/page'),
-  () => import('@/app/dashboard/clinical-command/_components/CdssAlertsPane'),
-  () => import('@/app/dashboard/clinical-command/_components/PatientContextBar'),
-  () => import('@/app/dashboard/clinical-command/_components/SoapNotePane'),
-  () => import('@/app/dashboard/clinical-command/_components/TranscriptPane'),
-  () => import('@/app/dashboard/command-center/_TrendChart'),
-  () => import('framer-motion'),
-  () => import('react-joyride'),
-];
 
 function DashboardBrand({
   showWordmark = true,
@@ -148,7 +146,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isEphemeral, setIsEphemeral] = useState(false);
   const { locale, t } = useLanguage();
   const { usageStats, bumpUsage, getMostUsed } = useToolUsageTracker();
-  const hasWarmedDashboardModulesRef = useRef(false);
 
   // Session timeout is isolated into <SessionTimeoutGuard /> to avoid
   // countdown-driven re-renders from cascading into the entire layout.
@@ -297,43 +294,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     };
   }, [router]);
 
-  useEffect(() => {
-    if (hasWarmedDashboardModulesRef.current) return;
-    hasWarmedDashboardModulesRef.current = true;
-
-    let cancelled = false;
-    const timeoutIds: number[] = [];
-    const idleApi = window as unknown as {
-      requestIdleCallback?: (cb: () => void) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-
-    const warmModules = () => {
-      DASHBOARD_MODULE_PRELOADERS.forEach((loadModule, index) => {
-        const timeoutId = window.setTimeout(() => {
-          if (cancelled) return;
-          void loadModule().catch(() => undefined);
-        }, index * 120);
-        timeoutIds.push(timeoutId);
-      });
-    };
-
-    if (idleApi.requestIdleCallback) {
-      const idleId = idleApi.requestIdleCallback(warmModules);
-      return () => {
-        cancelled = true;
-        timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-        if (idleApi.cancelIdleCallback) idleApi.cancelIdleCallback(idleId);
-      };
-    }
-
-    const timeoutId = window.setTimeout(warmModules, 200);
-    timeoutIds.push(timeoutId);
-    return () => {
-      cancelled = true;
-      timeoutIds.forEach((id) => window.clearTimeout(id));
-    };
-  }, []);
+  // Module preloading removed — Next.js <Link prefetch> handles route chunks on hover/viewport.
+  // Previous eager preloader fetched ~500-800 KB of dashboard JS on mount, defeating code splitting.
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -351,25 +313,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       heading: t('dashboard.sidebar.clinicalWorkspace'),
       items: [
-        { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: Plus },
-        { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/clinical-command', icon: Plus },
-        { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Plus },
-        { key: 'inbox', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Plus, badge: '3' },
+        { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: CalendarDays },
+        { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/clinical-command', icon: Sparkles },
+        { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Users },
+        { key: 'inbox', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Inbox, badge: '3' },
       ],
     },
     {
       heading: t('dashboard.sidebar.revenueOps'),
       items: [
-        { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: Plus },
-        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: Plus },
-        { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: Plus },
+        { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: LayoutDashboard },
+        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: ShieldCheck },
+        { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: BarChart3 },
       ],
     },
     {
       heading: t('dashboard.sidebar.administration'),
       items: [
-        { key: 'audit-compliance', label: t('dashboard.sidebar.auditCompliance'), href: '/dashboard/auditor', icon: Plus },
-        { key: 'settings-team', label: t('dashboard.sidebar.settingsTeam'), href: '/dashboard/settings', icon: Plus },
+        { key: 'audit-compliance', label: t('dashboard.sidebar.auditCompliance'), href: '/dashboard/auditor', icon: ClipboardCheck },
+        { key: 'settings-team', label: t('dashboard.sidebar.settingsTeam'), href: '/dashboard/settings', icon: Settings },
       ],
     },
   ];
@@ -637,12 +599,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     {/* Navigation */}
                     <div className="px-1.5 py-1.5">
                       {[
-                        { href: '/dashboard/settings',                label: t('dashboard.profile.profile'),      Icon: Plus },
-                        { href: '/dashboard/settings?tab=security',   label: t('dashboard.profile.security'),     Icon: Plus },
-                        { href: '/dashboard/settings?tab=preferences',label: t('dashboard.profile.preferences'),  Icon: Plus },
-                        { href: '/dashboard/settings?tab=privacy',    label: t('dashboard.profile.privacyData'),  Icon: Plus },
-                        { href: '/dashboard/settings?tab=billing',    label: t('dashboard.profile.billing'),      Icon: Plus },
-                        { href: '/dashboard/settings?tab=integrations',label: t('dashboard.profile.integrations'),Icon: Plus },
+                        { href: '/dashboard/settings',                label: t('dashboard.profile.profile'),      Icon: User },
+                        { href: '/dashboard/settings?tab=security',   label: t('dashboard.profile.security'),     Icon: Lock },
+                        { href: '/dashboard/settings?tab=preferences',label: t('dashboard.profile.preferences'),  Icon: SlidersHorizontal },
+                        { href: '/dashboard/settings?tab=privacy',    label: t('dashboard.profile.privacyData'),  Icon: ShieldAlert },
+                        { href: '/dashboard/settings?tab=billing',    label: t('dashboard.profile.billing'),      Icon: CreditCard },
+                        { href: '/dashboard/settings?tab=integrations',label: t('dashboard.profile.integrations'),Icon: Puzzle },
                       ].map((item) => (
                         <Link
                           key={item.href}
@@ -665,7 +627,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
                       >
-                        <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                         <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">{t('dashboard.profile.helpSupport')}</span>
                       </Link>
 
@@ -696,7 +658,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   <>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
-                        {user?.name || user?.email?.split('@')[0] || 'Plus'}
+                        {user?.name || user?.email?.split('@')[0] || 'User'}
                       </p>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                     </div>

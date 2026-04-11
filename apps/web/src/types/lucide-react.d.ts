@@ -16,6 +16,7 @@ declare module 'lucide-react' {
   export const BookOpen: LucideIcon;
   export const Brain: LucideIcon;
   export const Calendar: LucideIcon;
+  export const CalendarDays: LucideIcon;
   export const Check: LucideIcon;
   export const CheckCheck: LucideIcon;
   export const CheckCircle: LucideIcon;
@@ -24,7 +25,9 @@ declare module 'lucide-react' {
   export const ChevronLeft: LucideIcon;
   export const ChevronRight: LucideIcon;
   export const Circle: LucideIcon;
+  export const ClipboardCheck: LucideIcon;
   export const Clock: LucideIcon;
+  export const CreditCard: LucideIcon;
   export const Contrast: LucideIcon;
   export const CornerDownRight: LucideIcon;
   export const Crosshair: LucideIcon;
@@ -44,9 +47,13 @@ declare module 'lucide-react' {
   export const Grid3X3: LucideIcon;
   export const Heart: LucideIcon;
   export const HeartPulse: LucideIcon;
+  export const HelpCircle: LucideIcon;
   export const History: LucideIcon;
   export const Info: LucideIcon;
+  export const Inbox: LucideIcon;
+  export const LayoutDashboard: LucideIcon;
   export const Loader2: LucideIcon;
+  export const LogOut: LucideIcon;
   export const Lock: LucideIcon;
   export const Mail: LucideIcon;
   export const MapPin: LucideIcon;
@@ -60,6 +67,7 @@ declare module 'lucide-react' {
   export const Pause: LucideIcon;
   export const Play: LucideIcon;
   export const Plus: LucideIcon;
+  export const Puzzle: LucideIcon;
   export const QrCode: LucideIcon;
   export const RefreshCw: LucideIcon;
   export const RotateCw: LucideIcon;
@@ -71,7 +79,9 @@ declare module 'lucide-react' {
   export const Shield: LucideIcon;
   export const ShieldAlert: LucideIcon;
   export const ShieldCheck: LucideIcon;
+  export const SlidersHorizontal: LucideIcon;
   export const Smartphone: LucideIcon;
+  export const Sparkles: LucideIcon;
   export const Square: LucideIcon;
   export const Star: LucideIcon;
   export const Stethoscope: LucideIcon;
@@ -84,6 +94,7 @@ declare module 'lucide-react' {
   export const TrendingUp: LucideIcon;
   export const Upload: LucideIcon;
   export const User: LucideIcon;
+  export const Users: LucideIcon;
   export const X: LucideIcon;
   export const XCircle: LucideIcon;
   export const ZoomIn: LucideIcon;
