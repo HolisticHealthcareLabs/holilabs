@@ -136,3 +136,5 @@ p1-model-routing/
 test_output.txt
 apps/web/test_output.txt
 apps/web/tests/e2e/screenshots/
+*.secret
+.env.local.secret
