@@ -179,7 +179,7 @@
     "@playwright/test": "^1.40.0",
     "@prisma/client": "^6.7.0",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/express": "^5.0.5",
