@@ -8,7 +8,7 @@ import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   X, User, Plus, AlertCircle,
   CheckCircle2, Shield, FileText,
-  Play, Clock, Settings,
+  Play, Clock, Settings, Upload, Download
 } from 'lucide-react';
 import { filterRecordsForOrganization } from '../../../../../../packages/shared-kernel/src/types/auth';
 import { PatientEditDrawer } from './_components/PatientEditDrawer';
@@ -943,6 +943,76 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+      )}
+
+      {/* Import Patient Modal */}
+      {showImportForm && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowImportForm(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg">
+              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Importar Pacientes</h2>
+                <button onClick={() => setShowImportForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Faça o upload de um arquivo CSV contendo os dados dos pacientes. 
+                  <a href="/templates/patient-import-template.csv" download className="text-blue-600 hover:underline ml-1">Baixar template</a>
+                </p>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                />
+                
+                {importing && (
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Importando pacientes, por favor aguarde...</p>
+                )}
+
+                {importResult && !importResult.error && (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Resumo da Importação</h3>
+                    <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                      <li><span className="text-green-600 font-medium">{importResult.imported}</span> importados com sucesso</li>
+                      <li><span className="text-amber-600 font-medium">{importResult.skipped}</span> ignorados (duplicados)</li>
+                      <li><span className="text-red-600 font-medium">{importResult.errors?.length || 0}</span> erros</li>
+                    </ul>
+                    {importResult.errors?.length > 0 && (
+                      <button onClick={handleDownloadErrors} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                        <Download className="w-4 h-4" />
+                        Baixar Relatório de Erros
+                      </button>
+                    )}
+                  </div>
+                )}
+                {importResult?.error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-sm border border-red-200 dark:border-red-500/20">
+                    {importResult.error}
+                  </div>
+                )}
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setShowImportForm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                >
+                  Fechar
+                </button>
+                <button
+                  onClick={handleImportSubmit}
+                  disabled={!importFile || importing}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Importar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Add Patient Modal */}

@@ -1,0 +1,4 @@
+firstName,lastName,dateOfBirth,cpf,externalMrn,gender,email,phone,address,city,state,postalCode,medications
+João,da Silva,1985-03-15,111.222.333-44,MRN-1001,M,joao@example.com,+5511999999999,Rua das Flores 123,São Paulo,SP,01000-000,Losartan 50mg;Aspirin 81mg
+Maria,Oliveira,1992-08-22,555.666.777-88,,F,maria@example.com,+5511888888888,Avenida Paulista 1000,São Paulo,SP,01310-100,
+Carlos,Santos,1978-11-05,999.888.777-66,MRN-1003,M,,,Rua Augusta 500,São Paulo,SP,01305-000,Metformin 500mg
