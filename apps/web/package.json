@@ -103,7 +103,7 @@
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.1.0",
     "canvas-confetti": "^1.9.4",
-    "casbin": "^5.45.0",
+    "casbin": "^5.49.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cql-exec-fhir": "^2.1.6",
