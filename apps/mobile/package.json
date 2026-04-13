@@ -20,7 +20,7 @@
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@supabase/supabase-js": "^2.58.0",
-    "@tanstack/query-async-storage-persister": "^5.90.13",
+    "@tanstack/query-async-storage-persister": "^5.99.0",
     "@tanstack/react-query": "^5.90.11",
     "@tanstack/react-query-persist-client": "^5.28.0",
     "axios": "^1.6.7",
