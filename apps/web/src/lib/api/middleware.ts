@@ -555,6 +555,63 @@ export function requireRole(...allowedRoles: UserRole[]) {
 }
 
 // ============================================================================
+// T3.1: AUTOMATIC TENANT ISOLATION MIDDLEWARE
+// Extracts patientId from URL path or query, calls verifyPatientAccess.
+// Protects all 179+ routes that don't manually check access.
+// @compliance CYRUS invariant: every patient query scoped to tenant
+// ============================================================================
+
+function autoTenantIsolation(): Middleware {
+  return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
+    const userId = context.user?.id;
+    const role = context.user?.role;
+
+    // Skip for unauthenticated requests or ADMIN/SYSTEM roles
+    if (!userId || role === 'ADMIN' || role === 'SYSTEM') {
+      return next();
+    }
+
+    // Extract patientId from URL path segments:
+    // /api/patients/[id]/... → id is the patientId
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split('/');
+    const patientsIdx = pathSegments.indexOf('patients');
+    let patientId: string | null = null;
+
+    if (patientsIdx !== -1 && pathSegments[patientsIdx + 1]) {
+      const candidate = pathSegments[patientsIdx + 1];
+      if (candidate && !['search', 'import', 'export', 'invite', 'preferences', 'deletion'].includes(candidate)) {
+        patientId = candidate;
+      }
+    }
+
+    // Also check query string for ?patientId=
+    if (!patientId) {
+      patientId = url.searchParams.get('patientId');
+    }
+
+    // If we found a patientId, verify access
+    if (patientId) {
+      const hasAccess = await verifyPatientAccess(userId, patientId);
+      if (!hasAccess) {
+        logger.warn({
+          event: 'tenant_isolation_blocked',
+          userId,
+          patientId,
+          path: url.pathname,
+        });
+        return NextResponse.json(
+          { error: 'Forbidden: you do not have access to this patient' },
+          { status: 403 }
+        );
+      }
+    }
+
+    return next();
+  };
+}
+
+// ============================================================================
 // IDOR PROTECTION (Insecure Direct Object Reference)
 // @compliance Phase 2.4: Security Hardening
 // ============================================================================
@@ -1139,6 +1196,11 @@ export function createProtectedRoute(
     if (options?.audit) {
       middlewares.push(withAuditLog(options.audit.action, options.audit.resource));
     }
+
+    // T3.1: Automatic tenant isolation — verify patient access for any route
+    // that has a patientId in URL params or query string.
+    // This protects the 179 routes that don't manually call verifyPatientAccess.
+    middlewares.push(autoTenantIsolation());
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
     let response = (await composedHandler(request, context)) as NextResponse;
