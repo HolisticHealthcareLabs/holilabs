@@ -41,7 +41,7 @@
   "devDependencies": {
     "@jest/test-sequencer": "^29.7.0",
     "@prisma/client": "6.7.0",
-    "@types/node": "^20.11.0",
+    "@types/node": "^20.19.39",
     "concurrently": "^8.2.0",
     "prisma": "6.7.0",
     "tsx": "^4.7.0",
