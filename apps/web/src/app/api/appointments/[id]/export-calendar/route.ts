@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Calendar Export API Route
  * GET /api/appointments/[id]/export-calendar

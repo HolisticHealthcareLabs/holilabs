@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * GET /api/kpi
  * Retrieves all 8 KPIs with optional date range filtering.

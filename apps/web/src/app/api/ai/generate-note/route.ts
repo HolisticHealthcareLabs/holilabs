@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * SOAP Note Generation API Endpoint
  *

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Appointment Notification API Route
  * POST /api/appointments/[id]/notify - Send notification to patient

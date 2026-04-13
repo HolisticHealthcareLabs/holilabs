@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * GET   /api/lab-orders/[id] — Fetch single lab order
  * PATCH /api/lab-orders/[id] — Update order status

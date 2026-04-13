@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Notification Templates API Routes
  * GET /api/appointments/templates - List all notification templates

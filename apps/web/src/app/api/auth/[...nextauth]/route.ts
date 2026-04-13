@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * NextAuth v5 API Route
  *

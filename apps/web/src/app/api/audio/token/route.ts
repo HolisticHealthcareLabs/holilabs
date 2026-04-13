@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { auth } from '@/lib/auth';

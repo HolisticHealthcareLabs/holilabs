@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Consent with Witness Signature API
  * Creates consent with witness signature (for surgical/procedure consents)

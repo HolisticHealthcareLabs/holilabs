@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Check User Consent Status API Route
  *

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Log patient data access with LGPD-compliant access reason
  *

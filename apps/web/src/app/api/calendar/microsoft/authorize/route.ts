@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Microsoft Outlook OAuth - Authorization Initiation
  *

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Auto-Generate Reminders from Prevention Plan API
  *

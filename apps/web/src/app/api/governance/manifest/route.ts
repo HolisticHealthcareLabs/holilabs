@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { RulesManifest } from '@/lib/governance/rules-manifest';
 import { createProtectedRoute } from '@/lib/api/middleware';

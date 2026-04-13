@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Test Push Notification API
  * Sends a test push notification to the authenticated user

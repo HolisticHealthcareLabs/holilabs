@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Document Upload API
  * Handles file uploads with validation, hash generation, and storage

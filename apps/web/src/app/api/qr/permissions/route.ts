@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Permission Management API
  * Handles permission grants, revocations, and queries

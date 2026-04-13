@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Available Appointment Slots API
  * Returns available time slots for a given clinician and date

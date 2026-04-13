@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * QR Code Device Pairing API
  * Handles device pairing requests and validation

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Medication Refill Request API
  *

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Twilio Delivery Status Webhook
  *

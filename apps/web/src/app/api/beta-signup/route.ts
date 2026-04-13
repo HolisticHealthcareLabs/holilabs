@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Beta Signup API
  * Handles beta program signups with invitation code validation

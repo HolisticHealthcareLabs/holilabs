@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * MCP v1 API Route — Streamable HTTP Transport
  *

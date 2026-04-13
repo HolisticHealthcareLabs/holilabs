@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Granular Data Access Grant API
  * Allows patients to grant access to specific resource types (LABS, IMAGING, etc.)

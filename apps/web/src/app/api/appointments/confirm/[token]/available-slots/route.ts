@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Available Slots API for Rescheduling
  * GET /api/appointments/confirm/[token]/available-slots

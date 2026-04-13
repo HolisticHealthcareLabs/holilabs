@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * POST /api/lab-orders/[id]/results — Attach lab results to an order
  *

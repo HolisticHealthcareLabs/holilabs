@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * GET /api/compliance/report?startDate=...&endDate=...
  *

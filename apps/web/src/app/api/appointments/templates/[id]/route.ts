@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Notification Template API Routes
  * GET /api/appointments/templates/[id] - Get single template

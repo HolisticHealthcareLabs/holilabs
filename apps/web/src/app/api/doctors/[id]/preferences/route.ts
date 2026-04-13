@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Doctor Preferences API Routes
  * GET /api/doctors/[id]/preferences - Get doctor scheduling preferences

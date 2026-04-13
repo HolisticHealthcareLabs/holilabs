@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Consent Version Upgrade API
  * Upgrades a patient's consent to the latest version

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Consent Management API
  * GET  /api/consents?patientId={id} - List patient consents

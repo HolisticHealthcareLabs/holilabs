@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Accept Consents API Route
  *

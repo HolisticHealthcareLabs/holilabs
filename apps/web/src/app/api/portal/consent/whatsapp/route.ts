@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * WhatsApp Consent API
  * HIPAA/LGPD compliant consent management for WhatsApp adherence monitoring

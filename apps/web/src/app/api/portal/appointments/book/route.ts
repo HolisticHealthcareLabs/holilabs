@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Book Appointment API
  * Creates a new appointment and sends confirmation notification

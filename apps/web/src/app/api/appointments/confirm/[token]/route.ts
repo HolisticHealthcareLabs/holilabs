@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Appointment Confirmation API
  * GET /api/appointments/confirm/[token] - Get appointment details

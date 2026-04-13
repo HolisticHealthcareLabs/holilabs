@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Patient Access Log API
  * Shows who accessed patient's data (HIPAA requirement)

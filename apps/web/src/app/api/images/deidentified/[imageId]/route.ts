@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Retrieve De-identified Medical Image API
  * Serves de-identified images with proper security controls

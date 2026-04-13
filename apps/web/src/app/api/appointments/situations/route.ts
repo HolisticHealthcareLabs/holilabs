@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Situations API Routes
  * GET /api/appointments/situations - List all active situations
