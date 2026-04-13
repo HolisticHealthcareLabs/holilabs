@@ -150,7 +150,7 @@
     "react-papaparse": "^4.4.0",
     "react-signature-canvas": "1.1.0-alpha.2",
     "recharts": "^3.4.1",
-    "resend": "^6.4.2",
+    "resend": "^6.10.0",
     "sharp": "^0.34.5",
     "simple-hl7": "^3.3.0",
     "socket.io": "^4.8.1",
