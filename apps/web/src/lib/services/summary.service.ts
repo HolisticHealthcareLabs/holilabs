@@ -12,6 +12,7 @@ import { DeidService } from './deid.service';
 import { SummaryDraftSchema, type SummaryDraft, type SummaryGenerationInput } from '@/lib/schemas/summary-draft.schema';
 import logger from '@/lib/logger';
 import type { SummaryGenJobData } from '@/lib/queue/types';
+import { assertNoPHI } from '@/lib/ai/phi-guard';
 
 // Initialize Anthropic client
 const anthropic = process.env.ANTHROPIC_API_KEY
@@ -123,6 +124,11 @@ export class SummaryService {
     }
 
     const prompt = this.buildPrompt(deidTranscript, context, language);
+
+    // Tripwire: callers pass a parameter named `deidTranscript`, but the
+    // contract is enforced only by naming. If a caller skips de-id and
+    // passes a raw transcript, refuse before forwarding to Anthropic.
+    assertNoPHI(prompt, 'summary.generateDraft');
 
     logger.info({
       event: 'summary_llm_request_start',

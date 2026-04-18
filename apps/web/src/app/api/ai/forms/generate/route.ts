@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import logger from '@/lib/logger';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { assertNoPHI } from '@/lib/ai/phi-guard';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -96,6 +97,13 @@ export const POST = createProtectedRoute(
         role: m.role as 'user' | 'assistant',
         content: m.content,
       }));
+
+    // Tripwire: form-builder is a clinician UX, but a clinician typing
+    // "create form for patient João Silva CPF 123.456.789-00" would leak
+    // raw PHI to Anthropic. Refuse on high-confidence patterns.
+    for (const msg of anthropicMessages) {
+      assertNoPHI(msg.content, 'ai.forms.generate.user-message');
+    }
 
     // Call Claude AI
     const response = await anthropic.messages.create({
