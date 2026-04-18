@@ -58,7 +58,22 @@
       "@types/react": "18.2.46",
       "@types/react-dom": "18.2.18",
       "fast-xml-parser": ">=5.5.9",
-      "handlebars": ">=4.7.9"
+      "handlebars": ">=4.7.9",
+      "protobufjs@<7.5.5": ">=7.5.5",
+      "jws@=4.0.0": ">=4.0.1",
+      "node-forge@<1.4.0": ">=1.4.0",
+      "axios@>=1.0.0 <1.13.5": ">=1.13.5",
+      "tar@<7.5.7": ">=7.5.7",
+      "fastify@<5.7.2": ">=5.7.2",
+      "undici@<6.23.0": ">=6.23.0",
+      "cookie@<0.7.0": ">=0.7.0",
+      "serialize-javascript@<7.0.5": ">=7.0.5",
+      "dompurify@<3.3.2": ">=3.3.2",
+      "path-to-regexp@<0.1.13": ">=0.1.13",
+      "follow-redirects@<=1.15.11": ">=1.16.0",
+      "nodemailer@<8.0.4": ">=8.0.4",
+      "@xmldom/xmldom@<0.8.12": ">=0.8.12",
+      "electron@<35.7.5": ">=35.7.5"
     }
   },
   "dependencies": {

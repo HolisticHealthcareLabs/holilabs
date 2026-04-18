@@ -959,7 +959,10 @@
       "expandSidebar": "Expandir barra",
       "collapseSidebar": "Recolher barra",
       "closeSidebar": "Fechar barra",
-      "openNavigation": "Abrir menu"
+      "openNavigation": "Abrir menu",
+      "prescriptions": "Prescrições",
+      "addPatient": "Adicionar doente",
+      "lockScreen": "Bloquear ecrã"
     },
     "profile": {
       "profile": "Perfil",
@@ -1083,7 +1086,11 @@
           "peripheral_vascular": "Vascular Periférico",
           "growth_development": "Crescimento e Desenvolvimento"
         }
-      }
+      },
+      "saveSession": "Guardar sessão",
+      "saveSessionTitle": "Guardar esta sessão?",
+      "saveSessionBody": "Guardar alterações para {name}?",
+      "recording": "A gravar"
     }
   },
   "landing": {
@@ -1165,8 +1172,8 @@
       "badge5": "ANVISA Classe I",
       "badge6": "Nativo LGPD",
       "builtForLatam": "Construído para os próximos 1 bilhão de pacientes."
-      },
-      "cta": {
+    },
+    "cta": {
       "offerReminder": "Vagas de acesso antecipado limitadas restantes.",
       "headline": "Obter acesso antecipado.",
       "subhead": "Onboarding prioritário. Piloto gratuito. Molde o roadmap.",

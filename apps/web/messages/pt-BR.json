@@ -537,8 +537,8 @@
       "badge5": "ANVISA Classe I",
       "badge6": "Nativo LGPD",
       "builtForLatam": "Construído para os próximos 1 bilhão de pacientes."
-      },
-      "cta": {
+    },
+    "cta": {
       "offerReminder": "Vagas de acesso antecipado limitadas restantes.",
       "headline": "Obter acesso antecipado.",
       "subhead": "Onboarding prioritário. Piloto gratuito. Molde o roadmap.",
@@ -714,7 +714,10 @@
       "expandSidebar": "Expandir barra lateral",
       "collapseSidebar": "Recolher barra lateral",
       "closeSidebar": "Fechar barra lateral",
-      "openNavigation": "Abrir menu de navegação"
+      "openNavigation": "Abrir menu de navegação",
+      "prescriptions": "Prescrições",
+      "addPatient": "Adicionar paciente",
+      "lockScreen": "Bloquear tela"
     },
     "profile": {
       "profile": "Perfil",
@@ -1431,7 +1434,11 @@
           "peripheral_vascular": "Vascular Periférico",
           "growth_development": "Crescimento e Desenvolvimento"
         }
-      }
+      },
+      "saveSession": "Salvar sessão",
+      "saveSessionTitle": "Salvar esta sessão?",
+      "saveSessionBody": "Salvar alterações para {name}?",
+      "recording": "Gravando"
     },
     "formBuilder": {
       "shortText": "Texto Curto",

@@ -714,7 +714,10 @@
       "expandSidebar": "Expand sidebar",
       "collapseSidebar": "Collapse sidebar",
       "closeSidebar": "Close sidebar",
-      "openNavigation": "Open navigation menu"
+      "openNavigation": "Open navigation menu",
+      "prescriptions": "Prescriptions",
+      "addPatient": "Add patient",
+      "lockScreen": "Lock screen"
     },
     "profile": {
       "profile": "Profile",
@@ -1431,7 +1434,11 @@
           "peripheral_vascular": "Peripheral Vascular",
           "growth_development": "Growth & Development"
         }
-      }
+      },
+      "saveSession": "Save session",
+      "saveSessionTitle": "Save this session?",
+      "saveSessionBody": "Save changes for {name}?",
+      "recording": "Recording"
     },
     "formBuilder": {
       "shortText": "Short Text",
