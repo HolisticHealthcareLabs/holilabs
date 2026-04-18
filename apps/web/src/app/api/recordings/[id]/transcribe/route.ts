@@ -67,6 +67,8 @@ import logger from '@/lib/logger';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
+import { assertNoPHI } from '@/lib/ai/phi-guard';
 
 const TranscribeRequestSchema = z.object({
   audioUrl: z.string().url(),
@@ -206,7 +208,12 @@ export const POST = createProtectedRoute(
         recordingId,
       });
 
-      // Build patient info with allergies and chronic conditions
+      // De-identify transcript before sending to external LLM (LGPD Art. 46, HIPAA Safe Harbor)
+      const deidentifiedTranscript = await deidentifyTranscriptOrThrow(transcript);
+
+      // Patient identity is replaced with <PATIENT>; clinical context (age, gender,
+      // allergies, chronic conditions) is preserved because it's not directly
+      // identifying and improves SOAP generation quality.
       const allergiesText = recording.patient.allergies?.length
         ? `\nAlergias: ${recording.patient.allergies.map(a => `${a.allergen} (${a.severity}, ${a.reactions.join(', ')})`).join('; ')}`
         : '';
@@ -216,7 +223,7 @@ export const POST = createProtectedRoute(
         : '';
 
       const patientInfo = `
-Paciente: ${recording.patient.firstName} ${recording.patient.lastName}
+Paciente: <PATIENT>
 Edad: ${new Date().getFullYear() - new Date(recording.patient.dateOfBirth).getFullYear()} años
 Género: ${recording.patient.gender === 'M' ? 'Masculino' : recording.patient.gender === 'F' ? 'Femenino' : 'Otro'}${allergiesText}${chronicConditionsText}
 `.trim();
@@ -226,7 +233,7 @@ Género: ${recording.patient.gender === 'M' ? 'Masculino' : recording.patient.ge
 ${patientInfo}
 
 TRANSCRIPCIÓN DE LA CONSULTA:
-${transcript}
+${deidentifiedTranscript}
 
 Por favor, genera:
 1. SOAP notes estructuradas con las 4 secciones
@@ -242,6 +249,9 @@ Responde en formato JSON con esta estructura:
   "diagnosis": "Diagnóstico principal",
   "icd10Codes": ["A00.0", "B01.2"]
 }`;
+
+      // Tripwire: refuse to send if any high-confidence PHI pattern leaked through.
+      assertNoPHI(soapPrompt, 'recordings.transcribe.soap-prompt');
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
