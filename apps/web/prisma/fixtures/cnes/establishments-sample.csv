@@ -1,0 +1,8 @@
+CO_UNIDADE;NU_CNPJ;NO_FANTASIA;NO_RAZAO_SOCIAL;TP_UNIDADE;NO_MUNICIPIO;CO_SIGLA_ESTADO;CO_CEP;NO_LOGRADOURO;NU_LATITUDE;NU_LONGITUDE;NU_TELEFONE;DS_EMAIL
+1000001;12345678000101;Hospital Test Uno;Hospital Test Uno S/A;05;São Paulo;SP;01000-000;R. Teste 100;-23.5505;-46.6333;+55 11 0000-0001;contato@hospital-test-uno.example
+1000002;12345678000102;Clínica Integrativa Teste;Clínica Teste Dois Ltda;36;Rio de Janeiro;RJ;20000-000;Av. Teste 200;-22.9068;-43.1729;+55 21 0000-0002;clinica2@example.com
+1000003;;Lab Fixture;Laboratório Fixture ME;39;Belo Horizonte;MG;30000-000;R. Fixture 300;;;+55 31 0000-0003;
+1000004;12345678000104;Farmácia Exemplo;Farmácia Exemplo Ltda;43;Curitiba;PR;80000-000;Av. Exemplo 400;-25.4284;-49.2733;+55 41 0000-0004;
+1000005;;Posto de Saúde Norte;Posto Saúde Norte;01;Manaus;AM;69000-000;R. Norte 500;;;+55 92 0000-0005;
+1000006;12345678000106;UPA Centro;UPA Centro Municipal;75;Porto Alegre;RS;90000-000;Av. Centro 600;-30.0346;-51.2177;+55 51 0000-0006;upa@example.com
+1000007;12345678000107;Clínica Desconhecida;Clínica Tipo Desconhecido;99;Salvador;BA;40000-000;R. Desc 700;-12.9714;-38.5014;+55 71 0000-0007;
