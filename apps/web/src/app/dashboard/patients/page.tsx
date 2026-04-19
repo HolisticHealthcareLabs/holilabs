@@ -13,6 +13,7 @@ import {
 import { filterRecordsForOrganization } from '../../../../../../packages/shared-kernel/src/types/auth';
 import { PatientEditDrawer } from './_components/PatientEditDrawer';
 import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
+import { Alert, EmptyState } from '@/components/ui/premium';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -737,18 +738,11 @@ export default function PatientsPage() {
 
       {/* Error banner */}
       {fetchError && (
-        <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/5 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-            <span className="text-xs font-medium text-red-700 dark:text-red-400">{fetchError}</span>
-          </div>
-          <button
-            onClick={() => fetchPatients()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/10 transition-colors min-h-[44px]"
-          >
-            {t('retry')}
-          </button>
-        </div>
+        <Alert
+          tone="danger"
+          title={fetchError}
+          action={{ label: t('retry'), onClick: () => fetchPatients() }}
+        />
       )}
 
       {/* Loading skeleton */}
@@ -778,23 +772,14 @@ export default function PatientsPage() {
 
       {/* True empty state — no patients at all */}
       {!loading && !fetchError && roster.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col items-center justify-center py-20 px-6">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
-            <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-          </div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            {t('emptyStateTitle')}
-          </h3>
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-xs mb-4">
-            {t('emptyStateDescription')}
-          </p>
-          <a
-            href="/dashboard/patients/intake"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors min-h-[44px]"
-          >
-            <Plus className="w-4 h-4" />
-            {t('addFirstPatient')}
-          </a>
+        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <EmptyState
+            icon={User}
+            title={t('emptyStateTitle')}
+            description={t('emptyStateDescription')}
+            action={{ label: t('addFirstPatient'), href: '/dashboard/patients/intake' }}
+            accent="sky"
+          />
         </div>
       )}
 
@@ -813,24 +798,13 @@ export default function PatientsPage() {
 
         {/* Rows */}
         {visiblePatients.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4">
-              <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-            </div>
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-              {t('noPatients')}
-            </h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-xs mb-4">
-              {t('adjustFiltersHint')}
-            </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              {t('registerNewPatient')}
-            </button>
-          </div>
+          <EmptyState
+            icon={User}
+            title={t('noPatients')}
+            description={t('adjustFiltersHint')}
+            action={{ label: t('registerNewPatient'), onClick: () => setShowAddForm(true) }}
+            accent="slate"
+          />
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {visiblePatients.map((p) => {

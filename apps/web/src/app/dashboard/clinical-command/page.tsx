@@ -31,6 +31,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useEventStream } from '@/hooks/useEventStream';
 import type { SSEEvent } from '@/lib/events/emit';
 import AlertBanner from '@/components/clinical/AlertBanner';
+import { EmptyState } from '@/components/ui/premium';
 import RiskScorePanel from '@/components/clinical/RiskScorePanel';
 import ScreeningsDue from '@/components/clinical/ScreeningsDue';
 
@@ -1057,12 +1058,13 @@ export default function ClinicalCommandCenterPage() {
   // ── Feature flag kill-switch ─────────────────────────────────────────────
   if (!scribeEnabled) {
     return (
-      <div className="flex flex-col items-center justify-center h-full dark:bg-gray-950 text-center px-6" style={{ backgroundColor: 'var(--surface-primary)' }}>
-        <Stethoscope className="w-10 h-10 dark:text-gray-700 mb-4" style={{ color: 'var(--text-tertiary)' }} />
-        <h2 className="text-lg font-semibold dark:text-gray-300 mb-1" style={{ color: 'var(--text-secondary)' }}>Co-Pilot</h2>
-        <p className="text-sm dark:text-gray-500 max-w-xs" style={{ color: 'var(--text-muted)' }}>
-          This feature is not enabled for your workspace. Contact your administrator.
-        </p>
+      <div className="flex h-full items-center justify-center" style={{ backgroundColor: 'var(--surface-primary)' }}>
+        <EmptyState
+          icon={Stethoscope}
+          title="Co-Pilot"
+          description="This feature is not enabled for your workspace. Contact your administrator."
+          accent="slate"
+        />
       </div>
     );
   }

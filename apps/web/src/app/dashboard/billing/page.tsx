@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DEMO_CLAIMS, getDemoBillingStats, type DemoClaim } from '@/lib/demo/dashboard-mocks';
 import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
+import { MetricCard, Alert, EmptyState, type AccentName } from '@/components/ui/premium';
 
 type ClaimStatus = 'submitted' | 'approved' | 'denied' | 'pending_review' | 'resubmitted';
 type BillingStandard = 'CBHPM' | 'TUSS' | 'CPT' | 'CUPS';
@@ -367,38 +368,32 @@ export default function ClaimsIntelligencePage() {
       </div>
 
       {/* Billing Standard Banner */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-4 py-3 flex items-center gap-2.5">
-        <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
-        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-          {t('billingStandard')}: {billingInfo.label}
-        </span>
-      </div>
+      <Alert tone="info" title={`${t('billingStandard')}: ${billingInfo.label}`} />
+
 
       {/* KPI Row */}
       <div id="billing-kpis" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { icon: BarChart3, label: t('totalBilled'), value: formatCurrency(stats.totalBilled, stats.currency), accent: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/60 dark:border-blue-500/20', metric: 'all' as const },
-          { icon: TrendingUp, label: t('approvalRate'), value: `${stats.approvalRate}%`, accent: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/60 dark:border-emerald-500/20', metric: 'approved' as const },
-          { icon: XCircle, label: t('denied'), value: String(stats.deniedCount), accent: 'text-red-600 dark:text-red-400', border: 'border-red-200/60 dark:border-red-500/20', metric: 'denied' as const },
-          { icon: AlertTriangle, label: t('cdiAlerts'), value: String(stats.cdiAlerts), accent: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-500/20', metric: 'cdi' as const },
-        ].map((kpi, i) => {
-          const Icon = kpi.icon;
-          return (
-            <button
-              key={kpi.label}
+        {([
+          { icon: BarChart3,    label: t('totalBilled'),  value: formatCurrency(stats.totalBilled, stats.currency), accent: 'sky'     as AccentName, metric: 'all'      as const },
+          { icon: TrendingUp,   label: t('approvalRate'), value: `${stats.approvalRate}%`,                          accent: 'emerald' as AccentName, metric: 'approved' as const },
+          { icon: XCircle,      label: t('denied'),       value: String(stats.deniedCount),                         accent: 'rose'    as AccentName, metric: 'denied'   as const },
+          { icon: AlertTriangle,label: t('cdiAlerts'),    value: String(stats.cdiAlerts),                           accent: 'amber'   as AccentName, metric: 'cdi'      as const },
+        ]).map((kpi, i) => (
+          <div
+            key={kpi.label}
+            className={`rounded-2xl ${metricFilter === kpi.metric ? 'ring-2 ring-violet-500/50' : ''}`}
+          >
+            <MetricCard
+              icon={kpi.icon}
+              label={kpi.label}
+              value={kpi.value}
+              accent={kpi.accent}
+              index={i}
               onClick={() => setMetricFilter(kpi.metric)}
-              className={`rounded-2xl border ${kpi.border} bg-white dark:bg-gray-900 px-2 py-3 sm:p-4 flex flex-col items-center justify-center text-center overflow-hidden min-w-0 card-entrance card-entrance-${i + 1} hover:scale-[1.02] hover:shadow-md transition-all duration-200 ${metricFilter === kpi.metric ? 'ring-2 ring-violet-500/50' : ''}`}
-            >
-              <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 max-w-full">
-                <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${kpi.accent}`} />
-                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 truncate leading-none">{kpi.label}</span>
-              </div>
-              <p className={`text-base sm:text-xl md:text-2xl font-bold tabular-nums leading-tight w-full truncate ${kpi.accent}`}>
-                {kpi.value}
-              </p>
-            </button>
-          );
-        })}
+              ariaLabel={`${kpi.label}: ${kpi.value}`}
+            />
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -461,11 +456,12 @@ export default function ClaimsIntelligencePage() {
         </div>
 
         {filteredClaims.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-6">
-            <FileText className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('noClaimsMatch')}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{t('adjustFilters')}</p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title={t('noClaimsMatch')}
+            description={t('adjustFilters')}
+            accent="slate"
+          />
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {filteredClaims.map((claim) => {
