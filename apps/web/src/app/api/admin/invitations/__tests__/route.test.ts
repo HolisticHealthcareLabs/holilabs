@@ -5,7 +5,13 @@
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
-  createPublicRoute: (handler: any) => handler,
+  createProtectedRoute: (handler: any) => async (req: any, ctx: any) => {
+    const authHeader = req.headers?.get?.('authorization') || req.headers?.authorization;
+    if (!authHeader || authHeader !== 'Bearer test-admin-key') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+    return handler(req, ctx);
+  },
 }));
 
 jest.mock('@/lib/logger', () => ({
