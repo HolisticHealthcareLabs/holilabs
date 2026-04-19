@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { getLocale, getMessages } from 'next-intl/server';
-import { NextIntlClientProvider } from 'next-intl';
+import { IntlClientProvider } from '@/components/IntlClientProvider';
 import './globals.css';
 import '@/styles/print.css';
 import '@/styles/mobile.css';
@@ -142,7 +142,7 @@ export default async function RootLayout({
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className="font-sans antialiased">
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <IntlClientProvider locale={locale} messages={messages}>
           <ErrorBoundary>
             <Providers>
               <SkipLink />
@@ -158,7 +158,7 @@ export default async function RootLayout({
               </main>
             </Providers>
           </ErrorBoundary>
-        </NextIntlClientProvider>
+        </IntlClientProvider>
       </body>
     </html>
   );
