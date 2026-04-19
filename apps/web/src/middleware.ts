@@ -49,6 +49,7 @@ const NON_LOCALE_PREFIXES = [
   '/onboarding',
   '/download',
   '/legal',
+  '/find-doctor',
   '/_next',
   '/_vercel',
 ];

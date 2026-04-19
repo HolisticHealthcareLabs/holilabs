@@ -33,6 +33,13 @@ export {
     WORKFLOW_TEMPLATES,
 } from './workflows';
 
+// Registry functions
+export {
+    getAllRegisteredTools,
+    getToolsForRoles,
+    getToolsByCategory,
+} from './registry';
+
 // Individual tool modules
 export { patientTools } from './tools/patient.tools';
 export { patientCrudTools } from './tools/patient-crud.tools';
@@ -50,6 +57,7 @@ export { documentTools } from './tools/document.tools';
 export { billingTools } from './tools/billing.tools';
 export { settingsTools } from './tools/settings.tools';
 export { prescriptionTools } from './tools/prescription.tools';
+export { searchTools } from './tools/index';
 
 // Schemas (for external validation)
 export * from './schemas/tool-schemas';

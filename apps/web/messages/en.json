@@ -461,48 +461,43 @@
   "landing": {
     "nav": {
       "howItWorks": "How it works",
-      "results": "The return",
+      "forHospitals": "For hospitals",
+      "findDoctor": "Find a doctor",
+      "pricing": "Pricing",
       "signIn": "Sign in",
-      "requestAccess": "Request early access",
+      "requestAccess": "Get early access",
       "changeLanguage": "Change language",
       "closeMenu": "Close menu",
       "openMenu": "Open menu"
     },
     "hero": {
-      "offerPill": "LATAM Pilot 2026",
-      "headline": "You see the patient. We see everything else.",
-      "subhead": "Holi Labs is LATAMs clinical co-pilot. It catches drug interactions, drafts clinical notes, and recovers denied claims while you focus on the patient.",
-      "ctaPrimary": "Get Early Access",
-      "ctaSecondary": "Live Demo",
+      "offerPill": "",
+      "headline": "4 hours typing.\n11 minutes healing.",
+      "subhead": "Clinical intelligence that gives doctors their time back — and administrators the revenue they already earned.",
+      "ctaPrimary": "Request early access",
       "trustLgpd": "LGPD-native",
       "trustAnvisa": "ANVISA Class I",
       "trustFhir": "FHIR R4",
       "trustSpeed": "< 90s review",
-      "trustPhi": "Zero PHI in cloud"
+      "trustPhi": "Zero PHI in cloud",
+      "ctaSecondary": "See it live"
     },
-    "roi": {
-      "eyebrow": "Results",
-      "tabPhysicians": "For Physicians",
-      "tabAdministrators": "For Administrators",
-      "beforeLabel": "Before",
-      "afterLabel": "After",
-      "physicianBefore": "15 min typing per patient. Template hunting. Copy-paste SOAP.",
-      "physicianAfter": "90 seconds to review. Structured. Coded. Signed.",
-      "adminBefore": "Denial letter arrives 6 weeks later. Revenue lost. Audit. Rework.",
-      "adminAfter": "Flagged in real time. Corrected before submission.",
-      "testimonialQuote": "We went from 12 minutes per note to a 90-second review. The billing flags alone paid for the first month.",
-      "testimonialAttribution": "Dr. M., Cardiologist — São Paulo"
+    "roiIntro": {
+      "eyebrow": "THE RETURN",
+      "headline": "Two problems. One platform.",
+      "subhead": "Administrators lose revenue to claim denials. Physicians lose hours to documentation. Holi Labs addresses both. Simultaneously."
     },
     "roiFinance": {
       "eyebrow": "FOR ADMINISTRATORS",
       "stat": "30%",
-      "statLabel": "of LATAM claims rejected due to documentation gaps",
+      "statLabel": "of LATAM claims are rejected or reduced due to documentation gaps",
       "headline": "Stop losing revenue you already earned.",
-      "description": "Every rejected claim is revenue your hospital earned but never collected. Holi Labs cross-references every encounter against ICD-10, TUSS, and CBHPM codes in real time, flagging gaps seconds after they occur.",
+      "description": "Every rejected claim is revenue your hospital earned but never collected. Holi Labs cross-references every encounter against ICD-10, TUSS, and CBHPM codes in real time, flagging documentation gaps seconds after they occur, not weeks later when the denial letter arrives.",
       "item1": "ICD-10 validation in real time",
       "item2": "TUSS billing code verification",
       "item3": "CBHPM procedure cross-reference",
-      "item4": "Ambient CDI for documentation integrity"
+      "item4": "Ambient CDI for documentation integrity",
+      "item5": "Denial pattern intelligence"
     },
     "roiTime": {
       "eyebrow": "FOR PHYSICIANS",
@@ -513,42 +508,54 @@
       "item1": "Real-time SOAP note generation",
       "item2": "Structured clinical findings extraction",
       "item3": "Automated billing code sync",
-      "item4": "Template-free documentation"
+      "item4": "Template-free documentation",
+      "item5": "Continuous learning from physician corrections"
     },
     "howItWorks": {
-      "eyebrow": "HOW IT WORKS",
+      "eyebrow": "THE ENGINE",
       "headline": "Deterministic AI.\nNot a black box.",
-      "subhead": "Every flag traces to a published guideline or a government billing code.",
-      "step1Title": "Speak naturally",
-      "step1Desc": "The consultation happens exactly as it always has. No new screens. No workflow changes.",
-      "step2Title": "Intelligence runs silently",
-      "step2Desc": "Safety checks and billing validation process in real time against local regulatory standards.",
-      "step3Title": "Everything surfaces",
-      "step3Desc": "Gaps, interactions, and codes appear before the patient leaves.",
-      "differentiator": "No hallucinations. No guesswork. Every alert has a published source."
+      "subhead": "Every alert, every flag, every suggestion traces back to a published clinical guideline, a government-mandated billing code, or a peer-reviewed drug database. No hallucinations. No guesswork.",
+      "step1Title": "Speak naturally.",
+      "step1Desc": "No workflow changes. No new screens. The consultation happens exactly as it always has.",
+      "step2Title": "Intelligence runs silently.",
+      "step2Desc": "Clinical safety, billing validation, and documentation checks process in real time against local regulatory standards.",
+      "step3Title": "Everything surfaces before the patient leaves.",
+      "step3Desc": "Missing information, potential interactions, and billing mismatches appear in context. Nothing slips through."
     },
     "security": {
       "headline": "Zero PHI in the cloud. Period.",
-      "description": "Patient health information never leaves your network unencrypted. On-premise rules. De-identified AI pipeline. LGPD-compliant by design.",
-      "badge1": "On-premise engine",
-      "badge2": "De-identified pipeline",
-      "badge3": "FHIR R4",
-      "badge4": "Immutable audit trail",
-      "badge5": "ANVISA Class I",
-      "badge6": "LGPD-native",
-      "builtForLatam": "Built for the next 1 billion patients."
+      "description": "Patient health information never leaves your network unencrypted. Our architecture processes clinical rules on-premise and transmits only de-identified, tokenized data for AI processing. LGPD-compliant by design, not by policy.",
+      "badge1": "On-premise rule engine",
+      "badge2": "De-identified AI pipeline",
+      "badge3": "FHIR R4 interoperability",
+      "badge4": "Immutable audit trail"
+    },
+    "countries": {
+      "eyebrow": "BUILT FOR LATIN AMERICA",
+      "headline": "Localized engines. Not translated afterthoughts.",
+      "subhead": "Each country gets its own regulatory engine, formulary database, and billing code library. Built with local clinicians, not ported from a US product.",
+      "brazilName": "Brazil",
+      "brazilBadge": "Active",
+      "brazilDesc": "TUSS billing codes. ANVISA drug registry. CBHPM procedure validation. LGPD-native architecture. Full Portuguese NLP.",
+      "boliviaName": "Bolivia",
+      "boliviaBadge": "Active",
+      "boliviaDesc": "Ministry of Health standards. Spanish-first NLP. Local formulary integration. Co-built with Bolivian clinical teams.",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Coming soon",
+      "argentinaDesc": "SNOMED CT ontology. Provincial formulary mapping. IOMA billing validation. Full regulatory coverage launching Q3 2026.",
+      "comingSoonLabel": "Also expanding to",
+      "chile": "Chile",
+      "colombia": "Colombia",
+      "mexico": "Mexico",
+      "salvador": "El Salvador"
     },
     "cta": {
-      "offerReminder": "Limited early access slots remaining.",
-      "headline": "Get early access.",
-      "subhead": "Priority onboarding. Free pilot tier. Shape the roadmap.",
+      "offerReminder": "First 100 founding members earn a lifelong free subscription",
+      "headline": "How much revenue did your hospital lose to claim denials last month?",
+      "subhead": "Most administrators don't know the answer. Holi Labs shows you in the first week.",
       "placeholder": "your@hospital.com",
-      "orgPlaceholder": "Hospital or clinic name",
-      "rolePhysician": "Physician",
-      "roleAdmin": "Administrator",
-      "roleOther": "Other",
-      "submit": "Request access",
-      "sending": "Reserving...",
+      "submit": "Get early access",
+      "sending": "Sending...",
       "successMsg": "You're on the list. We'll reach out within 48 hours.",
       "errorDefault": "Something went wrong. Please try again.",
       "errorNetwork": "Network error. Please try again.",
@@ -556,7 +563,7 @@
     },
     "footer": {
       "brand": "Holi Labs",
-      "brandSub": "Real-time clinical intelligence for Latin American healthcare.",
+      "brandSub": "Clinical AI co-pilot for Latin American healthcare.",
       "product": "Product",
       "company": "Company",
       "legal": "Legal",
@@ -569,32 +576,9 @@
       "hipaaPolicy": "HIPAA policy",
       "lgpdPolicy": "LGPD policy",
       "liveDemo": "Live Demo",
+      "findDoctor": "Find a doctor",
       "copyright": "Copyright © 2026 Holi Labs. All rights reserved.",
-      "badges": "LGPD-native · ANVISA Class I · FHIR R4"
-    },
-    "roiIntro": {
-      "eyebrow": "PROVEN IMPACT",
-      "headline": "Stop losing revenue you already earned.",
-      "subhead": "Every rejected claim is money you made — then gave back. HoliLabs automates eligibility checks, prior auth, CUPS/TUSS coding, and RIPS submission so your revenue cycle closes the first time."
-    },
-    "countries": {
-      "eyebrow": "EXPANDING ACROSS LATAM",
-      "headline": "Built for Latin America. Launching everywhere.",
-      "subhead": "Purpose-built for LATAM healthcare regulations, billing systems, and clinical workflows.",
-      "brazilName": "Brazil",
-      "brazilBadge": "Live",
-      "brazilDesc": "TUSS, ANS, LGPD, SUS integration",
-      "boliviaName": "Bolivia",
-      "boliviaBadge": "Pilot",
-      "boliviaDesc": "CUPS, SOAT, clinical workflows",
-      "argentinaName": "Argentina",
-      "argentinaBadge": "Coming soon",
-      "argentinaDesc": "PMO, obras sociales, prepagas",
-      "comingSoonLabel": "Coming soon",
-      "chile": "Chile",
-      "colombia": "Colombia",
-      "mexico": "Mexico",
-      "salvador": "El Salvador"
+      "badges": "HIPAA-aligned · LGPD-native · ANVISA-ready"
     }
   },
   "pricing": {
@@ -714,7 +698,10 @@
       "expandSidebar": "Expand sidebar",
       "collapseSidebar": "Collapse sidebar",
       "closeSidebar": "Close sidebar",
-      "openNavigation": "Open navigation menu"
+      "openNavigation": "Open navigation menu",
+      "prescriptions": "Prescriptions",
+      "addPatient": "Add patient",
+      "lockScreen": "Lock screen"
     },
     "profile": {
       "profile": "Profile",
@@ -1431,7 +1418,11 @@
           "peripheral_vascular": "Peripheral Vascular",
           "growth_development": "Growth & Development"
         }
-      }
+      },
+      "saveSession": "Save session",
+      "saveSessionTitle": "Save this session?",
+      "saveSessionBody": "Save changes for {name}?",
+      "recording": "Recording"
     },
     "formBuilder": {
       "shortText": "Short Text",

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { PatientQueue, type Appointment } from './_components/PatientQueue';
 import { TaskWidget, type TaskItem } from './_components/TaskWidget';
+import { MetricCard, type AccentName } from '@/components/ui/premium';
 
 const WelcomeModal = lazy(() => import('@/components/onboarding/WelcomeModal'));
 const SpecialtyWalkthrough = lazy(() => import('@/components/onboarding/SpecialtyWalkthrough'));
@@ -18,7 +19,6 @@ const SpotlightTrigger = lazy(() => import('@/components/onboarding/SpotlightTri
 import {
   staggerContainer,
   staggerItem,
-  scaleInCard,
   slideDownHeader,
 } from '@/components/dashboard/CinematicTransition';
 
@@ -146,8 +146,7 @@ interface KpiCard {
   label: string;
   value: number;
   Icon: LucideIcon;
-  accent: string;
-  border: string;
+  accent: AccentName;
 }
 
 function useScheduleStats(appointments: Appointment[]) {
@@ -172,29 +171,25 @@ function useKpiCards(appointments: Appointment[]): KpiCard[] {
       label: 'patientsToday',
       value: stats.total,
       Icon: User,
-      accent: 'text-blue-600 dark:text-blue-400',
-      border: 'border-blue-200/60 dark:border-blue-500/20',
+      accent: 'sky',
     },
     {
       label: 'remaining',
       value: stats.remaining,
       Icon: Calendar,
-      accent: 'text-slate-600 dark:text-slate-300',
-      border: 'border-slate-200/80 dark:border-slate-700/40',
+      accent: 'slate',
     },
     {
       label: 'waitingRoom',
       value: stats.arrivedCount,
       Icon: CheckCircle2,
-      accent: 'text-emerald-600 dark:text-emerald-400',
-      border: 'border-emerald-200/60 dark:border-emerald-500/20',
+      accent: 'emerald',
     },
     {
       label: 'unsignedCharts',
       value: stats.unsignedCount,
       Icon: FileText,
-      accent: 'text-amber-600 dark:text-amber-400',
-      border: 'border-amber-200/60 dark:border-amber-500/20',
+      accent: 'amber',
     },
   ], [stats]);
 }
@@ -399,25 +394,14 @@ export default function MyDayPage() {
       {/* Morning Huddle KPI cards */}
       <motion.div variants={staggerItem} id="stat-cards" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {kpiCards.map((card, i) => (
-          <motion.div
+          <MetricCard
             key={card.label}
-            variants={scaleInCard}
-            className={`
-              rounded-2xl border bg-white dark:bg-gray-900 p-4
-              hover:scale-[1.02] hover:shadow-md transition-all duration-200
-              ${card.border}
-            `}
-          >
-            <div className="flex items-center gap-2 mb-2.5">
-              <card.Icon className={`w-4 h-4 ${card.accent}`} />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {t(card.label)}
-              </span>
-            </div>
-            <p className={`text-3xl font-bold tabular-nums text-center ${card.accent}`}>
-              {card.value}
-            </p>
-          </motion.div>
+            icon={card.Icon}
+            label={t(card.label)}
+            value={card.value}
+            accent={card.accent}
+            index={i}
+          />
         ))}
       </motion.div>
 

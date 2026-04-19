@@ -5,6 +5,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { assertNoPHI } from './phi-guard';
 
 // Initialize Anthropic client
 const anthropic = process.env.ANTHROPIC_API_KEY
@@ -38,6 +39,10 @@ export async function sendToClaude(
   if (!anthropic) {
     throw new Error('Anthropic API key not configured');
   }
+
+  // Tripwire: refuse to forward raw PHI patterns to external LLM.
+  // Callers must pre-de-identify (deidentifyTranscriptOrThrow / hybridDeidentify).
+  assertNoPHI(message, 'sendToClaude.user-message');
 
   const {
     systemPrompt = 'Eres un asistente médico de IA especializado en análisis clínico. Proporciona respuestas precisas, basadas en evidencia y conformes con HIPAA.',

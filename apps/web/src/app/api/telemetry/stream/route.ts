@@ -6,8 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createPublicRoute } from '@/lib/api/middleware';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { getSyntheticTelemetryEvents, isDemoClinician } from '@/lib/demo/synthetic';
 
 export const dynamic = 'force-dynamic';
@@ -167,10 +166,9 @@ function applyFilters(events: StreamEvent[], filters: TelemetryFilterState): Str
   });
 }
 
-export const GET = createPublicRoute(async (request: Request) => {
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
-  const email = session?.user?.email ?? null;
+export const GET = createProtectedRoute(async (request: Request, context: any) => {
+  const userId = context.user?.id ?? null;
+  const email = context.user?.email ?? null;
   const filters = toFilterState(request);
   const shouldServeSynthetic =
     isDemoClinician(userId, email) ||

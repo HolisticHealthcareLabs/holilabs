@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicRoute } from '@/lib/api/middleware';
+import { createPublicRoute, verifyInternalToken } from '@/lib/api/middleware';
 import { aggregateDailyCorrections, aggregateCorrectionsRange } from '@/lib/jobs/correction-aggregation';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import logger from '@/lib/logger';
@@ -33,21 +33,10 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     // Authorization check (prevent unauthorized job execution)
     const authHeader = request.headers.get('authorization');
-    const urlSecret = request.nextUrl.searchParams.get('secret');
-    const expectedSecret = process.env.CRON_SECRET || process.env.INTERNAL_JOB_SECRET;
-
-    // Fail-closed: secret MUST be configured in production
-    if (!expectedSecret) {
-      logger.error('🔒 CRON_SECRET or INTERNAL_JOB_SECRET not configured — rejecting request');
-      return NextResponse.json(
-        { error: 'Server misconfiguration: job secret required' },
-        { status: 500 }
-      );
-    }
-
-    const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret;
-    if (providedSecret !== expectedSecret) {
-      logger.error('🔒 Unauthorized job execution attempt');
+    const token = authHeader?.replace('Bearer ', '') || null;
+    
+    if (!verifyInternalToken(token)) {
+      logger.error('🔒 Unauthorized job execution attempt - invalid internal token');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

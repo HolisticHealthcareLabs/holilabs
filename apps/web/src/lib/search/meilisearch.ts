@@ -36,6 +36,38 @@ const getMeiliClient = () => {
 // Index names
 export const PATIENT_INDEX = 'patients';
 export const MESSAGE_INDEX = 'messages';
+export const PROVIDER_INDEX = 'providers';
+
+/**
+ * Runtime availability check — true only if Meilisearch is reachable
+ * AND an API key is configured. Cached for a short window.
+ */
+let _meiliAvailable: boolean | null = null;
+let _meiliAvailableExpiry = 0;
+const MEILI_AVAILABILITY_TTL_MS = 30_000;
+
+export async function isMeilisearchAvailable(): Promise<boolean> {
+  const now = Date.now();
+  if (_meiliAvailable !== null && now < _meiliAvailableExpiry) {
+    return _meiliAvailable;
+  }
+
+  if (!process.env.MEILI_MASTER_KEY) {
+    _meiliAvailable = false;
+    _meiliAvailableExpiry = now + MEILI_AVAILABILITY_TTL_MS;
+    return false;
+  }
+
+  try {
+    const client = getMeiliClient();
+    await client.health();
+    _meiliAvailable = true;
+  } catch {
+    _meiliAvailable = false;
+  }
+  _meiliAvailableExpiry = now + MEILI_AVAILABILITY_TTL_MS;
+  return _meiliAvailable;
+}
 
 /**
  * Patient document for Meilisearch
@@ -696,6 +728,285 @@ export async function reindexAllMessages(prisma: any, batchSize: number = 100) {
     return true;
   } catch (error) {
     console.error('❌ Failed to reindex messages:', error);
+    return false;
+  }
+}
+
+// ============================================================================
+// PROVIDER SEARCH (Doctoralia-model public directory)
+// ============================================================================
+
+/**
+ * Provider document indexed in Meilisearch.
+ * Flat shape for fast filtering — joins resolved at index time.
+ */
+export interface ProviderSearchDocument {
+  id: string;
+  name: string;
+  country: string;
+  registryId: string;
+  registryState: string | null;
+  photoUrl: string | null;
+  city: string | null;
+  state: string | null;
+  lat: number | null;
+  lng: number | null;
+  _geo?: { lat: number; lng: number };
+  claimStatus: string;
+  avgRating: number;
+  reviewCount: number;
+  completenessScore: number;
+  isRegistryActive: boolean;
+  publicProfileEnabled: boolean;
+  bio: string | null;
+  languages: string[];
+  /** Array of specialty slugs for faceted filtering */
+  specialtySlugs: string[];
+  /** Array of specialty display names (EN/PT/ES concatenated) for fuzzy search */
+  specialtyNames: string[];
+  /** MedicalSystemType values accepted by this provider */
+  systemTypes: string[];
+  /** CAM flag — true if any specialty is CAM */
+  hasCamSpecialty: boolean;
+  /** Insurance plan slugs accepted */
+  insurancePlanSlugs: string[];
+  /** Establishment city-state strings */
+  establishmentLocations: string[];
+  updatedAt: number;
+}
+
+export async function initializeProviderIndex() {
+  const client = getMeiliClient();
+  try {
+    const idx = client.index(PROVIDER_INDEX);
+
+    await idx.updateSearchableAttributes([
+      'name',
+      'specialtyNames',
+      'city',
+      'state',
+      'bio',
+    ]);
+
+    await idx.updateFilterableAttributes([
+      'country',
+      'state',
+      'city',
+      'claimStatus',
+      'isRegistryActive',
+      'publicProfileEnabled',
+      'specialtySlugs',
+      'systemTypes',
+      'hasCamSpecialty',
+      'insurancePlanSlugs',
+      'languages',
+      '_geo',
+    ]);
+
+    await idx.updateSortableAttributes([
+      'avgRating',
+      'reviewCount',
+      'completenessScore',
+      'name',
+      'updatedAt',
+      '_geo',
+    ]);
+
+    await idx.updateRankingRules([
+      'words',
+      'typo',
+      'proximity',
+      'attribute',
+      'sort',
+      'exactness',
+      'completenessScore:desc',
+      'avgRating:desc',
+    ]);
+
+    await idx.updateTypoTolerance({
+      enabled: true,
+      minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 },
+    });
+
+    logger.info({ event: 'provider_index_initialized' }, '[Meilisearch]');
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to initialize provider search index');
+    return false;
+  }
+}
+
+export async function indexProvider(doc: ProviderSearchDocument) {
+  const client = getMeiliClient();
+  try {
+    await client.index(PROVIDER_INDEX).addDocuments([doc]);
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to index provider');
+    return false;
+  }
+}
+
+export async function indexProviders(docs: ProviderSearchDocument[]) {
+  if (docs.length === 0) return true;
+  const client = getMeiliClient();
+  try {
+    await client.index(PROVIDER_INDEX).addDocuments(docs);
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to index providers');
+    return false;
+  }
+}
+
+export async function updateProviderIndex(doc: Partial<ProviderSearchDocument> & { id: string }) {
+  const client = getMeiliClient();
+  try {
+    await client.index(PROVIDER_INDEX).updateDocuments([doc]);
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to update provider index');
+    return false;
+  }
+}
+
+export async function deleteProviderFromIndex(providerId: string) {
+  const client = getMeiliClient();
+  try {
+    await client.index(PROVIDER_INDEX).deleteDocument(providerId);
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to delete provider from index');
+    return false;
+  }
+}
+
+export interface ProviderSearchOptions {
+  query?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  specialtySlug?: string;
+  systemType?: 'CONVENTIONAL' | 'INTEGRATIVE' | 'TRADITIONAL' | 'COMPLEMENTARY';
+  isCam?: boolean;
+  insurancePlanSlug?: string;
+  /** Geospatial search in km */
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  sort?: 'relevance' | 'rating' | 'name';
+  limit?: number;
+  offset?: number;
+}
+
+export async function searchProvidersIndex(options: ProviderSearchOptions) {
+  const client = getMeiliClient();
+  const index = client.index(PROVIDER_INDEX);
+
+  const filters: string[] = [
+    'isRegistryActive = true',
+    'publicProfileEnabled = true',
+  ];
+
+  if (options.country) filters.push(`country = "${options.country}"`);
+  if (options.state) filters.push(`state = "${escapeFilterValue(options.state)}"`);
+  if (options.city) filters.push(`city = "${escapeFilterValue(options.city)}"`);
+  if (options.specialtySlug) filters.push(`specialtySlugs = "${options.specialtySlug}"`);
+  if (options.systemType) filters.push(`systemTypes = "${options.systemType}"`);
+  if (options.isCam !== undefined) filters.push(`hasCamSpecialty = ${options.isCam}`);
+  if (options.insurancePlanSlug) filters.push(`insurancePlanSlugs = "${options.insurancePlanSlug}"`);
+
+  if (options.lat !== undefined && options.lng !== undefined && options.radiusKm) {
+    filters.push(`_geoRadius(${options.lat}, ${options.lng}, ${Math.round(options.radiusKm * 1000)})`);
+  }
+
+  const sort: string[] = [];
+  if (options.sort === 'rating') sort.push('avgRating:desc');
+  else if (options.sort === 'name') sort.push('name:asc');
+
+  const results = await index.search(options.query ?? '', {
+    filter: filters,
+    sort: sort.length > 0 ? sort : undefined,
+    limit: options.limit ?? 20,
+    offset: options.offset ?? 0,
+    attributesToHighlight: ['name', 'specialtyNames', 'bio'],
+  });
+
+  return {
+    hits: results.hits as ProviderSearchDocument[],
+    estimatedTotalHits: results.estimatedTotalHits ?? 0,
+    processingTimeMs: results.processingTimeMs,
+  };
+}
+
+function escapeFilterValue(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
+export async function reindexAllProviders(prisma: any, batchSize = 100) {
+  try {
+    await initializeProviderIndex();
+
+    const total = await prisma.physicianCatalog.count({
+      where: { isRegistryActive: true },
+    });
+    logger.info({ event: 'reindexing_providers', count: total }, '[Meilisearch]');
+
+    let processed = 0;
+    while (processed < total) {
+      const providers = await prisma.physicianCatalog.findMany({
+        where: { isRegistryActive: true },
+        take: batchSize,
+        skip: processed,
+        include: {
+          specialties: { include: { specialty: true } },
+          establishments: { include: { establishment: { select: { addressCity: true, addressState: true } } } },
+          insurancePlans: { where: { isActive: true }, include: { insurancePlan: { select: { slug: true } } } },
+        },
+      });
+
+      const docs: ProviderSearchDocument[] = providers.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        country: p.country,
+        registryId: p.registryId,
+        registryState: p.registryState,
+        photoUrl: p.photoUrl,
+        city: p.addressCity,
+        state: p.addressState,
+        lat: p.lat ? Number(p.lat) : null,
+        lng: p.lng ? Number(p.lng) : null,
+        _geo: p.lat && p.lng ? { lat: Number(p.lat), lng: Number(p.lng) } : undefined,
+        claimStatus: p.claimStatus,
+        avgRating: p.avgRating ?? 0,
+        reviewCount: p.reviewCount ?? 0,
+        completenessScore: p.completenessScore ?? 0,
+        isRegistryActive: p.isRegistryActive,
+        publicProfileEnabled: p.publicProfileEnabled,
+        bio: p.bio,
+        languages: p.languages ?? [],
+        specialtySlugs: p.specialties.map((ps: any) => ps.specialty.slug),
+        specialtyNames: Array.from(new Set(p.specialties.flatMap((ps: any) => [
+          ps.specialty.displayEn, ps.specialty.displayPt, ps.specialty.displayEs,
+        ]).filter(Boolean))),
+        systemTypes: Array.from(new Set(p.specialties.map((ps: any) => ps.specialty.systemType))),
+        hasCamSpecialty: p.specialties.some((ps: any) => ps.specialty.isCam),
+        insurancePlanSlugs: p.insurancePlans.map((ip: any) => ip.insurancePlan.slug),
+        establishmentLocations: p.establishments.map((pe: any) =>
+          [pe.establishment.addressCity, pe.establishment.addressState].filter(Boolean).join(', ')
+        ),
+        updatedAt: p.updatedAt.getTime(),
+      }));
+
+      await indexProviders(docs);
+      processed += providers.length;
+      logger.info({ event: 'provider_batch_indexed', processed, total }, '[Meilisearch]');
+    }
+
+    logger.info({ event: 'provider_reindex_complete' }, '[Meilisearch]');
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to reindex providers');
     return false;
   }
 }
