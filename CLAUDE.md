@@ -48,6 +48,18 @@ npx prisma generate   # Regenerate Prisma client
 
 ---
 
+## IV.B FROZEN UI — CHANGE CONTROL
+
+**MANDATORY.** Read `.claude/rules/frozen-ui.md` before modifying any UI file.
+
+- `src/components/landing/**` → **READ-ONLY** (no Write/Edit/rename)
+- `src/lib/i18n/landing.ts` → **STRINGS-ONLY** (values only, no schema changes)
+- `src/app/[locale]/page.tsx` → **READ-ONLY**
+
+Before any edit to a frozen zone: describe the change, show the diff against the latest `ui-frozen-*` tag, and wait for explicit `approved` / `go` / `yes`. Plan-mode approval does NOT count. See `.claude/rules/frozen-ui.md` for the full protocol.
+
+---
+
 ## V. SECURITY RULES
 
 ### V.1 PHI Protection — Zero Tolerance

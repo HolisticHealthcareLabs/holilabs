@@ -103,12 +103,22 @@ error.log
 *.swo
 *~
 
+# Scratch / backup files (never commit — move to .scratchpad/ for review)
+*.broken.*
+*.v2-backup.*
+*.bak
+*.orig
+*.rej
+*~backup
+*~broken
+
 # Synthea test data (large JAR file and generated data)
 synthea/
 synthea-output/
 apps/web/public/downloads/*.dmg
 release/
 .claude/worktrees/
+.claude/*.lock
 .scratchpad/
 
 # Agent session notes (root-level) — allowlist keepers
