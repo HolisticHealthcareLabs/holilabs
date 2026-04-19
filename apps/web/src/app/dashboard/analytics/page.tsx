@@ -9,6 +9,7 @@ import {
   Download, Calendar,
 } from 'lucide-react';
 import { DEMO_CLAIMS, DEMO_APPOINTMENTS, getDemoAnalyticsData, getDemoBillingStats } from '@/lib/demo/dashboard-mocks';
+import { MetricCard } from '@/components/ui/premium';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -409,38 +410,46 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <KPICard
-          icon={Users} label={t('totalPatients')} value={String(overview.totalPatients)}
+      {/* KPI Cards — premium MetricCard primitive, uniform light + dark */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          icon={Users}
+          label={t('totalPatients')}
+          value={overview.totalPatients}
           sub={t('active', { count: overview.activePatients })}
-          growth={trends.patientsGrowth}
-          accent="text-blue-600 dark:text-blue-400" border="border-blue-200/60 dark:border-blue-500/20"
-          iconBg="bg-blue-50 dark:bg-blue-500/10" index={1} onClick={() => router.push('/dashboard/patients')}
-          openLabel={t('open')}
+          delta={trends.patientsGrowth}
+          accent="sky"
+          index={0}
+          onClick={() => router.push('/dashboard/patients')}
         />
-        <KPICard
-          icon={Stethoscope} label={t('consultations')} value={String(overview.totalConsultations)}
+        <MetricCard
+          icon={Stethoscope}
+          label={t('consultations')}
+          value={overview.totalConsultations}
           sub={t('avgMin', { min: overview.avgConsultationTime })}
-          growth={trends.consultationsGrowth}
-          accent="text-emerald-600 dark:text-emerald-400" border="border-emerald-200/60 dark:border-emerald-500/20"
-          iconBg="bg-emerald-50 dark:bg-emerald-500/10" index={2} onClick={() => router.push('/dashboard/my-day')}
-          openLabel={t('open')}
+          delta={trends.consultationsGrowth}
+          accent="emerald"
+          index={1}
+          onClick={() => router.push('/dashboard/my-day')}
         />
-        <KPICard
-          icon={FileText} label={t('prescriptions')} value={String(overview.totalPrescriptions)}
+        <MetricCard
+          icon={FileText}
+          label={t('prescriptions')}
+          value={overview.totalPrescriptions}
           sub={t('perVisit', { count: (overview.totalPrescriptions / Math.max(overview.totalConsultations, 1)).toFixed(1) })}
-          accent="text-violet-600 dark:text-violet-400" border="border-violet-200/60 dark:border-violet-500/20"
-          iconBg="bg-violet-50 dark:bg-violet-500/10" index={3} onClick={() => router.push('/dashboard/clinical-command')}
-          openLabel={t('open')}
+          accent="violet"
+          index={2}
+          onClick={() => router.push('/dashboard/clinical-command')}
         />
-        <KPICard
-          icon={TrendingUp} label={t('revenue')} value={formatCurrency(overview.revenue)}
+        <MetricCard
+          icon={TrendingUp}
+          label={t('revenue')}
+          value={formatCurrency(overview.revenue)}
           sub={t('currentPeriod')}
-          growth={trends.revenueGrowth}
-          accent="text-amber-600 dark:text-amber-400" border="border-amber-200/60 dark:border-amber-500/20"
-          iconBg="bg-amber-50 dark:bg-amber-500/10" index={4} onClick={() => router.push('/dashboard/billing')}
-          openLabel={t('open')}
+          delta={trends.revenueGrowth}
+          accent="amber"
+          index={3}
+          onClick={() => router.push('/dashboard/billing')}
         />
       </div>
 

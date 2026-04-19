@@ -36,6 +36,10 @@ import {
   HelpCircle,
   Activity,
   Lock,
+  HeartPulse,
+  Leaf,
+  Sparkles,
+  Share2,
   type LucideIcon,
 } from 'lucide-react';
 const Pill = Activity;
@@ -261,6 +265,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       ],
     },
     {
+      heading: 'Perioperative',
+      items: [
+        { key: 'find-doctor',        label: 'Find care',            href: '/dashboard/find-doctor',        icon: Stethoscope },
+        { key: 'preop-calculators',  label: 'Risk calculators',     href: '/dashboard/preop-calculators',  icon: HeartPulse },
+        { key: 'preop-screening',    label: 'Supplement screen',    href: '/dashboard/preop-screening',    icon: Leaf },
+        { key: 'cam-consult',        label: 'CAM consult',          href: '/dashboard/cam-consult',        icon: Sparkles },
+        { key: 'clinical-referrals', label: 'Referrals',            href: '/dashboard/clinical-referrals', icon: Share2 },
+      ],
+    },
+    {
       heading: t('dashboard.sidebar.revenueOps'),
       items: [
         { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: LayoutDashboard },
@@ -290,6 +304,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (currentPath.includes('/dashboard/patients')) return 'patients';
     if (currentPath.includes('/dashboard/auditor') || currentPath.includes('/dashboard/admin/audit-logs')) return 'audit-compliance';
     if (currentPath.includes('/dashboard/settings')) return 'settings-team';
+    if (currentPath.includes('/dashboard/find-doctor')) return 'find-doctor';
+    if (currentPath.includes('/dashboard/preop-calculators')) return 'preop-calculators';
+    if (currentPath.includes('/dashboard/preop-screening')) return 'preop-screening';
+    if (currentPath.includes('/dashboard/cam-consult')) return 'cam-consult';
+    if (currentPath.includes('/dashboard/clinical-referrals')) return 'clinical-referrals';
     return 'my-day';
   })();
 

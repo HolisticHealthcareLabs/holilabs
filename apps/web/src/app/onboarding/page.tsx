@@ -36,12 +36,57 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [generatedUsername, setGeneratedUsername] = useState<string | null>(null);
   const [defaultOrg, setDefaultOrg] = useState<string>('');
-  const [step, setStep] = useState<OnboardingStep>('review');
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // Restore saved state from localStorage (mid-wizard resume)
+  const [step, setStep] = useState<OnboardingStep>(() => {
+    if (typeof window === 'undefined') return 'review';
+    try {
+      const saved = localStorage.getItem('holilabs:onboarding:draft');
+      if (saved) return (JSON.parse(saved).step as OnboardingStep) || 'review';
+    } catch {}
+    return 'review';
+  });
+  const [acceptedTerms, setAcceptedTerms] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('holilabs:onboarding:draft');
+      if (saved) return JSON.parse(saved).acceptedTerms ?? false;
+    } catch {}
+    return false;
+  });
   const [subscribeUpdates, setSubscribeUpdates] = useState(false);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-  const [organization, setOrganization] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('holilabs:onboarding:draft');
+      if (saved) return JSON.parse(saved).selectedSpecialties ?? [];
+    } catch {}
+    return [];
+  });
+  const [organization, setOrganization] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const saved = localStorage.getItem('holilabs:onboarding:draft');
+      if (saved) return JSON.parse(saved).organization ?? '';
+    } catch {}
+    return '';
+  });
+  const [licenseNumber, setLicenseNumber] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const saved = localStorage.getItem('holilabs:onboarding:draft');
+      if (saved) return JSON.parse(saved).licenseNumber ?? '';
+    } catch {}
+    return '';
+  });
+
+  // Auto-save form state to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem('holilabs:onboarding:draft', JSON.stringify({
+        step, acceptedTerms, selectedSpecialties, organization, licenseNumber,
+      }));
+    } catch {}
+  }, [step, acceptedTerms, selectedSpecialties, organization, licenseNumber]);
 
   const firstName = session?.user?.name?.split(' ')[0] || 'there';
   const verifiedEmail = session?.user?.email || '';
@@ -72,6 +117,7 @@ export default function OnboardingPage() {
 
       if (result.success) {
         setGeneratedUsername(result.username);
+        try { localStorage.removeItem('holilabs:onboarding:draft'); } catch {}
 
         await update();
 
@@ -325,15 +371,28 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between px-1 text-xs text-white/45">
-              <span>
-                Step {currentStepIndex + 1} of {STEP_ORDER.length}
-              </span>
+            {/* Visual stepper */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                {STEP_ORDER.map((s, i) => (
+                  <div
+                    key={s}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i <= currentStepIndex
+                        ? 'bg-white w-8'
+                        : 'bg-white/20 w-4'
+                    }`}
+                  />
+                ))}
+                <span className="ml-2 text-xs text-white/45">
+                  {currentStepIndex + 1}/{STEP_ORDER.length}
+                </span>
+              </div>
               {step !== 'review' ? (
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="text-white/55 transition-colors hover:text-white/80"
+                  className="text-xs text-white/55 transition-colors hover:text-white/80"
                 >
                   Back
                 </button>
